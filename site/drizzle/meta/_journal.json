@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794042899606,
+      "tag": "0001_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794042899606,
+      "tag": "0002_checks_table_replaces_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794043679911,
+      "tag": "0003_add_projects_catalog_and_saved_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794043817586,
+      "tag": "0004_seed_projects_catalog_permanently",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794046846965,
+      "tag": "0005_translate_catalog_text_to_bahasa_indonesia",
+      "breakpoints": true
+    }
+  ]
+}

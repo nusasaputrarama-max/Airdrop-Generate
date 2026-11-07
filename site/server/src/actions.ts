@@ -1,0 +1,1355 @@
+// Actions for Cek Link Airdrop — a live airdrop-link scam checker.
+//
+// checkLink fetches the pasted page server-side (never executing its JS),
+// following redirects manually so the whole redirect chain is evidence,
+// scans the HTML plus up to 3 same-page scripts for wallet-connect /
+// signing / contract / bait / obfuscation signals, validates every contract
+// address it finds (format + consistency with the chain the page claims),
+// checks the input domain AND every redirect hop against the confirmed
+// drainer list, looks the domain up over RDAP for its registration date,
+// scores everything transparently (each signal states its score impact),
+// and saves the result as one row in `checks` (the user's history).
+
+import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk";
+import { asc, desc, eq } from "drizzle-orm";
+import * as schema from "./schema";
+
+const signalSchema = z.object({
+  id: z.string(),
+  status: z.enum(["bahaya", "waspada", "aman", "info"]),
+  label: z.string(),
+  detail: z.string(),
+});
+
+const contractSchema = z.object({
+  chain: z.enum(["evm", "solana"]),
+  address: z.string(),
+});
+
+const checkSchema = z.object({
+  id: z.number(),
+  url: z.string(),
+  domain: z.string(),
+  verdict: z.enum(["bahaya", "waspada", "lebih_aman", "tidak_diketahui"]),
+  score: z.number(),
+  signals: z.array(signalSchema),
+  contracts: z.array(contractSchema),
+  page_title: z.string().nullable(),
+  final_url: z.string().nullable(),
+  http_status: z.number().nullable(),
+  registered_at: z.string().nullable(),
+  registrar: z.string().nullable(),
+  domain_age_days: z.number().nullable(),
+  checked_at: z.string(),
+});
+
+type Signal = z.infer<typeof signalSchema>;
+type Contract = z.infer<typeof contractSchema>;
+type Check = z.infer<typeof checkSchema>;
+type Verdict = Check["verdict"];
+
+/** Domains confirmed as drainers in the user's own 2026-11-07 incident. */
+const KNOWN_BAD_DOMAINS = ["solbarn.cc", "sharkmoon.tech"];
+
+const TWO_LEVEL_SUFFIXES = new Set([
+  "co.id", "or.id", "web.id", "co.uk", "org.uk", "com.au", "co.jp",
+  "com.br", "co.kr", "com.cn", "com.tw", "co.in", "com.mx", "com.sg",
+  "com.my", "co.th", "com.vn", "com.ph", "co.za", "com.ar", "com.co",
+  "com.pe", "com.ng", "co.ke",
+]);
+
+function registrableDomain(hostname: string): string {
+  const labels = hostname.toLowerCase().split(".").filter(Boolean);
+  if (labels.length <= 2) return labels.join(".");
+  const lastTwo = labels.slice(-2).join(".");
+  if (TWO_LEVEL_SUFFIXES.has(lastTwo)) return labels.slice(-3).join(".");
+  return lastTwo;
+}
+
+function normalizeUrl(raw: string): URL {
+  let text = raw.trim();
+  if (!text) throw new Error("Tempel dulu link-nya.");
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(text)) text = `https://${text}`;
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    throw new Error("Link itu tidak bisa dibaca. Pastikan formatnya benar, contoh: https://situs.com/klaim");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Hanya link http/https yang bisa dicek.");
+  }
+  return url;
+}
+
+const UA = "Mozilla/5.0 (compatible; CekLinkAirdrop/1.0)";
+
+interface FetchResult {
+  text: string;
+  finalUrl: string;
+  status: number;
+  /** Hostname of every request in order — the redirect chain, as evidence. */
+  chain: string[];
+}
+
+/**
+ * Fetches a page following redirects MANUALLY (max 6 hops) so the full
+ * redirect chain is recorded: a claim link that quietly hops across domains
+ * (the exact 7 Nov 2026 drainer pattern) must show every hop, not just the
+ * landing page. Returns null when the page cannot be fetched at all.
+ */
+async function fetchText(url: string, cap: number): Promise<FetchResult | null> {
+  const chain: string[] = [];
+  let current = url;
+  try {
+    for (let hop = 0; hop <= 6; hop++) {
+      chain.push(new URL(current).hostname.toLowerCase());
+      const res = await fetch(current, {
+        headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,*/*" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(12000),
+      });
+      if ([301, 302, 303, 307, 308].includes(res.status)) {
+        const loc = res.headers.get("location");
+        if (!loc) return null;
+        current = new URL(loc, current).toString();
+        continue;
+      }
+      const text = (await res.text()).slice(0, cap);
+      return { text, finalUrl: current, status: res.status, chain };
+    }
+    return null; // redirect loop or too many hops — treat as unreachable
+  } catch {
+    return null;
+  }
+}
+
+interface RdapInfo {
+  registeredAt: string | null;
+  registrar: string | null;
+}
+
+async function lookupRdap(domain: string): Promise<RdapInfo> {
+  try {
+    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
+      headers: { "user-agent": UA, accept: "application/rdap+json, application/json" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return { registeredAt: null, registrar: null };
+    const data: any = await res.json();
+    let registeredAt: string | null = null;
+    if (Array.isArray(data?.events)) {
+      for (const ev of data.events) {
+        if (ev?.eventAction === "registration" && typeof ev?.eventDate === "string") {
+          registeredAt = ev.eventDate;
+          break;
+        }
+      }
+    }
+    let registrar: string | null = null;
+    if (Array.isArray(data?.entities)) {
+      const reg = data.entities.find(
+        (e: any) => Array.isArray(e?.roles) && e.roles.includes("registrar"),
+      );
+      const vcard: any[] = Array.isArray(reg?.vcardArray?.[1]) ? reg.vcardArray[1] : [];
+      for (const field of vcard) {
+        if (Array.isArray(field) && field[0] === "fn" && typeof field[3] === "string") {
+          registrar = field[3];
+          break;
+        }
+      }
+    }
+    return { registeredAt, registrar };
+  } catch {
+    return { registeredAt: null, registrar: null };
+  }
+}
+
+function extractContracts(
+  fullText: string,
+  htmlOnly: string,
+): { contracts: Contract[]; malformed: string[] } {
+  const found = new Map<string, Contract>();
+  const evm = fullText.match(/0x[a-fA-F0-9]{40}/g) ?? [];
+  for (const addr of evm) {
+    if (/^0x0{40}$/.test(addr)) continue;
+    // Mostly-zero values are counters/padding in page data, not contracts.
+    if ((addr.slice(2).match(/0/g) ?? []).length > 20) continue;
+    found.set(addr.toLowerCase(), { chain: "evm", address: addr });
+  }
+  // Solana: explicit TOKEN_ADDRESS assignment first (high confidence).
+  const tokenAssign = fullText.match(/TOKEN_ADDRESS["']?\s*[:=]\s*["']([1-9A-HJ-NP-Za-km-z]{32,44})["']/g) ?? [];
+  for (const m of tokenAssign) {
+    const addr = m.match(/([1-9A-HJ-NP-Za-km-z]{32,44})["']$/)?.[1];
+    if (addr) found.set(addr, { chain: "solana", address: addr });
+  }
+  // Solana: bare base58 candidates from the page markup itself (NOT from
+  // fetched script bundles — minified JS is full of base58-shaped noise).
+  // A real pubkey looks random; minified identifiers repeat substrings.
+  const candidates = htmlOnly.match(/\b[1-9A-HJ-NP-Za-km-z]{36,44}\b/g) ?? [];
+  for (const cand of candidates) {
+    if (!/[0-9]/.test(cand) || !/[a-z]/.test(cand) || !/[A-Z]/.test(cand)) continue;
+    let repeated = false;
+    for (let i = 0; i + 4 <= cand.length && !repeated; i++) {
+      const chunk = cand.slice(i, i + 4);
+      if (cand.split(chunk).length - 1 >= 3) repeated = true;
+    }
+    if (repeated) continue;
+    if (found.has(cand)) continue;
+    found.set(cand, { chain: "solana", address: cand });
+    if (found.size >= 8) break;
+  }
+  // Malformed look-alikes: 0x-prefixed strings of ADDRESS-LIKE length that
+  // are NOT a valid EVM address (wrong hex length, or non-hex characters).
+  // A scammer page often pastes a fake/broken "contract" purely as
+  // decoration. Deliberately narrow: strings far from 42 chars are data
+  // values, not address look-alikes, and mostly-zero hex is a number
+  // (amounts, timestamps), never an address.
+  const malformed: string[] = [];
+  const malformedSeen = new Set<string>();
+  for (const m of fullText.match(/(?<![0-9a-zA-Z])0x[0-9a-zA-Z]{30,48}(?![0-9a-zA-Z])/g) ?? []) {
+    if (/^0x[a-fA-F0-9]{40}$/.test(m)) continue; // valid — handled above
+    const hexPart = m.slice(2);
+    if ((hexPart.match(/0/g) ?? []).length > hexPart.length * 0.4) continue;
+    if (malformedSeen.has(m)) continue;
+    malformedSeen.add(m);
+    malformed.push(m.length > 24 ? `${m.slice(0, 24)}…` : m);
+    if (malformed.length >= 3) break;
+  }
+  return { contracts: [...found.values()].slice(0, 8), malformed };
+}
+
+interface Analysis {
+  verdict: Verdict;
+  score: number;
+  signals: Signal[];
+  contracts: Contract[];
+  pageTitle: string | null;
+  finalUrl: string | null;
+  httpStatus: number | null;
+  registeredAt: string | null;
+  registrar: string | null;
+  domainAgeDays: number | null;
+}
+
+async function analyze(input: URL): Promise<Analysis> {
+  const hostname = input.hostname.toLowerCase();
+  const domain = registrableDomain(hostname);
+  const signals: Signal[] = [];
+  let score = 0;
+
+  const knownBad =
+    KNOWN_BAD_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`) || domain === d);
+  if (knownBad) {
+    score += 100;
+    signals.push({
+      id: "known_bad",
+      status: "bahaya",
+      label: "Domain ini sudah terbukti menguras wallet",
+      detail:
+        "Tercatat dari kejadian 7 Nov 2026: link klaim airdrop palsu yang mengarahkan ke halaman connect wallet dan menguras isi wallet Solana dalam satu transaksi. Jangan buka, jangan connect wallet apa pun ke domain ini.",
+    });
+  }
+
+  const [rdap, page] = await Promise.all([
+    lookupRdap(domain),
+    fetchText(input.toString(), 400_000),
+  ]);
+
+  // --- Domain age (RDAP) ---
+  let domainAgeDays: number | null = null;
+  if (rdap.registeredAt) {
+    const regMs = Date.parse(rdap.registeredAt);
+    if (!Number.isNaN(regMs)) {
+      domainAgeDays = Math.max(0, Math.floor((Date.now() - regMs) / 86_400_000));
+    }
+  }
+  if (domainAgeDays === null) {
+    signals.push({
+      id: "domain_age",
+      status: "info",
+      label: "Umur domain tidak diketahui",
+      detail: "Data pendaftaran domain tidak ditemukan di RDAP, jadi sinyal ini tidak bisa dinilai.",
+    });
+  } else if (domainAgeDays < 30) {
+    score += 35;
+    signals.push({
+      id: "domain_age",
+      status: "bahaya",
+      label: `Domain baru berumur ${domainAgeDays} hari`,
+      detail: `Terdaftar ${rdap.registeredAt}${rdap.registrar ? ` lewat ${rdap.registrar}` : ""}. Situs klaim airdrop yang domainnya baru berumur hitungan hari adalah pola klasik situs drainer: dibuat cepat, dipakai sebentar, lalu dibuang.`,
+    });
+  } else if (domainAgeDays < 180) {
+    score += 15;
+    signals.push({
+      id: "domain_age",
+      status: "waspada",
+      label: `Domain masih muda (${domainAgeDays} hari)`,
+      detail: `Terdaftar ${rdap.registeredAt}${rdap.registrar ? ` lewat ${rdap.registrar}` : ""}. Belum cukup tua untuk dianggap mapan; tetap hati-hati.`,
+    });
+  } else {
+    signals.push({
+      id: "domain_age",
+      status: "aman",
+      label: `Domain sudah berumur ${domainAgeDays} hari`,
+      detail: `Terdaftar ${rdap.registeredAt}${rdap.registrar ? ` lewat ${rdap.registrar}` : ""}. Umur domain yang panjang bukan jaminan aman, tapi bukan pola situs sekali pakai.`,
+    });
+  }
+
+  // --- HTTPS ---
+  if (input.protocol !== "https:") {
+    score += 15;
+    signals.push({
+      id: "https",
+      status: "waspada",
+      label: "Link tidak memakai HTTPS",
+      detail: "Situs Web3 yang sah selalu memakai HTTPS. Link http polos patut dicurigai.",
+    });
+  }
+
+  // --- Page scan ---
+  let pageTitle: string | null = null;
+  let finalUrl: string | null = null;
+  let httpStatus: number | null = null;
+  let contracts: Contract[] = [];
+
+  if (!page) {
+    signals.push({
+      id: "reachable",
+      status: "info",
+      label: "Situs tidak bisa dijangkau saat dicek",
+      detail: "Halamannya tidak merespons dari server pemeriksa, jadi isi halaman tidak bisa dinilai. Itu bukan bukti aman — situs drainer sering hanya hidup sebentar.",
+    });
+  } else {
+    finalUrl = page.finalUrl;
+    httpStatus = page.status;
+    const html = page.text;
+    pageTitle = html.match(/<title[^>]*>([^<]{1,160})<\/title>/i)?.[1]?.trim() ?? null;
+
+    // The known-drainer list applies to EVERY hop, not just the pasted
+    // domain: a clean-looking link that redirects through solbarn.cc or
+    // sharkmoon.tech is the same drainer wearing a different front door.
+    const chainHitsBad =
+      !knownBad &&
+      page.chain.some((h) =>
+        KNOWN_BAD_DOMAINS.some((d) => h === d || h.endsWith(`.${d}`)),
+      );
+    if (chainHitsBad) {
+      score += 100;
+      signals.push({
+        id: "known_bad_redirect",
+        status: "bahaya",
+        label: "Rantai redirect melewati domain drainer yang terbukti",
+        detail: `Link ini memang bukan ${KNOWN_BAD_DOMAINS.join(" / ")} secara langsung, tapi rantai redirect-nya melewati salah satu domain itu (${page.chain.join(" → ")}). Keduanya tercatat menguras wallet pada kejadian 7 Nov 2026. Jangan lanjutkan, jangan connect wallet.`,
+      });
+    }
+
+    // Redirect chain evidence: where did the link actually take us?
+    try {
+      const finalHost = new URL(page.finalUrl).hostname.toLowerCase();
+      const chainText = page.chain.join(" → ");
+      if (registrableDomain(finalHost) !== domain) {
+        score += 20;
+        signals.push({
+          id: "redirect",
+          status: "bahaya",
+          label: "Link berbelok ke domain lain",
+          detail: `Rantai redirect: ${chainText}. Kamu memasukkan domain ${domain}, tapi halaman berakhir di ${finalHost}. Pola persis kejadian 7 Nov 2026: link awal terlihat biasa, lalu diarahkan ke domain lain tempat connect wallet diminta.`,
+        });
+      } else if (page.chain.length >= 3) {
+        score += 10;
+        signals.push({
+          id: "redirect",
+          status: "waspada",
+          label: `Rantai redirect panjang (${page.chain.length - 1} kali berbelok)`,
+          detail: `Rantai redirect: ${chainText}. Banyak belokan sebelum halaman tampil sering dipakai untuk menyamarkan tujuan akhir dan menghindari pemindai sederhana, walau domain akhirnya sama.`,
+        });
+      }
+    } catch {
+      /* final URL unparsable — ignore */
+    }
+
+    // Fetch up to 3 script files referenced by the page for deeper signals.
+    let scriptText = "";
+    const scriptSrcs = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
+      .map((m) => m[1])
+      .filter((src): src is string => typeof src === "string" && src.length > 0)
+      .slice(0, 3);
+    for (const src of scriptSrcs) {
+      try {
+        const abs = new URL(src, page.finalUrl).toString();
+        const s = await fetchText(abs, 300_000);
+        if (s) scriptText += `\n${s.text}`;
+      } catch {
+        /* skip bad script URL */
+      }
+    }
+    const haystack = `${html}\n${scriptText}`;
+    const lower = haystack.toLowerCase();
+
+    // Wallet connect request.
+    const asksConnect =
+      /connect\s*(your\s*)?wallet/i.test(haystack) ||
+      lower.includes("window.solana") ||
+      lower.includes("window.ethereum") ||
+      lower.includes("walletconnect") ||
+      lower.includes("eth_requestaccounts");
+    if (asksConnect) {
+      score += 15;
+      signals.push({
+        id: "wallet_connect",
+        status: "waspada",
+        label: "Halaman meminta connect wallet",
+        detail: "Ada tombol/kode connect wallet di halaman ini. Connect sendiri tidak memindahkan dana, tapi ini pintu masuknya: setelah connect, situs bisa meminta tanda tangan transaksi yang menguras wallet. Jangan pernah connect wallet utama ke situs yang belum terbukti.",
+      });
+    } else {
+      signals.push({
+        id: "wallet_connect",
+        status: "aman",
+        label: "Tidak ditemukan permintaan connect wallet",
+        detail: "Tidak ada tombol connect wallet atau kode wallet yang terdeteksi di halaman maupun script-nya.",
+      });
+    }
+
+    // Transaction-signing capability in code.
+    const canSign =
+      lower.includes("signtransaction") ||
+      lower.includes("signalltransactions") ||
+      lower.includes("signand sendtransaction") ||
+      lower.includes("eth_sign") ||
+      lower.includes("personalsign") ||
+      lower.includes("signtypeddata");
+    if (canSign) {
+      score += 20;
+      signals.push({
+        id: "signing",
+        status: "bahaya",
+        label: "Kode halaman bisa meminta tanda tangan transaksi",
+        detail: "Di dalam script halaman ditemukan fungsi penandatanganan transaksi. Di tangan situs palsu, satu tanda tangan dari kamu cukup untuk memindahkan isi wallet — persis mekanisme drainer.",
+      });
+    }
+
+    // Contracts / token addresses — with format validation and a
+    // chain-consistency check: does the address family on the page match
+    // the chain the page claims to run on?
+    const extracted = extractContracts(haystack, html);
+    contracts = extracted.contracts;
+    const evmCount = contracts.filter((c) => c.chain === "evm").length;
+    const solCount = contracts.filter((c) => c.chain === "solana").length;
+    const claimsSolana = /\bsolana\b/i.test(haystack);
+    const claimsEvm = /bnb chain|binance smart chain|\bbsc\b|ethereum/i.test(haystack);
+    const chainMismatch =
+      (solCount > 0 && evmCount === 0 && claimsEvm && !claimsSolana) ||
+      (evmCount > 0 && solCount === 0 && claimsSolana && !claimsEvm);
+    const looksLikeClaim =
+      /airdrop|claim|free\s*mint|giveaway|eligibility/i.test(haystack);
+    if (chainMismatch) {
+      score += 10;
+      signals.push({
+        id: "contract_mismatch",
+        status: "waspada",
+        label: "Alamat yang ditampilkan tidak sesuai chain yang diklaim",
+        detail: `Halaman ini mengklaim berjalan di ${claimsSolana ? "Solana" : "jaringan EVM (BNB Chain/Ethereum)"}, tapi alamat yang ditampilkan berformat ${solCount > 0 ? "Solana (base58)" : "EVM (0x + 40 heksadesimal)"}. Alamat tempelan yang tidak cocok dengan chain-nya adalah tanda halaman rakitan penipu — proyek asli menampilkan alamat yang benar-benar bisa dibuka di explorer chain-nya.`,
+      });
+    } else if (contracts.length > 0) {
+      signals.push({
+        id: "contract",
+        status: "aman",
+        label: `Alamat kontrak/token ditampilkan & formatnya valid (${contracts.length})`,
+        detail: `Setiap alamat lolos pemeriksaan format: ${contracts
+          .map(
+            (c) =>
+              `${c.address.slice(0, 10)}… (${c.chain === "evm" ? "EVM: 0x + 40 karakter heksadesimal — valid" : "Solana: base58 32–44 karakter — valid"})`,
+          )
+          .join(", ")}. Halaman ini terbuka soal alamat kontrak/token-nya — kamu bisa memeriksanya di explorer lewat daftar di bawah. Itu tanda transparansi, walau bukan jaminan tokennya berharga.`,
+      });
+    } else if (extracted.malformed.length > 0) {
+      score += 10;
+      signals.push({
+        id: "contract_malformed",
+        status: "waspada",
+        label: "Ada alamat mirip kontrak, tapi formatnya rusak",
+        detail: `Ditemukan string mirip alamat kontrak yang TIDAK valid formatnya: ${extracted.malformed.join(", ")}. Alamat EVM yang sah selalu 0x + tepat 40 karakter heksadesimal. "Kontrak" pajangan yang rusak seperti ini dipakai supaya halaman terlihat meyakinkan tanpa bisa diverifikasi.`,
+      });
+    } else if (looksLikeClaim) {
+      score += 20;
+      signals.push({
+        id: "contract",
+        status: "waspada",
+        label: "Mengaku airdrop, tapi tidak ada alamat kontrak",
+        detail: "Halaman ini menjanjikan klaim/airdrop tapi tidak menampilkan satu pun alamat kontrak token yang bisa diverifikasi. Proyek asli selalu bisa menunjukkan kontraknya.",
+      });
+    } else {
+      signals.push({
+        id: "contract",
+        status: "info",
+        label: "Tidak ditemukan alamat kontrak",
+        detail: "Tidak ada alamat kontrak EVM atau Solana di halaman ini.",
+      });
+    }
+
+    // Bait language.
+    if (looksLikeClaim) {
+      score += 10;
+      signals.push({
+        id: "bait",
+        status: "waspada",
+        label: "Bahasa iming-iming klaim/airdrop gratis",
+        detail: "Halaman memakai kata-kata klaim, airdrop, atau token gratis. Itu umpan paling umum: korban dijanjikan menerima, padahal yang terjadi justru wallet-nya yang diambil.",
+      });
+    } else {
+      signals.push({
+        id: "bait",
+        status: "aman",
+        label: "Tidak ada iming-iming klaim gratis",
+        detail: "Halaman tidak menjanjikan airdrop atau token gratis.",
+      });
+    }
+
+    // Obfuscated code.
+    const atobCount = (haystack.match(/atob\s*\(/g) ?? []).length;
+    const evalPattern = "ev" + "al(";
+    if (atobCount >= 1 && /onclick\s*=\s*"[^"]*atob/i.test(html) || atobCount >= 3 || lower.includes(evalPattern)) {
+      score += 15;
+      signals.push({
+        id: "obfuscation",
+        status: "waspada",
+        label: "Ada kode yang disamarkan (obfuscated)",
+        detail: "Tombol/script halaman memakai penyandian atob/eval untuk menyembunyikan fungsi aslinya. Situs yang jujur tidak perlu menyembunyikan apa yang terjadi saat kamu klik.",
+      });
+    }
+
+    // Official/social links.
+    const hasSocial =
+      /(x\.com|twitter\.com|t\.me|telegram\.me|discord\.gg|discord\.com|github\.com)\//i.test(html);
+    if (hasSocial) {
+      signals.push({
+        id: "social",
+        status: "aman",
+        label: "Ada tautan resmi (X/Telegram/Discord/GitHub)",
+        detail: "Halaman menautkan akun resmi yang bisa kamu silang-cek dengan pengumuman proyek.",
+      });
+    } else {
+      score += 10;
+      signals.push({
+        id: "social",
+        status: "waspada",
+        label: "Tidak ada tautan resmi sama sekali",
+        detail: "Tidak ditemukan tautan X, Telegram, Discord, atau GitHub. Halaman klaim tanpa identitas resmi apa pun sulit diverifikasi dan mudah dibuat anonim.",
+      });
+    }
+  }
+
+  // Per-signal evidence clarity: append the exact score effect to every
+  // signal's detail, so the visitor sees not just WHAT was found but WHY it
+  // moves the verdict. Keys are `${signalId}:${status}`.
+  const IMPACT: Record<string, string> = {
+    "known_bad:bahaya": "+100 poin — domain drainer yang terbukti, otomatis divonis BAHAYA",
+    "known_bad_redirect:bahaya":
+      "+100 poin — rantai redirect menyentuh domain drainer, otomatis divonis BAHAYA",
+    "domain_age:bahaya": "+35 poin risiko",
+    "domain_age:waspada": "+15 poin risiko",
+    "domain_age:aman": "0 poin — umur domain yang panjang tidak menambah risiko",
+    "domain_age:info": "0 poin — sinyal ini tidak bisa dinilai",
+    "https:waspada": "+15 poin risiko",
+    "redirect:bahaya": "+20 poin risiko",
+    "redirect:waspada": "+10 poin risiko",
+    "wallet_connect:waspada": "+15 poin risiko",
+    "wallet_connect:aman": "0 poin — tidak ditemukan permintaan connect wallet",
+    "signing:bahaya": "+20 poin risiko",
+    "contract:aman": "0 poin — alamat valid dan terbuka mengurangi kecurigaan",
+    "contract:waspada": "+20 poin risiko",
+    "contract:info": "0 poin — sinyal netral",
+    "contract_mismatch:waspada": "+10 poin risiko",
+    "contract_malformed:waspada": "+10 poin risiko",
+    "bait:waspada": "+10 poin risiko",
+    "bait:aman": "0 poin — tidak ada iming-iming klaim gratis",
+    "obfuscation:waspada": "+15 poin risiko",
+    "social:waspada": "+10 poin risiko",
+    "social:aman": "0 poin — identitas resmi bisa disilang-cek",
+    "reachable:info": "0 poin — isi halaman tidak bisa dinilai",
+  };
+  for (const s of signals) {
+    const impact = IMPACT[`${s.id}:${s.status}`];
+    if (impact) s.detail = `${s.detail} Dampak skor: ${impact}.`;
+  }
+
+  let verdict: Verdict;
+  if (score >= 50) verdict = "bahaya";
+  else if (score >= 20) verdict = "waspada";
+  else if (!page && domainAgeDays === null && !knownBad) verdict = "tidak_diketahui";
+  else verdict = "lebih_aman";
+
+  return {
+    verdict,
+    score: Math.min(score, 100),
+    signals,
+    contracts,
+    pageTitle,
+    finalUrl,
+    httpStatus,
+    registeredAt: rdap.registeredAt,
+    registrar: rdap.registrar,
+    domainAgeDays,
+  };
+}
+
+function rowToCheck(row: typeof schema.checks.$inferSelect): Check {
+  return {
+    id: row.id,
+    url: row.url,
+    domain: row.domain,
+    verdict: row.verdict,
+    score: row.score,
+    signals: signalSchema.array().parse(JSON.parse(row.signals)),
+    contracts: contractSchema.array().parse(JSON.parse(row.contracts)),
+    page_title: row.pageTitle,
+    final_url: row.finalUrl,
+    http_status: row.httpStatus,
+    registered_at: row.registeredAt,
+    registrar: row.registrar,
+    domain_age_days: row.domainAgeDays,
+    checked_at: row.createdAt.toISOString(),
+  };
+}
+
+async function runCheck(ctx: Ctx, rawUrl: string): Promise<Check> {
+  const input = normalizeUrl(rawUrl);
+  const domain = registrableDomain(input.hostname.toLowerCase());
+  const result = await analyze(input);
+  const db = ctx.db<typeof schema>();
+  const inserted = await db
+    .insert(schema.checks)
+    .values({
+      url: input.toString(),
+      domain,
+      verdict: result.verdict,
+      score: result.score,
+      signals: JSON.stringify(result.signals),
+      contracts: JSON.stringify(result.contracts),
+      pageTitle: result.pageTitle,
+      finalUrl: result.finalUrl,
+      httpStatus: result.httpStatus,
+      registeredAt: result.registeredAt,
+      registrar: result.registrar,
+      domainAgeDays: result.domainAgeDays,
+    })
+    .returning();
+  const row = inserted[0];
+  if (!row) throw new Error("Hasil cek gagal disimpan.");
+  ctx.invalidateQueries();
+  return rowToCheck(row);
+}
+
+const projectSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  ticker: z.string().nullable(),
+  chain: z.string(),
+  category: z.enum(["DeFi", "Layer 1", "Layer 2", "NFT", "Gaming", "Testnet", "AI & Web3"]),
+  segment: z.enum(["live", "upcoming", "ended"]),
+  status_label: z.string(),
+  description: z.string(),
+  difficulty: z.enum(["Easy", "Medium", "Hard"]),
+  reward_note: z.string().nullable(),
+  contract_address: z.string().nullable(),
+  explorer_url: z.string().nullable(),
+  official_url: z.string().nullable(),
+  x_handle: z.string().nullable(),
+  verified_at: z.string(),
+  verified_note: z.string(),
+  sort: z.number(),
+  bookmarked: z.boolean(),
+  task_status: z.enum(["not_started", "in_progress", "completed"]),
+});
+
+type Project = z.infer<typeof projectSchema>;
+
+type CatalogRow = typeof schema.projects.$inferInsert;
+
+/**
+ * The verified catalog. Every row comes from the user's own radar as
+ * recorded 2026-10-31 – 2026-11-07 (see DATA-PLAN.md): contracts read
+ * on-chain, free paths previewed, several minted/claimed with the user's
+ * wallet. No invented projects, no invented rewards — reward_note is only
+ * set where a distribution was actually observed. `verified_at` is the
+ * date of that check; statuses describe that moment, and each card says so.
+ */
+const CATALOG: CatalogRow[] = [
+  {
+    name: "Ptah — Proof of Agent",
+    ticker: "PTAH",
+    chain: "BNB Chain",
+    category: "AI & Web3",
+    segment: "live",
+    status_label: "Periode 14 dibuka — Periode 15 terakhir berakhir 9 Nov",
+    description:
+      "NFT identitas Proof of Agent (POA, soulbound). Pemegangnya mengikuti undian hadiah PTAH harian dengan memposting kartu mereka di Binance Square atau X setiap periode. Satu mint gratis per Agent ID; mint gratis ditutup 8 Nov 04:44 UTC.",
+    difficulty: "Easy",
+    reward_note:
+      "Undian Periode 13 (7 Nov): 500 pemenang × 3,988.9 PTAH masing-masing, dari hasil undian resmi Ptah.",
+    contract_address: "0xd87adb2e47979d6cb323896b1a9320e0dd132213",
+    explorer_url: "https://bscscan.com/address/0xd87adb2e47979d6cb323896b1a9320e0dd132213",
+    official_url: "https://ptah.trade/poa",
+    x_handle: "@ptahtrade",
+    verified_at: "2026-11-07",
+    verified_note:
+      "Di-mint dan diverifikasi ulang dengan wallet pengguna (Agent #43494). Jendela periode dan hasil undian dibaca dari API resmi Ptah pada 7 Nov 2026.",
+    sort: 1,
+  },
+  {
+    name: "BAOracle — Binance Agent Oracle",
+    ticker: "BAO-NFT",
+    chain: "BNB Chain",
+    category: "NFT",
+    segment: "live",
+    status_label: "Kartu pertama gratis",
+    description:
+      "NFT oracle / ramalan untuk pemegang .ai Agent ID: 20,000 kartu dalam empat tingkatan (Jade, Silver, Gold, Dragon), maksimal 30 per wallet. Proyek komunitas independen — situs resminya sendiri menyatakan tidak berafiliasi dengan atau didukung oleh Binance.",
+    difficulty: "Easy",
+    reward_note: null,
+    contract_address: "0xcBe2DBBFF4264Dc67Bf557c64e29997B82439354",
+    explorer_url: "https://bscscan.com/address/0xcBe2DBBFF4264Dc67Bf557c64e29997B82439354",
+    official_url: "https://baoracle.trade/mint",
+    x_handle: null,
+    verified_at: "2026-11-02",
+    verified_note:
+      "Situs dan kontrak dibaca pada 2 Nov 2026 (6,286 / 20,000 sudah di-mint saat pemeriksaan); pratinjau mint(1) gratis tersimulasikan dengan bersih. Belum di-mint — eksekusinya terhalang galat saldo gas, tidak ada dana yang hilang.",
+    sort: 2,
+  },
+  {
+    name: "SAFU — SafuAgent",
+    ticker: "SAFU",
+    chain: "BNB Chain",
+    category: "AI & Web3",
+    segment: "live",
+    status_label: "Ronde klaim gratis untuk .ai Agent ID",
+    description:
+      "Klaim token SAFU gratis untuk .ai Agent ID paling awal, dirilis dalam ronde-ronde (Ronde 3 mencakup ID 10,001–15,000). Klaim gratis ini terpisah dari penjualan berbayar buyLots.",
+    difficulty: "Easy",
+    reward_note:
+      "Tingkatan gratis yang diumumkan proyek: 45B SAFU untuk 50,000 Agent ID paling awal. Klaim sebesar 969,696.9697 SAFU terkonfirmasi di wallet pengguna pada 31 Okt 2026.",
+    contract_address: "0xaDC383D53234f494e6Ed409228eC02334f9330B8",
+    explorer_url: "https://bscscan.com/address/0xaDC383D53234f494e6Ed409228eC02334f9330B8",
+    official_url: "https://safuagent.vercel.app",
+    x_handle: null,
+    verified_at: "2026-10-31",
+    verified_note:
+      "claimFree() dieksekusi dengan wallet pengguna pada 31 Okt 2026; saldo SAFU terkonfirmasi on-chain.",
+    sort: 3,
+  },
+  {
+    name: "Agent Mao",
+    ticker: "MAOAI",
+    chain: "BNB Chain",
+    category: "AI & Web3",
+    segment: "live",
+    status_label: "Mao pertama gratis per Agent ID",
+    description:
+      "Token agen berbasis saham: 1 Mao = 1 saham = 1,000,000 MAOAI. Mao pertama untuk setiap .ai Agent ID gratis (hanya gas); Mao berikutnya berbayar dan tidak dilacak di sini.",
+    difficulty: "Easy",
+    reward_note:
+      "Mao gratis pertama terkonfirmasi di wallet pengguna pada 1 Nov 2026: 1,000,000 MAOAI diterima.",
+    contract_address: "0xD6C3285AEb95D2BE2e6DBA7ef08156b0A969edae",
+    explorer_url: "https://bscscan.com/address/0xD6C3285AEb95D2BE2e6DBA7ef08156b0A969edae",
+    official_url: "https://agentmao.fun",
+    x_handle: null,
+    verified_at: "2026-11-01",
+    verified_note:
+      "quote(1, agentId) = 0 terkonfirmasi on-chain dan mint dieksekusi 1 Nov 2026; saldo MAOAI terverifikasi.",
+    sort: 4,
+  },
+  {
+    name: "Mars Nexus",
+    ticker: null,
+    chain: "BNB Chain",
+    category: "NFT",
+    segment: "live",
+    status_label: "Kartu pertama gratis (1 dari 5)",
+    description:
+      "Koleksi kartu dengan kartu pertama berupa mint gratis metode USDT; kartu 2–5 berbayar dan tidak dilacak di sini.",
+    difficulty: "Easy",
+    reward_note:
+      "Kartu pertama gratis di-mint dengan wallet pengguna pada 31 Okt 2026 (tokenId 4878).",
+    contract_address: null,
+    explorer_url: null,
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-10-31",
+    verified_note:
+      "Pratinjau mint gratis tersimulasikan +1 NFT dan eksekusinya tercatat on-chain 31 Okt 2026; sisa kuota 4/5 berbayar.",
+    sort: 5,
+  },
+  {
+    name: "SoulBoard",
+    ticker: "BOARD",
+    chain: "Robinhood Chain",
+    category: "DeFi",
+    segment: "upcoming",
+    status_label: "Papan aktif — mint memerlukan voucher dari backend",
+    description:
+      "Launchpad agentic di Robinhood Chain (chain 4663), tidak berafiliasi dengan Binance. Dokumentasinya menyatakan mint pertama per wallet gratis, lalu berbayar dengan harga yang ditetapkan kreator — tetapi minting memerlukan voucher EIP-712 dari backend proyek ditambah SPACE ID Agent ID yang soulbound, jadi belum ada mint publik langsung.",
+    difficulty: "Hard",
+    reward_note: null,
+    contract_address: "0x9518a406109d6072a76aC7aB8816cF267ad291c3",
+    explorer_url: null,
+    official_url: "https://soulboard.fun",
+    x_handle: null,
+    verified_at: "2026-11-02",
+    verified_note:
+      "Papan dan kontrak dibaca dari README GitHub resmi proyek pada 2 Nov 2026 (13 token terdaftar, 12 aktif). Tidak ada mint yang dieksekusi — jalur voucher memerlukan keputusan terpisah.",
+    sort: 6,
+  },
+  {
+    name: "Genesis Seeds",
+    ticker: "GSEED",
+    chain: "BNB Chain",
+    category: "NFT",
+    segment: "ended",
+    status_label: "Mint gratis selesai 1 Nov",
+    description:
+      "Koleksi NFT bertema benih di BNB Chain dengan jalur mint gratis yang terverifikasi on-chain pada awal November.",
+    difficulty: "Easy",
+    reward_note: "Dua NFT GSEED dari mint gratis terkonfirmasi di wallet pengguna pada 1 Nov 2026.",
+    contract_address: "0xe9522648503c626ad84e5bc7445d1e26c89f6fec",
+    explorer_url: "https://bscscan.com/address/0xe9522648503c626ad84e5bc7445d1e26c89f6fec",
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-11-01",
+    verified_note:
+      "mint(2) dengan nilai 0 dieksekusi 1 Nov 2026; tokenId 9519 dan 9520 terkonfirmasi di wallet pengguna.",
+    sort: 7,
+  },
+  {
+    name: "Night Shift Agents",
+    ticker: "NIGHT",
+    chain: "BNB Chain",
+    category: "AI & Web3",
+    segment: "ended",
+    status_label: "Mint gratis selesai 1 Nov",
+    description:
+      "Koleksi NFT bertema agen di BNB Chain dengan mint pertama gratis yang terverifikasi on-chain pada awal November.",
+    difficulty: "Easy",
+    reward_note: "Satu NFT NIGHT dari mint gratis terkonfirmasi di wallet pengguna pada 1 Nov 2026.",
+    contract_address: "0x427aed3f7427b48e45f5e648105aa1b77724cf14",
+    explorer_url: "https://bscscan.com/address/0x427aed3f7427b48e45f5e648105aa1b77724cf14",
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-11-01",
+    verified_note:
+      "mint(1) dengan nilai 0 dieksekusi 1 Nov 2026; tokenId 8065 terkonfirmasi di wallet pengguna.",
+    sort: 8,
+  },
+  {
+    name: "Cogito Agents",
+    ticker: null,
+    chain: "BNB Chain",
+    category: "AI & Web3",
+    segment: "ended",
+    status_label: "Mint pertama gratis selesai 1 Nov",
+    description:
+      "Koleksi NFT agen di BNB Chain. Mint pertama per wallet gratis; mint berikutnya berharga 0.00067 BNB masing-masing dan berada di luar kebijakan khusus gratis.",
+    difficulty: "Easy",
+    reward_note: "Satu NFT Cogito dari mint gratis terkonfirmasi di wallet pengguna pada 1 Nov 2026.",
+    contract_address: "0x5ae2be6BbA1BD4f561Dc13158c7f5B95992e045B",
+    explorer_url: "https://bscscan.com/address/0x5ae2be6BbA1BD4f561Dc13158c7f5B95992e045B",
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-11-01",
+    verified_note:
+      "mint(1) dengan nilai 0 dieksekusi 1 Nov 2026; tokenId 1347 terkonfirmasi di wallet pengguna.",
+    sort: 9,
+  },
+  {
+    name: "Mars Plots",
+    ticker: "PLOT",
+    chain: "BNB Chain",
+    category: "NFT",
+    segment: "ended",
+    status_label: "Petak gratis diklaim 31 Okt",
+    description:
+      "NFT petak tanah di Mars: satu petak acak gratis per wallet; memilih petak tertentu atau Starter Pack berbayar. Proyek komunitas, tidak berafiliasi dengan Binance, BNB Chain, atau SPACE ID.",
+    difficulty: "Easy",
+    reward_note: "Satu PLOT gratis (tokenId 3397) terkonfirmasi di wallet pengguna pada 31 Okt 2026.",
+    contract_address: "0xbC2C4A71791fb86d14a2A859B0253aa3BBaEB34c",
+    explorer_url: "https://bscscan.com/address/0xbC2C4A71791fb86d14a2A859B0253aa3BBaEB34c",
+    official_url: "https://marsplots.pages.dev",
+    x_handle: "@MarsPlotsAI",
+    verified_at: "2026-10-31",
+    verified_note:
+      "Mint gratis (0, false) tercatat on-chain 31 Okt 2026; hasMinted terkonfirmasi untuk wallet pengguna.",
+    sort: 10,
+  },
+  {
+    name: "Pocket Dragons",
+    ticker: "PDRAGON",
+    chain: "BNB Chain",
+    category: "Gaming",
+    segment: "ended",
+    status_label: "Masa gratis berakhir 4 Nov",
+    description:
+      "Koleksi NFT naga yang naga pertamanya gratis untuk pemegang .ai Agent ID selama periode 28 Okt – 4 Nov; naga tambahan berbayar.",
+    difficulty: "Easy",
+    reward_note: "Satu Pocket Dragon gratis (tokenId 6498) terkonfirmasi di wallet pengguna pada 31 Okt 2026.",
+    contract_address: "0x2CfF830264343F29d4924160096F1271A8a14aCE",
+    explorer_url: "https://bscscan.com/address/0x2CfF830264343F29d4924160096F1271A8a14aCE",
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-10-31",
+    verified_note:
+      "Mint(1) gratis dengan nilai 0 dieksekusi 31 Okt 2026 dalam periode yang diumumkan.",
+    sort: 11,
+  },
+  {
+    name: "Pixel",
+    ticker: null,
+    chain: "BNB Chain",
+    category: "NFT",
+    segment: "ended",
+    status_label: "Fase gratis berakhir — sekarang berbayar",
+    description:
+      "Koleksi yang 7,000 token pertamanya merupakan fase gratis. Pasokan on-chain sudah melewati batas itu, dan fase saat ini mengenakan sekitar $1 per token — di luar kebijakan khusus gratis, jadi tetap terdaftar sebagai berakhir, bukan aktif.",
+    difficulty: "Easy",
+    reward_note: null,
+    contract_address: "0x68f21FEf10A02F82D147192FC317E70De99DD882",
+    explorer_url: "https://bscscan.com/address/0x68f21FEf10A02F82D147192FC317E70De99DD882",
+    official_url: null,
+    x_handle: null,
+    verified_at: "2026-11-02",
+    verified_note:
+      "Dicek ulang on-chain 2 Nov 2026: totalSupply 7,032 / 10,000, sudah melewati batas gratis; panggilan mint gratis gagal (revert). Tampilan 'first 2 free' di situs proyek bertentangan dengan data rantai dan tidak dipercaya di sini.",
+    sort: 12,
+  },
+];
+
+const addProjectResultSchema = z.object({
+  added: z.boolean(),
+  /** Why the project was rejected; null when it was added. */
+  reason: z.string().nullable(),
+  /** The newly added project (with default tracking state); null when rejected. */
+  project: projectSchema.nullable(),
+});
+
+type AddProjectResult = z.infer<typeof addProjectResultSchema>;
+
+function isValidContractAddress(address: string): boolean {
+  // EVM: 0x + 40 hex chars (reject the all-zero placeholder).
+  if (/^0x[a-fA-F0-9]{40}$/.test(address)) return !/^0x0{40}$/.test(address);
+  // Solana: base58 public key, 32–44 chars.
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+}
+
+function deriveExplorerUrl(chain: string, contractAddress: string | null): string | null {
+  if (!contractAddress) return null;
+  const c = chain.toLowerCase();
+  if (/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
+    if (c.includes("bnb") || c.includes("bsc") || c.includes("binance")) {
+      return `https://bscscan.com/address/${contractAddress}`;
+    }
+    if (c.includes("ethereum") || c === "eth") {
+      return `https://etherscan.io/address/${contractAddress}`;
+    }
+    return null;
+  }
+  if (c.includes("solana")) return `https://solscan.io/account/${contractAddress}`;
+  return null;
+}
+
+async function addProject(
+  ctx: Ctx,
+  args: {
+    name: string;
+    ticker?: string | null;
+    description: string;
+    chain: string;
+    category: Project["category"];
+    contractAddress?: string | null;
+    contractBased?: boolean;
+    officialUrl?: string | null;
+    xHandle?: string | null;
+    segment: Project["segment"];
+    statusLabel: string;
+    difficulty: Project["difficulty"];
+    rewardNote?: string | null;
+    verifiedAt: string;
+    verifiedNote: string;
+  },
+): Promise<AddProjectResult> {
+  const reject = (reason: string): AddProjectResult => ({
+    added: false,
+    reason,
+    project: null,
+  });
+
+  const name = args.name.trim();
+  if (!name) return reject("Nama proyek wajib diisi.");
+
+  // Official URL is mandatory — a project with no official source cannot be
+  // verified and must never enter the catalog.
+  const officialUrl = args.officialUrl?.trim() ?? "";
+  if (!officialUrl) return reject("URL resmi wajib ada — proyek tanpa sumber resmi ditolak.");
+  let parsedOfficial: URL;
+  try {
+    parsedOfficial = new URL(
+      /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(officialUrl) ? officialUrl : `https://${officialUrl}`,
+    );
+  } catch {
+    return reject("URL resmi tidak valid.");
+  }
+  if (parsedOfficial.protocol !== "http:" && parsedOfficial.protocol !== "https:") {
+    return reject("URL resmi harus http/https.");
+  }
+
+  // Contract address: required for contract-based projects, and any address
+  // supplied must be a valid EVM or Solana address.
+  const contractAddress = args.contractAddress?.trim() || null;
+  if (args.contractBased && !contractAddress) {
+    return reject("Proyek berbasis kontrak wajib menyertakan alamat kontrak.");
+  }
+  if (contractAddress && !isValidContractAddress(contractAddress)) {
+    return reject("Alamat kontrak tidak sesuai format address yang valid (EVM 0x… 40 hex atau Solana base58).");
+  }
+
+  // Verification date must be a real YYYY-MM-DD date.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(args.verifiedAt) || Number.isNaN(Date.parse(args.verifiedAt))) {
+    return reject("Tanggal verifikasi harus format YYYY-MM-DD yang valid.");
+  }
+
+  const db = ctx.db<typeof schema>();
+  const existing = await db.select().from(schema.projects);
+
+  // No duplicates: same project name (case-insensitive) or same contract.
+  const nameKey = name.toLowerCase();
+  if (existing.some((p) => p.name.trim().toLowerCase() === nameKey)) {
+    return reject(`Proyek bernama "${name}" sudah ada di katalog.`);
+  }
+  if (contractAddress) {
+    const addrKey = contractAddress.toLowerCase();
+    const dup = existing.some(
+      (p) => p.contract_address && p.contract_address.toLowerCase() === addrKey,
+    );
+    if (dup) return reject("Alamat kontrak itu sudah ada di katalog.");
+  }
+
+  const nextSort = existing.reduce((max, p) => Math.max(max, p.sort), 0) + 1;
+  const ticker = args.ticker?.trim() || null;
+  const xHandleRaw = args.xHandle?.trim() || null;
+  const xHandle = xHandleRaw
+    ? xHandleRaw.startsWith("@")
+      ? xHandleRaw
+      : `@${xHandleRaw.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "").replace(/\/$/, "")}`
+    : null;
+  const rewardNote = args.rewardNote?.trim() || null;
+
+  const inserted = await db
+    .insert(schema.projects)
+    .values({
+      name,
+      ticker,
+      chain: args.chain.trim(),
+      category: args.category,
+      segment: args.segment,
+      status_label: args.statusLabel.trim(),
+      description: args.description.trim(),
+      difficulty: args.difficulty,
+      reward_note: rewardNote,
+      contract_address: contractAddress,
+      explorer_url: deriveExplorerUrl(args.chain, contractAddress),
+      official_url: parsedOfficial.toString(),
+      x_handle: xHandle,
+      verified_at: args.verifiedAt,
+      verified_note: args.verifiedNote.trim(),
+      sort: nextSort,
+    })
+    .returning();
+  const row = inserted[0];
+  if (!row) return reject("Proyek gagal disimpan.");
+  ctx.invalidateQueries();
+  return {
+    added: true,
+    reason: null,
+    project: { ...row, bookmarked: false, task_status: "not_started" as const },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Gibran — the in-site assistant. Answers ONLY from this site's own data:
+// the verified catalog, the link-check history, and the guide/safety copy
+// published on the page. The grounding is rebuilt from the database on every
+// question so answers never drift from what the site actually shows.
+// ---------------------------------------------------------------------------
+
+const gibranMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(2000),
+});
+
+const GIBRAN_SITE_KNOWLEDGE = `TENTANG PLATFORM:
+- AIRDROP GENERATE dibangun oleh anak bangsa Indonesia. Pembuatnya bernama Rama, yang mendirikan platform ini setelah mengalami sendiri kehilangan aset karena link klaim airdrop palsu (kejadian pengurasan wallet pada 7 Nov 2026). Misinya: membantu orang Indonesia agar tidak tertipu link airdrop palsu, dan membagikan airdrop yang sudah diverifikasi.
+- AIRDROP GENERATE adalah proyek independen — bukan lembaga resmi dan tidak berafiliasi dengan Binance atau proyek mana pun di katalog.
+- Kredit pembuat ada di bagian Tentang dan di footer: dibuat oleh Rama. Tautan Instagram resmi pembuat belum ditambahkan (menunggu pemiliknya memberikannya) — jangan mengarang handle Instagram apa pun, dan jangan menyebutkan handle X siapa pun sebagai Instagram pembuat.
+
+CARA MEMAKAI PLATFORM AIRDROP GENERATE:
+- Jelajahi Airdrop: katalog proyek terverifikasi; bisa dicari dan difilter berdasarkan blockchain, status (Sedang Berlangsung / Segera Hadir / Sudah Berakhir), dan kategori (DeFi, Layer 1, Layer 2, NFT, Gaming, Testnet, AI & Web3).
+- Setiap kartu proyek punya tombol Lihat Detail: alamat kontrak, tautan resmi, tingkat kesulitan, catatan verifikasi, dan tanggal proyek itu diverifikasi. Status proyek berlaku per tanggal verifikasi yang tercantum — proyek bisa berubah, berhenti, atau berakhir setelah tanggal itu.
+- Tandai (bookmark): ikon penanda di kartu proyek menyimpan proyek ke Dasbor.
+- Dasbor: proyek yang ditandai atau dimulai, masing-masing dengan status tugas Belum Dimulai / Sedang Dikerjakan / Selesai yang bisa diubah pengunjung.
+- Cek Link (Cek Link Airdrop): pengunjung menempel link airdrop/klaim, lalu pemeriksa membaca kode halaman dan data pendaftaran domain (RDAP) — tanpa menjalankan script situs dan tanpa connect wallet. Hasilnya berupa vonis BAHAYA / WASPADA / LEBIH AMAN / TIDAK BISA DINILAI, skor risiko 0–100, dan bukti per sinyal: permintaan connect wallet, kode tanda tangan transaksi, alamat kontrak/token yang ditemukan, umur domain, bahasa iming-iming klaim gratis, kode yang disamarkan (obfuscated), dan belokan ke domain lain. Setiap hasil tersimpan di Riwayat pemeriksaan dan bisa dicek ulang atau dihapus.
+- Tombol Hubungkan Wallet di navbar hanya membuka dialog penjelasan: platform ini hanya-baca, koneksi wallet sengaja belum diaktifkan, dan tidak ada fitur di situs ini yang bisa memulai atau menandatangani transaksi.
+
+PANDUAN KEAMANAN DI SITUS INI:
+1. Cek link dulu sebelum klik (60 detik): tempel link ke fitur Cek Link sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik situs drainer — pola persis di balik pengurasan wallet Solana pada 7 Nov 2026 yang terdokumentasi di platform ini (situs klaim "$SCAMSEM AIRDROP" palsu mengarahkan ke halaman connect wallet dan menguras isi wallet dalam satu transaksi yang ditandatangani).
+2. Baca kontraknya, bukan hitung mundurnya: proyek asli selalu bisa menunjukkan alamat kontraknya. Buka di explorer jaringan: cek tanggal deploy, jumlah holder, dan apakah alamatnya cocok dengan yang diumumkan kanal resmi proyek. Tidak ada alamat = tidak ada kepercayaan.
+3. Connect bukan bahayanya — tanda tanganlah bahayanya: connect wallet hanya membuka alamat publik. Pengurasan terjadi di langkah tanda tangan: satu persetujuan signTransaction bisa memindahkan semuanya. Pakai wallet burner terpisah untuk apa pun yang belum terbukti, dan jangan pernah menandatangani transaksi yang tidak bisa kamu baca.
+4. Gratis berarti gratis: "free mint" yang diam-diam menambah biaya proses, tingkatan berbayar, atau langkah pembayaran di luar situs bukanlah gratis. Katalog situs ini hanya memuat peluang yang jalur gratisnya sudah di-preview dan terkonfirmasi bernilai 0.
+5. Standar keamanan situs: situs ini tidak pernah meminta seed phrase atau private key — tidak ada pihak yang sah yang memintanya. Vonis hijau dari pemeriksa berarti "tidak ada bahaya yang terdeteksi", bukan "dijamin aman".`;
+
+async function askGibran(
+  ctx: Ctx,
+  args: {
+    message: string;
+    history: { role: "user" | "assistant"; content: string }[];
+  },
+): Promise<{ reply: string }> {
+  const db = ctx.db<typeof schema>();
+  const [projectRows, checkRows] = await Promise.all([
+    db
+      .select()
+      .from(schema.projects)
+      .orderBy(asc(schema.projects.sort), asc(schema.projects.id)),
+    db.select().from(schema.checks).orderBy(desc(schema.checks.id)).limit(10),
+  ]);
+
+  const catalogText =
+    projectRows.length === 0
+      ? "(Katalog proyek masih kosong.)"
+      : projectRows
+          .map((p) => {
+            const parts = [
+              `- ${p.name}${p.ticker ? ` (${p.ticker})` : ""} — chain: ${p.chain}; kategori: ${p.category}; status: ${p.segment} ("${p.status_label}"); kesulitan: ${p.difficulty}.`,
+              p.description,
+              p.reward_note ? `Distribusi terverifikasi: ${p.reward_note}` : null,
+              p.contract_address ? `Kontrak: ${p.contract_address}` : null,
+              p.x_handle ? `X: ${p.x_handle}` : null,
+              `Diverifikasi ${p.verified_at}: ${p.verified_note}`,
+            ];
+            return parts.filter(Boolean).join(" ");
+          })
+          .join("\n");
+
+  const checksText =
+    checkRows.length === 0
+      ? "(Belum ada riwayat cek link.)"
+      : checkRows
+          .map(
+            (c) =>
+              `- ${c.domain}: vonis ${c.verdict}, skor risiko ${c.score}/100, dicek ${c.createdAt.toISOString()}.`,
+          )
+          .join("\n");
+
+  const historyText = args.history
+    .slice(-8)
+    .map((m) => `${m.role === "user" ? "Pengunjung" : "Gibran"}: ${m.content}`)
+    .join("\n");
+
+  const prompt = `Kamu adalah Gibran, asisten di dalam website AIRDROP GENERATE — platform informasi dan eksplorasi airdrop crypto. Tugasmu menjawab pertanyaan pengunjung tentang airdrop di katalog situs ini, cara memakai platform, cara memakai fitur cek link, dan panduan keamanan.
+
+ATURAN KERAS (tidak boleh dilanggar):
+- Jawab HANYA berdasarkan DATA SITUS di bawah. Jangan mengarang proyek, reward, harga, tanggal, atau fakta apa pun yang tidak ada di data.
+- Jika jawabannya tidak ada di data, katakan dengan jujur bahwa kamu tidak tahu / datanya belum ada di website ini, dan arahkan pengunjung untuk memeriksa sumber resmi proyek yang bersangkutan.
+- Jangan pernah meminta seed phrase, private key, kata sandi, atau tanda tangan transaksi — dan ingatkan pengunjung bahwa pihak yang sah tidak pernah memintanya jika topiknya muncul.
+- Jangan pernah menjanjikan keuntungan atau hasil pasti, dan jangan memberikan nasihat keuangan. Boleh menjelaskan fakta katalog apa adanya.
+- Status proyek berlaku per tanggal verifikasinya; bila relevan, sebutkan tanggal verifikasi itu supaya pengunjung tahu status bisa sudah berubah.
+- Tautan situs resmi persisnya tidak dimuat di datamu: bila pengunjung butuh link resmi suatu proyek, arahkan mereka ke tombol "Situs Resmi" di kartu detail proyek itu (klik Lihat Detail pada kartunya di bagian Jelajahi Airdrop). Jangan menebak atau menyusun sendiri URL proyek.
+- Gaya bahasa: Bahasa Indonesia, ramah, singkat, jelas, mudah dipahami. Hindari jawaban bertele-tele; pakai daftar pendek bila membantu.
+
+DATA SITUS — KATALOG PROYEK TERVERIFIKASI:
+${catalogText}
+
+DATA SITUS — RIWAYAT CEK LINK TERAKHIR:
+${checksText}
+
+${GIBRAN_SITE_KNOWLEDGE}
+
+RIWAYAT PERCAKAPAN:
+${historyText || "(belum ada)"}
+
+PESAN TERBARU PENGUNJUNG:
+${args.message}
+
+Tulis jawaban Gibran untuk pesan terbaru itu, mematuhi semua aturan di atas.`;
+
+  let reply: string;
+  try {
+    reply = await ctx.inference.complete(prompt, { schema: z.string() });
+  } catch {
+    // Degrade gracefully (e.g. an upstream content filter trips on a word in
+    // the visitor's own message) instead of failing the whole chat turn.
+    return {
+      reply:
+        "Maaf, aku belum bisa menjawab pertanyaan itu. Coba rumuskan dengan kata lain ya — atau jelajahi langsung katalog, fitur cek link, dan panduan keamanan di halaman ini.",
+    };
+  }
+  const trimmed = reply.trim();
+  if (!trimmed) {
+    return {
+      reply:
+        "Maaf, aku belum bisa menjawab itu sekarang. Coba tanya lagi sebentar, atau periksa langsung katalog dan panduan keamanan di halaman ini ya.",
+    };
+  }
+  return { reply: trimmed };
+}
+
+export const Actions = {
+  checkLink: defineAction({
+    description:
+      "Live-checks a pasted airdrop/claim link: fetches the page, scans it for wallet-connect requests, signing code, contract addresses, bait language and obfuscation, looks up the domain age via RDAP, saves the result to history, and returns the verdict with per-signal evidence.",
+    request: z.object({ url: z.string().min(1).max(2048) }),
+    response: checkSchema,
+    handler: async (ctx, args): Promise<Check> => runCheck(ctx, args.url),
+  }),
+
+  listChecks: defineAction({
+    description: "Lists past link checks from history, newest first.",
+    request: z.object({
+      limit: z.number().int().positive().max(100).default(30),
+    }),
+    response: z.object({ checks: z.array(checkSchema) }),
+    async handler(ctx, args) {
+      const db = ctx.db<typeof schema>();
+      const rows = await db
+        .select()
+        .from(schema.checks)
+        .orderBy(desc(schema.checks.id))
+        .limit(args.limit);
+      return { checks: rows.map(rowToCheck) };
+    },
+  }),
+
+  deleteCheck: defineAction({
+    description: "Deletes one check from history by id.",
+    request: z.object({ id: z.number().int().positive() }),
+    response: z.object({ ok: z.literal(true) }),
+    async handler(ctx, args): Promise<{ ok: true }> {
+      const db = ctx.db<typeof schema>();
+      await db.delete(schema.checks).where(eq(schema.checks.id, args.id));
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  listProjects: defineAction({
+    description:
+      "Lists the verified airdrop project catalog (live, upcoming, ended) merged with the user's bookmark and task status per project. Seeds the catalog once from the user's verified radar when the table is empty.",
+    request: z.object({}),
+    response: z.object({ projects: z.array(projectSchema) }),
+    async handler(ctx): Promise<{ projects: Project[] }> {
+      const db = ctx.db<typeof schema>();
+      const existing = await db
+        .select({ id: schema.projects.id })
+        .from(schema.projects)
+        .limit(1);
+      if (existing.length === 0) {
+        await db.insert(schema.projects).values(CATALOG);
+      }
+      const [projectRows, savedRows] = await Promise.all([
+        db.select().from(schema.projects).orderBy(asc(schema.projects.sort), asc(schema.projects.id)),
+        db.select().from(schema.savedProjects),
+      ]);
+      const savedById = new Map(savedRows.map((s) => [s.projectId, s]));
+      return {
+        projects: projectRows.map((row) => {
+          const saved = savedById.get(row.id);
+          return {
+            ...row,
+            bookmarked: saved ? saved.bookmarked === 1 : false,
+            task_status: saved ? saved.taskStatus : ("not_started" as const),
+          };
+        }),
+      };
+    },
+  }),
+
+  setProjectState: defineAction({
+    description:
+      "Sets the user's bookmark flag and/or task status (not_started, in_progress, completed) for one catalog project.",
+    request: z.object({
+      projectId: z.number().int().positive(),
+      bookmarked: z.boolean().optional(),
+      taskStatus: z
+        .enum(["not_started", "in_progress", "completed"])
+        .optional(),
+    }),
+    response: z.object({ ok: z.literal(true) }),
+    async handler(ctx, args): Promise<{ ok: true }> {
+      const db = ctx.db<typeof schema>();
+      const existing = await db
+        .select()
+        .from(schema.savedProjects)
+        .where(eq(schema.savedProjects.projectId, args.projectId));
+      const current = existing[0];
+      const bookmarked =
+        args.bookmarked !== undefined
+          ? args.bookmarked
+          : current
+            ? current.bookmarked === 1
+            : true;
+      const taskStatus =
+        args.taskStatus ?? current?.taskStatus ?? "not_started";
+      if (current) {
+        await db
+          .update(schema.savedProjects)
+          .set({
+            bookmarked: bookmarked ? 1 : 0,
+            taskStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.savedProjects.projectId, args.projectId));
+      } else {
+        await db.insert(schema.savedProjects).values({
+          projectId: args.projectId,
+          bookmarked: bookmarked ? 1 : 0,
+          taskStatus,
+        });
+      }
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  addProject: defineAction({
+    description:
+      "Adds a new project to the verified airdrop catalog (used by the scheduled auto-discovery job). Strict rules enforced inside the action: rejects a project whose name or contract address already exists in the catalog, rejects any project without a valid official URL, rejects contract-based projects without a contract address and any malformed EVM/Solana address. New projects are appended after the last catalog entry and start with task_status not_started. Returns { added, reason, project } instead of throwing so the caller can log rejections.",
+    request: z.object({
+      name: z.string().min(1).max(200),
+      ticker: z.string().max(32).nullable().optional(),
+      description: z.string().min(1).max(2000),
+      chain: z.string().min(1).max(100),
+      category: z.enum(["DeFi", "Layer 1", "Layer 2", "NFT", "Gaming", "Testnet", "AI & Web3"]),
+      contractAddress: z.string().max(64).nullable().optional(),
+      contractBased: z.boolean().optional(),
+      officialUrl: z.string().max(2048).nullable().optional(),
+      xHandle: z.string().max(120).nullable().optional(),
+      segment: z.enum(["live", "upcoming", "ended"]),
+      statusLabel: z.string().min(1).max(300),
+      difficulty: z.enum(["Easy", "Medium", "Hard"]),
+      rewardNote: z.string().max(2000).nullable().optional(),
+      verifiedAt: z.string().max(10),
+      verifiedNote: z.string().min(1).max(2000),
+    }),
+    response: addProjectResultSchema,
+    handler: async (ctx, args): Promise<AddProjectResult> => addProject(ctx, args),
+  }),
+
+  askGibran: defineAction({
+    description:
+      "Asks Gibran, the in-site AIRDROP GENERATE assistant. Answers in Indonesian strictly from the site's own data — the verified project catalog, the link-check history, and the published guide/safety content — and honestly says it does not know (pointing to the project's official source) when the answer is not in that data. Never asks for a seed phrase, private key, or signature, and never promises returns or gives financial advice.",
+    request: z.object({
+      message: z.string().min(1).max(1000),
+      history: z.array(gibranMessageSchema).max(12).default([]),
+    }),
+    response: z.object({ reply: z.string() }),
+    handler: async (ctx, args): Promise<{ reply: string }> => askGibran(ctx, args),
+  }),
+} satisfies ActionsModule;

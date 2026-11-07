@@ -1,0 +1,8 @@
+{
+  "entry": "client/dist/index.html",
+  "managedCronJobs": [],
+  "name": "AIRDROP GENERATE",
+  "platformVersion": 28,
+  "runtime": "typescript",
+  "slug": "cek-link-airdrop"
+}

@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+
+@theme {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+  --text-4xl: 36px;
+  --text-4xl--line-height: 40px;
+  --text-5xl: 48px;
+  --text-5xl--line-height: 52px;
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #05070f;
+  --bg2: #0a0f22;
+  --surface: #0c1226;
+  --surface2: #121a36;
+  --text: #eef1fb;
+  --dim: #98a2c3;
+  --border: #1e2a4d;
+  --accent: #f0b90b;
+  --accent2: #f5c542;
+  --accent-ink: #0b0e11;
+  --red: #fb7185;
+  --red-bg: #2b0f1c;
+  --amber: #fbbf24;
+  --amber-bg: #2b2007;
+  --green: #34d399;
+  --green-bg: #07271c;
+  --radius: 16px;
+  --space-surface: var(--surface);
+  --space-surface-alt: var(--surface2);
+  --space-muted: var(--dim);
+  --space-border: var(--border);
+  --space-accent: var(--accent);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
