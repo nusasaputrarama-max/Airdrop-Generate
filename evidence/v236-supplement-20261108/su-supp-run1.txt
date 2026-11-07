@@ -1,0 +1,11 @@
+=== SUITE v2.3.2 (RUN=1) Node v24.22.1 ===
+PASS SU-T1 :: state=NOT_READY path=attempts-exhausted-unconfirmed sigsSent=3 rejections=2 workerMasihHidup=true
+PASS SU-T2 :: state=NOT_READY path=identity-failed reason=starttime-mismatch sigsSent=0 page=1 decoyHidup=true
+PASS SU-T3 :: state=READY path=exit-confirmed attemptsUsed=1 lookupOk=true workerHidup=false
+PASS SU-T4 :: setelahRace ok=true token=tok-19 setelahCrash ok=true tokenSama=true
+PASS SU-T5 :: pemenang=1 kalah=4 alasanKalah=held-by-live-holder
+PASS SU-T6 :: pertama=true kedua=true direklamasi=true
+PASS SU-T7 :: state=READY path=worker-already-dead sigsSent=0
+PASS SU-T8 :: matiSebelumCleanup=true state=READY path=worker-already-dead sigsSent=0
+PASS SU-T9 :: rusak: state=NOT_READY path=pidfile-corrupt | parsial: state=NOT_READY path=pidfile-corrupt | hilang: state=READY path=no-pidfile | sigsSent=0 page=2
+=== HASIL RUN=1: 9/9 PASS ===

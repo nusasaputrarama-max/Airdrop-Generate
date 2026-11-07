@@ -1,6 +1,6 @@
-# SSRF RESPONSE MATRIX v2.3.8 — Jawaban atas Audit ChatGPT V1 & V2
+# SSRF RESPONSE MATRIX v2.3.9 — Jawaban atas Audit ChatGPT V1 & V2 (revisi v2.3.9)
 
-**Dokumen:** matriks respons revisi desain v2.3.8
+**Dokumen:** matriks respons revisi desain v2.3.9
 **Tanggal:** 2026-11-08 (WIB)
 **Status:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED
 **Menjawab:**
@@ -17,6 +17,20 @@ ke v2.3.8 — §D.4.17 ringkasan matriks, §D.4.18 desain remediasi
 F-001..F-005, §D.4.19 inventaris staging), `SSRF_REPRODUCIBILITY_V238.md`,
 `evidence/v236/MANIFEST.md` + 21 file bukti mentah, `site/DATA-PLAN.md`
 (mirror, sudah di-redact), `site/bun.lock` (baru di-mirror).
+
+**Revisi v2.3.9 (8 November 2026, dokumen ini):** penyempitan celah bukti
+tanpa otorisasi implementasi, atas perintah pemilik proyek ("kerjakan
+dengan benar jobdeskmu dan persempit celah dulu", public tester DITAHAN).
+Yang baru di v2.3.9: (1) bundle bukti suplemen `evidence/v236-supplement-20261108/`
+(4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md` sendiri)
+— menutup caveat F-007 yang dicatat v2.3.8; (2) verifikasi F-005 dari kode
+(read-only): tidak ada auth di `actions.ts`, tidak ada pemanggil di
+`client/src/`, provenance disimpan verbatim dari argumen caller, tidak ada
+kolom provenance di schema; (3) verifikasi F-009: SDK tarball terverifikasi
+ada (0.14.0, SHA-256), `bun install --frozen-lockfile` di salinan scratch
+exit 0 tanpa mengubah `bun.lock`, typecheck client+server exit 0
+(Bun 1.4.4). F-001..F-005 TETAP blocked — tidak ada implementasi di
+v2.3.9. Public tester TIDAK disentuh.
 
 ## Catatan kejujuran tentang waktu
 
@@ -74,11 +88,11 @@ persetujuan eksplisit.
 | F-002 | High — cap setelah buffering | **blocked** | Desain streamed cap + decompressed cap selesai. Implementasi menunggu otorisasi. |
 | F-003 | High — tanpa total deadline | **blocked** | Desain total deadline + cancellation budget selesai. Implementasi menunggu otorisasi. |
 | F-004 | Medium — addProject duplicate race | **blocked** | Desain unique constraint + harness konkurensi selesai. Implementasi menunggu otorisasi. |
-| F-005 | Medium — otorisasi addProject tidak jelas | **blocked** | Trust boundary didokumentasikan apa adanya (NOT VERIFIED dari mirror); desain otorisasi + provenance selesai. Keputusan mekanisme otorisasi butuh pemilik + fakta runtime. |
-| F-006 | Medium — DATA-PLAN.md berisi narasi pribadi | **addressed** | Mirror `site/DATA-PLAN.md` di-redact + rescan selesai. Follow-up terpisah: DATA-PLAN.md di live artifact masih berisi narasi asli. |
-| F-007 | Medium — log mentah v2.3.6 tidak ada di repo | **partially addressed** | Bundle `evidence/v236/` (21 file, byte-identik, manifest + SHA-256) diterbitkan. Caveat material: `su-run4` hanya ekor; run gagal awal + run ketiga OPS-T7 tidak tersimpan. |
+| F-005 | Medium — otorisasi addProject tidak jelas | **blocked** | **v2.3.9: DIVERIFIKASI dari kode** — tidak ada auth di `actions.ts` (grep `auth\|token\|session\|ADMIN` di luar string konten: nol); tidak ada pemanggil di `client/src/` maupun file server lain; provenance (`verified_at`/`verified_note`) disimpan verbatim dari argumen caller; schema tidak punya kolom provenance. Satu-satunya pembatas yang mungkin adalah scoping endpoint runtime artifact — **NOT VERIFIED dari mirror**. Desain otorisasi + provenance selesai. Keputusan mekanisme otorisasi butuh pemilik + fakta runtime. |
+| F-006 | Medium — DATA-PLAN.md berisi narasi pribadi | **addressed** | Mirror `site/DATA-PLAN.md` di-redact + rescan selesai. **v2.3.9 residual:** narasi insiden juga ada di string kode `site/server/src/actions.ts` — komentar baris 51 (`KNOWN_BAD_DOMAINS`) dan `GIBRAN_SITE_KNOWLEDGE` baris 1089 — keduanya copy/kode live, perbaikannya follow-up tahap (b), bukan edit diam-diam di mirror. Follow-up terpisah: DATA-PLAN.md di live artifact masih berisi narasi asli. |
+| F-007 | Medium — log mentah v2.3.6 tidak ada di repo | **partially addressed** | Bundle `evidence/v236/` (21 file, byte-identik, manifest + SHA-256) diterbitkan. **v2.3.9: bundle suplemen `evidence/v236-supplement-20261108/` diterbitkan** — 4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS (manifest + SHA-256 sendiri); `su-supp-run1.txt` byte-identik dengan `su-run1.txt` lama. Caveat tersisa: run gagal awal SU-T5 tetap NOT PRESERVED (tidak direkonstruksi); klaim v2.3.6 tetap bersandar pada bukti lama. |
 | F-008 | Medium — penjelasan SU-T5 v2.3.7 tidak akurat | **addressed** | Koreksi transparan di `SSRF_RECONCILIATION_V237.md` + §D.4.16 desain, dengan verifikasi kode committed. |
-| F-009 | Medium — mirror tidak dapat direproduksi | **partially addressed** | `site/bun.lock` di-mirror (SHA terverifikasi); manifest reproduksibilitas ditulis. SDK tarball tetap NOT VERIFIED; tidak ada test suite/CI; tidak ada hasil build/typecheck. |
+| F-009 | Medium — mirror tidak dapat direproduksi | **partially addressed** | `site/bun.lock` di-mirror (SHA terverifikasi); manifest reproduksibilitas ditulis. **v2.3.9: SDK tarball terverifikasi ada** (`@hatch/space-sdk` 0.14.0, 2.051.070 byte, SHA-256 `f2cb7b25…`); **`bun install --frozen-lockfile` di salinan scratch exit 0** (79 paket, `bun.lock` tidak berubah, hash `a7e1457e…`); **typecheck client+server exit 0** (Bun 1.4.4, TS 5.6.3). Tetap NOT VERIFIED: provenance SDK, konsistensi di bawah Bun 1.3.10 yang dideklarasikan, CI, dan build penuh (`bun run build` tidak dicoba — build dicadangkan untuk artifact tools). |
 
 **Keputusan akhir tidak berubah: DESIGN REVIEW ONLY — IMPLEMENTATION NOT
 APPROVED. Link Scanner tetap nonaktif.**
@@ -242,10 +256,39 @@ tidak ada pemeriksaan otorisasi di mana pun di file (grep
 "registrar" dari RDAP dan peran Gibran); `checkLink` (~baris 1204–1210)
 adalah `defineAction` biasa tanpa wrapper auth. Verifikasi ulang
 2026-11-08: cocok.
+**Verifikasi v2.3.9 (dari kode, read-only, 2026-11-08 — mirror
+`site/`, sinkron commit `c68c727`):**
+
+- **Tidak ada mekanisme auth di dalam kode.** Grep
+  `auth|token|session|ADMIN|secret|password|verify` di
+  `site/server/src/actions.ts`: nol mekanisme — hanya string konten
+  (regex `TOKEN_ADDRESS`, narasi verifikasi). Handler `addProject`
+  (baris 1342) memanggil fungsi internal (baris 959) tanpa memeriksa
+  identitas pemanggil apa pun dari `ctx`.
+- **Tidak ada pemanggil di kode yang di-mirror.** Grep `addProject` di
+  seluruh `site/client/src/` dan `site/server/src/`: hanya
+  `actions.ts` sendiri (definisi internal baris 959 + `defineAction`
+  baris 1321–1342). Deskripsi action (baris 1322–1324) menyebut
+  pemanggil yang dimaksud adalah "scheduled auto-discovery job" (cron
+  agen) — bukan UI. Tidak ada pemanggil lain yang dapat diverifikasi
+  dari repo.
+- **Provenance disimpan verbatim dari argumen caller.** Insert
+  (baris 1062–1063): `verified_at: args.verifiedAt`,
+  `verified_note: args.verifiedNote.trim()` — server tidak memverifikasi
+  secara independen klaim verifikasi yang diajukan caller. Schema
+  (`site/server/src/schema.ts` baris 48–49) menyimpan `verified_at` /
+  `verified_note` sebagai teks biasa; **tidak ada kolom provenance**
+  (`added_by`, `source`, dsb.) — hanya `created_at` (baris 21).
+- **Satu-satunya pembatas yang mungkin adalah scoping endpoint
+  runtime artifact** (bagaimana runtime Hatch membatasi siapa yang
+  dapat memanggil action) — **NOT VERIFIED dari mirror**: tidak ada
+  bukti di repo tentang pembatasan itu. Jadi: auth di dalam kode
+  **TERBUKTI TIDAK ADA**; lapisan di luar kode **TIDAK DAPAT
+  DIVERIFIKASI**.
 **Respons (tahap a):** (1) Trust boundary didokumentasikan apa adanya
-di §D.4.18 butir F-005a: dari mirror saja, TIDAK DAPAT DIVERIFIKASI
-apakah ada lapisan otorisasi di luar file ini (mis. di runtime artifact
-atau di pemanggil cron) — **NOT VERIFIED**, bukan "tidak ada".
+di §D.4.18 butir F-005a — diperbarui v2.3.9 dengan temuan di atas:
+auth di dalam kode TERBUKTI TIDAK ADA; lapisan runtime NOT VERIFIED,
+bukan "tidak ada".
 (2) Desain otorisasi + provenance di §D.4.18 butir F-005b..F-005d:
 `addProject` hanya boleh dipanggil dari jalur terotorisasi yang
 didokumentasikan; setiap penambahan mencatat provenance (sumber resmi,
@@ -295,6 +338,16 @@ mirror, KECUALI satu sisa:
 - `site/client/src/App.tsx` dan `GIBRAN_SITE_KNOWLEDGE` menyebut insiden
   7 Nov 2026 hanya secara generik (tanpa fragmen wallet) — itu copy
   produk live; bila pemilik ingin mengubahnya, itu follow-up terpisah.
+- **Presisi v2.3.9:** narasi insiden di string kode terdapat di
+  `site/server/src/actions.ts` baris 1089 (`GIBRAN_SITE_KNOWLEDGE` —
+  "mendirikan platform ini setelah mengalami sendiri kehilangan aset
+  karena link klaim airdrop palsu (kejadian pengurasan wallet pada
+  7 Nov 2026)") dan komentar baris 51 (`KNOWN_BAD_DOMAINS` —
+  "Domains confirmed as drainers in the user's own 2026-11-07
+  incident"). Keduanya adalah kode/copy live yang di-mirror — bukan
+  fragmen wallet dan bukan secret — perbaikannya adalah edit source
+  live tahap (b), dicatat sebagai follow-up, bukan diedit diam-diam
+  di mirror.
 
 **Yang TIDAK diperbaiki di v2.3.8 (dicatat eksplisit):**
 `DATA-PLAN.md` di live artifact (`~/workspace/ts-spaces/cek-link-airdrop/`)
@@ -344,6 +397,33 @@ tidak dikecualikan `.gitignore`; verifikasi `git status` 2026-11-08:
    angka (baris ringkasan PASS ada di dalam log).
 5. Log v2.3.2/v2.3.3/v2.3.4/v2.3.5 hanya ada sebagai kutipan verbatim di
    dokumen spike — kutipan dokumen, bukan log mentah terverifikasi hash.
+
+**Suplemen v2.3.9 (menutup caveat 1 dan 3 — 2026-11-08):** bundle baru
+`evidence/v236-supplement-20261108/` + `MANIFEST.md` sendiri. Dijalankan
+ulang dari `spike-harness-v236/` (harness commit `fc798ce`, tidak berubah
+sejak v2.3.6):
+
+- SU-T1..SU-T9, 4 run lengkap (supp-1..4, 2026-11-07T17:29:40Z /
+  17:29:49Z / 17:29:57Z / 17:30:06Z, exit 0, **9/9 PASS tiap run**,
+  masing-masing 11 baris lengkap) — perintah
+  `node su-v232/run-tests.cjs 1..4`.
+- OPS-T7 run ketiga (supp-3, 2026-11-07T17:30:15Z, exit 0, **PASS**,
+  5 baris lengkap) — perintah `node ops-recovery.cjs`.
+- **Verifikasi silang:** `su-supp-run1.txt` byte-identik dengan
+  `evidence/v236/su-run1.txt` (`diff` exit 0); `ops-t7-supp-run3.txt`
+  berbeda dari `opsrec-run1.txt` hanya pada nomor inode/PID (nilai
+  spesifik-per-proses), semua boolean identik.
+- **Bukan pengganti, bukan rekonstruksi:** file `evidence/v236/` TIDAK
+  diubah; klaim v2.3.6 tetap bersandar pada bukti lama. Justifikasi
+  re-run (protokol melarang re-run tes berbukti valid): log run ke-4
+  yang tersimpan tidak lengkap (ekor) dan log run ketiga OPS-T7 tidak
+  ada — celah bukti nyata, bukan pengulangan. Bila hasil berbeda dari
+  klaim lama, perbedaan akan dilaporkan apa adanya (tidak terjadi:
+  semua PASS).
+- **Tetap NOT PRESERVED:** run gagal awal SU-T5 (caveat 2) — tidak
+  direkonstruksi; log mentah v2.3.2–v2.3.5 (caveat 5); perintah shell
+  eksak tiap run v2.3.6 asli (caveat 4 — untuk run suplemen, perintah
+  dan exit status TERCATAT di manifest suplemen).
 
 **Risiko tersisa:** seorang reviewer independen tetap tidak dapat
 memverifikasi run ke-4 SU dan run ketiga OPS-T7 dari bukti mentah.
@@ -419,6 +499,39 @@ via path lokal absolut, Bun site 1.3.10 vs spike 1.4.4.
   spike/VM ini `1.4.4`, Node `v24.22.1`, Python `3.12.3`, kernel
   Linux 7.0.0-43-generic x86_64. Perbedaan versi dicatat sebagai fakta;
   tidak ada klaim "konsisten".
+
+**Verifikasi v2.3.9 (2026-11-08, di salinan scratch — BUKAN di live
+artifact, TIDAK mengubah file live):**
+
+- **SDK tarball TERBUKTI ADA:** `/opt/hatch/skills/spaces/ts-runtime/dist/space-sdk.tgz`,
+  2.051.070 byte, SHA-256
+  `f2cb7b25d35a7ade70a59ddbc5a3b7aefc727306d570d2356eaeb91d120ad49e`,
+  `@hatch/space-sdk` versi **0.14.0** (dari `package.json` di dalam
+  tarball). Yang terverifikasi: keberadaan + versi + hash. Yang tetap
+  NOT VERIFIED: provenance (file builder-local, mtime 1 Jan 1980 —
+  tidak ada rantai sumber/commit/signature yang dapat diperiksa dari
+  repo).
+- **`bun install --frozen-lockfile` di salinan scratch
+  (`/tmp/scratch-site`, salinan `site/`): exit 0** — 79 paket
+  terinstal (4,73 dtk), `bun.lock` TIDAK berubah (SHA-256
+  `a7e1457e…` sebelum dan sesudah install — sama dengan yang dicatat
+  v2.3.8). Lockfile KONSISTEN dengan `package.json`. Catatan: install
+  berjalan di bawah Bun 1.4.4 (VM ini), BUKAN Bun 1.3.10 yang
+  dideklarasikan `packageManager` — konsistensi di bawah 1.3.10 tetap
+  NOT VERIFIED.
+- **Typecheck di salinan scratch: client exit 0, server exit 0**
+  (script `typecheck` dari `package.json`: `bun x tsc --noEmit -p
+  client/tsconfig.json && bun x tsc --noEmit -p server/tsconfig.json`,
+  TypeScript 5.6.3 dari lockfile, Bun 1.4.4). Ini typecheck, BUKAN
+  build.
+- **Build penuh (`bun run build`) TIDAK dicoba** — house rules mirror
+  mencadangkan build/ship hanya untuk artifact tools; build yang sah
+  adalah yang dilakukan pipeline artifact (v11 perbaikan outage,
+  v12 revisi narasi — keduanya sukses). Tidak ada klaim build dari
+  VM ini.
+- **Tidak ada test suite site** (tetap — verifikasi v2.3.8 berdiri)
+  dan **tidak ada CI** (tetap — tidak ada `.github/workflows`).
+
 **Risiko tersisa:** reviewer independen tetap tidak dapat membangun
 mirror dari nol tanpa builder Hatch (SDK tarball) dan tanpa CI.
 **Aksi berikutnya:** bila pemilik menginginkan reproduksibilitas penuh,
@@ -568,19 +681,20 @@ teks di desain v2.3.6: nol kemunculan "0600", "NOFOLLOW", "symlink"):
    (§4). Tidak ada fallback ambigu yang tersisa di desain — fallback
    numeric-kill dinyatakan bersyarat eksplisit pada keputusan owner.
 
-## §6. Yang TIDAK diklaim v2.3.8
+## §6. Yang TIDAK diklaim v2.3.9
 
 - Tidak ada implementasi kode F-001..F-005.
 - Tidak ada perubahan perilaku aplikasi live; tidak ada perubahan
   database/katalog; tidak ada production build; Link Scanner tidak
-  diaktifkan.
-- Tidak ada tes harness baru yang dijalankan (tidak ada file bukti
-  eksperimen baru di v2.3.8 — semua bukti adalah publikasi ulang
-  bukti v2.3.6 yang sudah ada + verifikasi kode yang sudah
-  ter-commit).
+  diaktifkan. Public tester TIDAK disentuh.
+- **Tes harness baru YANG dijalankan di v2.3.9 (berbeda dari v2.3.8):**
+  5 run suplemen bukti v2.3.6 — SU-T1..SU-T9 4× lengkap 9/9 +
+  OPS-T7 run ke-3 PASS (`evidence/v236-supplement-20261108/` +
+  `MANIFEST.md`). Ini run SUPLEMEN BARU, bukan pengulangan klaim lama
+  dan bukan bukti staging — bukti VM, seperti semua bukti spike.
 - Tidak ada klaim "F-001..F-005 selesai" — kelimanya BLOCKED sampai
   tahap (b) + harness staging PASS.
-- Sampai commit v2.3.8 masuk `main`, tidak ada kemajuan teknis yang
+- Sampai commit v2.3.9 masuk `main`, tidak ada kemajuan teknis yang
   dapat diverifikasi dari repo.
 
 ## §7. Yang butuh keputusan Rama (pemilik proyek)
@@ -592,8 +706,12 @@ teks di desain v2.3.6: nol kemunculan "0600", "NOFOLLOW", "symlink"):
 2. **Keputusan U-46** — opsi (a) terima fallback terkuantifikasi ATAU
    opsi (b) larang mutlak + ganti fallback (§3). Tanpa ini,
    implementasi pensinyalan tetap diblokir.
-3. **Mekanisme otorisasi addProject (F-005)** — siapa yang boleh
-   memanggil, lewat jalur apa (butuh fakta runtime artifact).
+3. **Mekanisme otorisasi addProject (F-005)** — v2.3.9 memverifikasi
+   fakta dari kode: auth di dalam kode TERBUKTI TIDAK ADA, tidak ada
+   pemanggil di `client/src/`, provenance disimpan verbatim dari
+   caller. Yang masih butuh pemilik: pilih mekanisme otorisasi (sesi
+   admin / token layanan / daftar pemanggil) + fakta scoping endpoint
+   runtime artifact.
 4. **Follow-up DATA-PLAN.md live artifact** — perbaikan narasi di
    situs live lewat artifact workflow (bukan edit langsung).
 5. **Staging (tahap 3)** — lingkungan staging produksi yang sampai
