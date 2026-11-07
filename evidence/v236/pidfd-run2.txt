@@ -1,0 +1,8 @@
+PASS PIDFD-T1 :: pidfd_open(6351) -> 3 errno=0; send SIGKILL -> 0 errno=0; child mati SIGKILL=True; probe sesudah mati -> -1 errno=3 (ekspektasi -1/ESRCH=3)
+PASS PIDFD-T2 :: reuse PID 6353 setelah 7870 spawn dalam 3.99 dtk (pid_max=8192); pidfd_send_signal(pidfd-lama, SIGKILL) -> -1 errno=3 (ekspektasi -1/ESRCH=3); decoy hidup=True state=S
+PASS PIDFD-T3 :: kill(6353, SIGKILL) biasa SETELAH reuse -> decoy mati=True state=Z (membuktikan race kill-by-number itu NYATA)
+PASS PIDFD-T4 :: zombie state=Z; pidfd_open(zombie 6355) -> 3 errno=0; send_signal(0) -> 0 errno=0; send_signal(SIGKILL) -> 0 errno=0 (nilai dicatat apa adanya — lihat analisis)
+PASS PIDFD-T5 :: pidfd_open(999999) -> -1 errno=3 (ekspektasi -1/ESRCH=3)
+PASS PIDFD-T6 :: pidfd_open(1) -> 3 errno=0; probe sig 0 -> 0 errno=0 (bukan child tetap bisa)
+PASS PIDFD-T7 :: pidfd_open(self, flags=0xFFFFFFFF) -> -1 errno=22 (ekspektasi -1/EINVAL=22)
+=== PIDFD PYTHON: 7/7 PASS ===

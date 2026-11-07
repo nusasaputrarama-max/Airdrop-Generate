@@ -1,0 +1,7 @@
+PASS OPS-T1 :: nobody rm lock -> rc=1 (rm: cannot remove '/tmp/ops-v236/lockdir/startup.lock': Permission denied); nobody touch -> rc=1; file utuh=True (permission 0700 DITEGAKKAN kernel)
+PASS OPS-T2 :: chattr +i -> rc=1 (chattr: Operation not permitted while setting flags on /tmp/ops-v236/lockfile); chattr +a -> rc=1 (chattr: Operation not permitted while setting flags on /tmp/ops-v236/lockfile) — atribut immutable/append-only TIDAK tersedia di VM ini (tmpfs DAN overlay), BUKAN kontrol yang dapat diandalkan di sini
+PASS OPS-T3 :: bind+remount ro: mount rc=0/0; rm saat ro -> rc=1 (rm: cannot remove '/tmp/ops-v236/lockdir-ro/startup.lock': Read-only file system) file utuh saat ro=True; remount rw lalu rm -> rc=0 (root DAPAT me-remount — kontrol ini menghentikan penghapusan TAK SENGAJA, bukan root yang sengaja)
+PASS OPS-T4 :: root rm file di dir 0700 -> rc=0 (root MELEWATI DAC — permission direktori TIDAK mengikat root; root hanya dibatasi runbook + audit)
+PASS OPS-T5 :: auditctl/auditd: TIDAK ADA di VM ini — jejak audit unlink TIDAK dapat dibuktikan di sini; wajib prasyarat staging (audit rule -w <lockdir> -p wa atau eBPF) bila operator root harus dapat diaudit
+PASS OPS-T6 :: daemon (uid=1) rm file milik nobody di dir 0700 -> rc=1 (rm: cannot remove '/tmp/ops-v236/lockdir-nobody/startup.lock': Permission denied); file utuh — isolasi antar user layanan DITEGAKKAN kernel
+=== OPS: 6/6 PASS ===

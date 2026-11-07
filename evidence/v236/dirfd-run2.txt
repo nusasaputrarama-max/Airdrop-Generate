@@ -1,0 +1,3 @@
+PASS PIDFD-T10a :: stat via dirfd SEBELUM mati == stat by-number: {'state': 'S', 'starttime': '114685'} vs {'state': 'S', 'starttime': '114685'}
+FAIL PIDFD-T10b :: PID 300 dipakai ulang decoy=300 (starttime decoy={'state': 'R', 'starttime': '115090'}); stat via dirfd SETELAH mati+reap: OSError errno=3 (No such process); stat via dirfd SETELAH reuse: OSError errno=3 (No such process); korban starttime=114685 -> dirfd mem-pin task lama=False
+=== PIDFD-T10: 1/2 PASS ===

@@ -1,0 +1,2 @@
+PASS SU-T9 :: rusak: state=NOT_READY path=pidfile-corrupt | parsial: state=NOT_READY path=pidfile-corrupt | hilang: state=READY path=no-pidfile | sigsSent=0 page=2
+=== HASIL RUN=1: 9/9 PASS ===

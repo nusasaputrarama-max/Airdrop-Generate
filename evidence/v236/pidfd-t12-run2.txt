@@ -1,0 +1,6 @@
+PASS PIDFD-T12a :: worker 317 -> {'ok': True, 'reason': 'signaled-and-confirmed'}
+PASS PIDFD-T12b :: reuse sebelum langkah 1: decoy=318 (target 318) -> {'ok': False, 'reason': 'identity-mismatch', 'detail': 'starttime'}; decoy hidup=True
+PASS PIDFD-T12c :: reuse di antara open & revalidasi: decoy=319 starttime baru=167502 -> {'ok': False, 'reason': 'identity-changed', 'detail': 'starttime-after-pidfd-open'}; decoy hidup=True
+PASS PIDFD-T12d :: pidfd lama setelah reuse (decoy=320, target 320): send_signal -> -1 errno=3 (ekspektasi -1/ESRCH=3); decoy hidup=True
+=== PIDFD-T12: 4/4 PASS ===
+pid_max dipulihkan ke 4194304

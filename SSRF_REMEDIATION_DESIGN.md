@@ -1,14 +1,19 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.7 (7 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.7 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.8 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.8 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2:** `SSRF_RESPONSE_MATRIX_V238.md` (F-001..F-009, status per temuan, harness diperketat H-SSRF-01..20, definisi lengkap U-46, jawaban Handoff V1 6 butir + V2 §8 9 butir) — lihat §D.4.17. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md`.
+- **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
   PIDFD-T9 + OPS-T1..T7 + re-run SU-T1..SU-T9 9/9 × 4 — lihat §D.4.14;
   matriks prasyarat staging STAGE-P01..P12 — lihat §D.4.15) — bukti dari
   VM ini, BUKAN dari runtime artifact produksi (lihat batas bukti di file
   tersebut). Harness disalin ke `spike-harness-v236/` agar dapat
-  dijalankan ulang.
+  dijalankan ulang. **[KOREKSI v2.3.8: klaim "9/9 × 4" adalah hitungan
+  run yang dijalankan; bukti mentah yang tersimpan hanya 3 log lengkap
+  (`su-run1..3`) + 1 ekor 2 baris (`su-run4`) — lihat
+  `evidence/v236/MANIFEST.md` dan §D.4.17.]**
 - **Bukti uji v2.3.4:** `SSRF_SPIKE_V234.md` (race TERBUKTI pada kode v2.3.3 — ADV-T1: 2 pemilik, 3/3 × 2; perbaikan flock TERUJI — ADV-T2/T2sim/T5/T6: 4/4 × 2; semantik flock kernel TERUJI — FLK-T1..T8: 9/9 × 2 tmpfs, 9/9 × 2 overlay) — bukti dari VM ini, BUKAN dari runtime artifact produksi (lihat batas bukti di file tersebut). Harness disalin ke `spike-harness-v234/` agar dapat dijalankan ulang.
 - **Bukti uji v2.3.5:** `SSRF_SPIKE_V235.md` (suite adversarial AUTH 18/18 PASS,
   dijalankan ulang **2×**: AUTH-T1..T11 + AUTH-C1 — otoritas flock, mixed-version,
@@ -70,6 +75,30 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.8 (8 November 2026)
+
+Revisi respons atas DUA audit independen ChatGPT terhadap kode sumber
+(`SSRF_CODE_SECURITY_AUDIT_V1.md`, commit `52724d6`, 2026-11-07 23:52
+WIB — F-001..F-006; `SSRF_INDEPENDENT_AUDIT_V2.md`, commit `789797e`,
+2026-11-07 23:56 WIB — F-007..F-009, ST-01..ST-16, B-01..B-12). V1 dan
+V2 hanya berselang 4 menit; observasi V2 bahwa "belum ada respons Muse"
+benar secara repo pada saat itu — v2.3.8 inilah responsnya. Tidak ada
+keputusan D-1 s.d. D-8 yang diubah. Status tetap: **DESIGN ACCEPTED WITH
+CONDITIONS — IMPLEMENTATION NOT APPROVED**. Tidak ada pengujian baru
+yang dijalankan untuk v2.3.8 (tidak ada file bukti eksperimen baru);
+yang baru adalah publikasi bukti lama, koreksi penjelasan, dan desain
+remediasi + harness. Dokumen respons lengkap:
+`SSRF_RESPONSE_MATRIX_V238.md`.
+
+| # | Bagian | Perubahan |
+| --- | --- | --- |
+| 1 | §D.4.17 (baru) + §G + §H | Ringkasan matriks respons F-001..F-009: F-001..F-005 BLOCKED (desain selesai, implementasi menunggu otorisasi tahap b); F-006 ADDRESSED (mirror `site/DATA-PLAN.md` di-redact + rescan); F-007 PARTIALLY ADDRESSED (bundle `evidence/v236/` diterbitkan — 21 file byte-identik + manifest; caveat: `su-run4` hanya ekor, run gagal awal + run ketiga OPS-T7 tidak tersimpan); F-008 ADDRESSED (koreksi penjelasan SU-T5 — lihat butir 2); F-009 PARTIALLY ADDRESSED (`site/bun.lock` di-mirror + manifest reproduksibilitas; SDK provenance, test suite/CI, hasil build tetap NOT VERIFIED). |
+| 2 | §D.4.16 + `SSRF_RECONCILIATION_V237.md` | Koreksi F-008 secara transparan (teks salah ditandai, bukan dihapus diam-diam): penjelasan SU-T5 v2.3.7 ("fd lock lalu `process.exit()` tanpa `flock.unlock()`") SALAH terhadap kode committed — yang benar: salinan harness v2.3.6 awalnya tidak menyertakan `lock-racer.cjs` (child mati module-not-found → `no-output`); `startup.cjs` memakai `openSync 'wx'`, `lock-racer.cjs` memanggil `fs.closeSync` — tidak ada flock di jalur SU-T5. Tambahan koreksi: sitasi `pidfd-node-run1..3.log` di rekonsiliasi tidak ada — nama benar `pidfd-t11-run1..3.log`. |
+| 3 | §D.4.18 (baru) | Desain remediasi F-001..F-005 (bukan implementasi): spesifikasi perubahan kode eksak per temuan (file, fungsi, line range, perilaku) + spesifikasi harness deterministik H-SSRF-01..20 (redirect berantai, DNS rebinding, IPv4+IPv6, jawaban campuran, script-to-internal, bentuk IP non-kanonik, userinfo), H-RES-01..06, H-CAT-01..03, H-AUTH-01..03 — masing-masing dengan kriteria PASS/FAIL eksplisit + kriteria penerimaan per temuan. Persyaratan DG-1..DG-3 dirumuskan dengan kriteria tes (§G U-47..U-49). |
+| 4 | §D.4.19 (baru) + §G (U-46) | Inventaris staging template tahap 3 (tanpa menjalankan tes): tiap gate ST-01..ST-16 mendapat owner, precondition, prosedur aman, aturan PASS/FAIL, destinasi bukti. U-46 didefinisikan LENGKAP (definisi, status, owner, fakta teknis, opsi (a)/(b) + trade-off, prasyarat, kriteria penerimaan) — TANPA diputuskan; keputusan tertulis tetap di tangan pemilik. |
+| 5 | §H + pernyataan penutup | Pemisahan tiga tahap ditulis eksplisit (desain / implementasi / deployment); G7 mencatat re-evaluasi wajib membaca matriks respons + bundle bukti + manifest reproduksibilitas; G6 mencatat caveat bukti SU-T1..SU-T9. |
+| 6 | Pernyataan penutup | Paragraf v2.3.8 ditambahkan. Estimasi TETAP ~8–14 hari kerja. G0 tetap wajib dibuktikan aktif; dokumen final BUKAN persetujuan implementasi; perubahan mirror GitHub TIDAK berarti situs live berubah. |
 
 ## Perubahan di revisi v2.3.7 (7 November 2026)
 
@@ -3564,10 +3593,23 @@ Riwayat: v2.3.2 9/9 × 3 run (`SSRF_SPIKE_V232.md` §1–§2; RUN=3 di
 `SSRF_SPIKE_V233.md` §0), v2.3.3 regresi terhadap kode yang diperkeras 9/9
 × 2 (`SSRF_SPIKE_V233.md`), v2.3.6 re-run 9/9 × 4 (`SSRF_SPIKE_V236.md`
 §0.1; `spike-harness-v236/su-run1.log` s.d. `su-run4.log`) — total 9
-eksekusi penuh suite, semuanya 9/9 PASS. Satu-satunya kegagalan yang pernah
-tercatat adalah bug setup harness SU-T5 pada run pertama v2.3.6
-(`lock-racer.cjs` memakai fd lock lalu `process.exit()` tanpa
-`flock.unlock()`), terdiagnosis dan diperbaiki sebelum 4 run bersih.
+eksekusi penuh suite, semuanya 9/9 PASS. **[KOREKSI v2.3.8 — caveat
+bukti: hitungan 4 run adalah menurut `SSRF_SPIKE_V236.md` §0.1; bukti
+mentah yang tersimpan hanya 3 log lengkap + 1 ekor 2 baris (`su-run4`,
+194 byte) — lihat `evidence/v236/MANIFEST.md`. Status yang benar:
+"reported PASS in VM documentation" dengan 3 log lengkap.]**
+Satu-satunya kegagalan yang pernah tercatat adalah bug setup harness SU-T5
+pada run pertama v2.3.6 **[KOREKSI v2.3.8 — penjelasan v2.3.7 di sini
+SALAH: teks asli menyebut "(`lock-racer.cjs` memakai fd lock lalu
+`process.exit()` tanpa `flock.unlock()`)". Yang benar, sesuai
+`SSRF_SPIKE_V236.md` §0.1 dan kode committed: salinan harness v2.3.6
+awalnya tidak menyertakan `lock-racer.cjs`, sehingga child mati
+module-not-found tanpa stdout → `no-output`; `startup.cjs` memakai
+`fs.openSync(lockPath, 'wx')` dan `lock-racer.cjs` memanggil
+`fs.closeSync` — tidak ada flock di jalur SU-T5. Koreksi lengkap di
+`SSRF_RECONCILIATION_V237.md` (catatan koreksi v2.3.8) dan
+`SSRF_RESPONSE_MATRIX_V238.md` §2.8]**, terdiagnosis dan diperbaiki
+sebelum 4 run bersih.
 Perubahan status ini memenuhi syarat evaluasi §6.1 (referensi bukti yang
 dapat dilacak + konfirmasi reviewer — dokumen rekonsiliasi ini; re-review
 ChatGPT pada G7). Pengulangan SU-T1..SU-T9 di staging tetap wajib
@@ -3600,6 +3642,279 @@ untuk diputuskan pada revisi desain berikutnya, bukan diklaim sudah ada.
 keputusan owner (U-46), 1 pengujian tertunda (AUTH-T9c), 1 gerbang
 produksi (G0), 1 latensi deteksi (U-45, bersama ST-12). Tidak satu pun
 butir di sana adalah pengulangan pekerjaan v2.3.6.
+
+### D.4.17 Matriks respons v2.3.8 atas audit kode V1 + V2 (BARU)
+
+Dua audit independen ChatGPT atas kode sumber mirror (V1 commit
+`52724d6`, 2026-11-07 23:52 WIB; V2 commit `789797e`, 2026-11-07 23:56
+WIB — hanya 4 menit berselang; observasi V2 "belum ada respons Muse"
+benar secara repo pada saat itu) dijawab oleh
+`SSRF_RESPONSE_MATRIX_V238.md` (dokumen ini hanya ringkasannya; matriks
+adalah rujukan kanonik). **Pemisahan tiga tahap mengikat seluruh bagian
+ini:** (a) desain — diizinkan; (b) implementasi — butuh persetujuan
+eksplisit terpisah pemilik, TIDAK diberikan saat ini; (c) deployment —
+butuh persetujuan + prosedur tersendiri. Perubahan mirror GitHub TIDAK
+berarti situs live berubah.
+
+| ID | Status v2.3.8 | Ringkasan |
+| --- | --- | --- |
+| F-001 Critical SSRF | **blocked** | Desain remediasi + harness H-SSRF-01..20 selesai (§D.4.18). Implementasi menunggu otorisasi tahap (b). Link Scanner tetap nonaktif. |
+| F-002 High cap setelah buffering | **blocked** | Desain streamed cap + decompressed cap selesai (§D.4.18). Implementasi menunggu otorisasi. |
+| F-003 High tanpa total deadline | **blocked** | Desain total deadline + cancellation budget selesai (§D.4.18). Implementasi menunggu otorisasi. |
+| F-004 Medium duplicate race | **blocked** | Desain unique constraint + harness konkurensi selesai (§D.4.18). Implementasi (termasuk migrasi DB) menunggu otorisasi. |
+| F-005 Medium otorisasi addProject | **blocked** | Trust boundary didokumentasikan NOT VERIFIED dari mirror; desain otorisasi + provenance selesai (§D.4.18). Mekanisme otorisasi butuh keputusan pemilik + fakta runtime. |
+| F-006 Medium DATA-PLAN.md | **addressed** | Mirror `site/DATA-PLAN.md` di-redact; rescan mirror: nol temuan kecuali komentar kode `site/server/src/actions.ts:51` (follow-up tahap b) dan copy generik di `App.tsx`/`GIBRAN_SITE_KNOWLEDGE` (follow-up terpisah). DATA-PLAN.md di live artifact MASIH berisi narasi asli — follow-up terpisah via artifact workflow, bukan edit langsung. |
+| F-007 Medium log mentah tidak ada | **partially addressed** | Bundle `evidence/v236/` diterbitkan: 21 file `.txt` byte-identik dari `spike-harness-v236/*.log` (verifikasi `cmp` 21/21 OK) + `MANIFEST.md` (test ID, run, timestamp UTC, harness commit `fc798ce`, host `htch-runtime`, kernel, Bun 1.4.4, Node v24.22.1, SHA-256). Caveat material: `su-run4` hanya ekor 2 baris (3 log lengkap + 1 ekor); run gagal awal SU-T5 (8/9 × 3) dan run ketiga OPS-T7 TIDAK TERSIMPAN (NOT PRESERVED, tidak dapat dipulihkan); perintah shell + exit status per run NOT VERIFIED. Status SU-T1..SU-T9 yang benar: "reported PASS in VM documentation" dengan 3 log lengkap. |
+| F-008 Medium penjelasan SU-T5 | **addressed** | Koreksi transparan di `SSRF_RECONCILIATION_V237.md` + §D.4.16 di atas (teks salah ditandai, bukan dihapus diam-diam). Verifikasi kode committed: `openSync 'wx'` di `startup.cjs`, `fs.closeSync` di `lock-racer.cjs`, blob SHA identik v2.3.2/v2.3.6 (`8c7a33ac88c3514f7841245eb45c5a1639b0fbc0`). |
+| F-009 Medium reproduksibilitas | **partially addressed** | `site/bun.lock` di-mirror (SHA-256 `a7e1457ee5cb6423d6e2a08c4058fd63c1c05f5a17b01f5bd8d1aebe1d89405f`, byte-identik dengan live artifact); manifest `SSRF_REPRODUCIBILITY_V238.md`. Tetap NOT VERIFIED: provenance tarball SDK (path builder-local `/opt/hatch/...`, tidak dapat diambil independen); tidak ada test suite site; tidak ada CI; tidak ada hasil typecheck/build. Bun site 1.3.10 vs spike 1.4.4 dicatat apa adanya. |
+
+**Yang TIDAK diklaim v2.3.8:** tidak ada implementasi kode; tidak ada
+tes harness baru yang dijalankan; tidak ada perubahan perilaku aplikasi
+live, database/katalog, atau production build. Sampai commit v2.3.8
+masuk `main`, tidak ada kemajuan teknis yang dapat diverifikasi dari
+repo.
+
+### D.4.18 Desain remediasi F-001..F-005 — SPESIFIKASI, BUKAN IMPLEMENTASI (BARU)
+
+Bagian ini adalah **desain tahap (a)**. Setiap butir memberi: file,
+fungsi, line range pada mirror commit `c68c727`, perilaku yang diubah,
+spesifikasi harness, dan kriteria penerimaan. **Tidak satu butir pun di
+bawah ini diterapkan di v2.3.8.** Implementasi menunggu persetujuan
+eksplisit pemilik (tahap b). Harness lengkap dengan tabel kasus uji ada
+di `SSRF_RESPONSE_MATRIX_V238.md` §2; bagian ini memuat spesifikasi
+perubahan + ringkasan harness + kriteria penerimaan agar desain dapat
+dibaca sendiri.
+
+**F-001a — Resolve + validasi semua jawaban A/AAAA (awal + tiap hop).**
+File: `site/server/src/actions.ts`, `normalizeUrl()` (baris 69–89) dan
+`fetchText()` (baris 101–125) + pemanggil `analyze()` (baris 236+).
+Perilaku baru: setiap hostname di-resolve ke SEMUA jawaban A dan AAAA
+(termasuk jawaban dari CNAME — ikuti rantai sampai jawaban akhir);
+setiap jawaban divalidasi SEBELUM koneksi; bila SATU jawaban terlarang,
+seluruh set jawaban DITOLAK (kebijakan tolak-set — paling ketat, paling
+mudah diverifikasi). Validasi memakai klasifikasi alamat yang sama
+untuk A dan AAAA (butir F-001b). DNS dilakukan lewat resolver yang
+hasilnya dapat di-pin (lihat F-001c); tidak ada caching jawaban antar
+hop.
+
+**F-001b — Tolak non-global-unicast (IPv4 dan IPv6).** Rentang yang
+ditolak: loopback (`127.0.0.0/8`, `::1`), RFC1918 (`10/8`,
+`172.16/12`, `192.168/16`), link-local (`169.254/16`, `fe80::/10`),
+metadata cloud (`169.254.169.254` sudah tercakup link-local — tetap
+disebut eksplisit di daftar uji), unique-local (`fc00::/7`), alamat
+tidak ditentukan (`0.0.0.0`, `::`), CGNAT (`100.64.0.0/10` — sudah
+diputuskan D-1 s.d. D-8: blokir default), IPv4-mapped IPv6
+(`::ffff:0:0/96` — ekstrak IPv4 tertanam lalu klasifikasikan sebagai
+IPv4), IPv4-compatible/translasi lain yang menanamkan IPv4 (termasuk
+prefix NAT64 yang diketahui — lihat U-11; prefix NSP yang tidak dikenal
+tetap risiko terbuka), dan alamat zone-scoped (`fe80::1%eth0`,
+`::1%lo` — zone ID TIDAK membuat alamat aman; tolak bila alamat
+dasarnya terlarang, dan jangan pernah strip zone lalu memakai
+alamatnya). Parsing host WAJIB kanonik sebelum klasifikasi: bentuk
+desimal/oktal/heksadesimal (`2130706433`, `0177.0.0.1`, `0x7f.0.0.1`),
+bentuk pendek (`127.1`), dan userinfo (`http://publik@127.0.0.1/`)
+harus diparse ke host sebenarnya dulu — host yang gagal diparse secara
+kanonik DITOLAK (fail-closed), bukan di-fetch sebagai hostname.
+
+**F-001c — Pin destination ke koneksi.** Alamat yang lolos validasi
+di-pin ke koneksi aktual (pendekatan yang sudah TERBUKTI di VM:
+Pendekatan 1 via Node `https` Agent `lookup` — `SSRF_SPIKE_RUNTIME.md`;
+fallback Pendekatan 2 via `Bun.fetch` + `tls.serverName` + header
+`Host`). Pinning berarti: resolve ulang di antara validasi dan connect
+TIDAK BOLEH mengubah destination (menutup DNS rebinding); sertifikat
+TLS diverifikasi terhadap hostname, bukan terhadap IP pin. Bila runtime
+produksi tidak mendukung pinning (U-1/STAGE-P01), implementasi
+DIBLOKIR dan kembali ke meja desain (§A.2a).
+
+**F-001d — Validasi ulang tiap hop redirect.** `fetchText()` saat ini
+mengikuti redirect manual (maks 6 hop + initial = 7 request) tanpa
+kebijakan IP. Perilaku baru: SETIAP hop redirect diperlakukan seperti
+URL awal yang baru — resolve + validasi + pinning penuh (butir
+F-001a..F-001c) sebelum fetch hop itu; hop yang melanggar menghentikan
+rantai (tidak ada koneksi ke hop itu); batas hop tetap 6; redirect ke
+scheme selain http/https DITOLAK; redirect dengan userinfo/internal
+divalidasi sebagai host sebenarnya. Koreksi dokumen: klaim
+`site/DATA-PLAN.md` "up to 3 same-origin script files" SALAH terhadap
+kode (kode tidak memberlakukan same-origin) — klaim itu diperbaiki
+menjadi perilaku baru butir F-001e saat implementasi.
+
+**F-001e — Script same-origin saja.** Fetch script saat ini
+(~baris 373–386) mengambil sampai 3 URL script dari HTML yang
+dikontrol penyerang tanpa pembatasan origin. Perilaku baru: script
+HANYA di-fetch bila URL-nya same-origin dengan halaman yang sedang
+diperiksa (scheme + host + port sama); script lintas origin TIDAK
+di-fetch; script yang URL-nya resolve ke alamat terlarang DITOLAK
+dengan validasi yang sama seperti F-001a..F-001c (termasuk redirect
+pada fetch script). Jumlah script tetap maks 3.
+
+**Harness F-001 — H-SSRF-01..20 (spesifikasi ringkas; tabel lengkap di
+matriks §2.1).** Semua kasus memakai server uji lokal saja (listener
+`127.0.0.1` sebagai target "internal", stub DNS terkontrol) — TIDAK
+PERNAH layanan metadata nyata atau infrastruktur produksi. Aturan ukur:
+"zero connections" dibuktikan listener lokal + log egress; verdict
+checker harus tolak; tidak ada byte internal yang sampai ke output.
+Kasus: H-SSRF-01 privat IPv4; -02 loopback IPv4; -03 link-local/metadata;
+-04 RFC1918; -05 loopback IPv6; -06 link-local IPv6; -07 unique-local
+IPv6; -08 IPv4-mapped IPv6 (3 varian); -09 zone-scoped; -10 redirect
+berantai multi-hop ke internal (2 varian akhir); -11 DNS rebinding;
+-12 jawaban DNS campuran (tolak set); -13 script src ke internal;
+-14 script lintas origin; -15 redirect loop/hop berlebih; -16
+rebinding via redirect; -17 CNAME ke internal; -18 bentuk IP
+non-kanonik; -19 userinfo menutupi host; -20 redirect ke URL
+userinfo/internal. **Kriteria penerimaan F-001:** H-SSRF-01..20 SEMUA
+PASS pada implementasi tahap (b), dijalankan di staging (bukan hanya
+VM), dengan log mentah + manifest seperti `evidence/v236/`. Satu kasus
+FAIL = F-001 tetap OPEN. **Peringatan yang mengikat:** harness yang
+lulus TIDAK membuktikan implementasi aman bila tidak menguji jalur
+eksploitasi nyata di atas — daftar ini adalah syarat minimum, bukan
+daftar opsional.
+
+**F-002a — Streamed byte cap (compressed).** File: `fetchText()`
+(baris 101–125). Perilaku baru: body dibaca via stream (bukan
+`await res.text()` lalu slice); stream dibatalkan (abort) segera saat
+byte terkompresi yang diterima melewati cap; cap dinyatakan sebagai
+konstanta + didokumentasikan (nilai cap diputuskan saat implementasi
+dengan merujuk kebutuhan checker — bukan di sini).
+**F-002b — Decompressed cap.** Dekompresi (gzip/deflate/brotli bila
+didukung) dihitung terhadap byte HASIL dekompresi; stream dibatalkan
+saat hasil dekompresi melewati cap terpisah — menutup gzip bomb.
+**F-002c — Cap per request dan total.** Cap berlaku per request DAN
+total per pemeriksaan (page + semua redirect + semua script) — satu
+rantai tidak boleh mengakali cap dengan memecah body ke banyak hop.
+**Harness F-002 — H-RES-01..03:** H-RES-01 body 50 MB → koneksi
+dibatalkan sebelum 50 MB ter-buffer, memori proses di bawah anggaran
+yang dinyatakan; H-RES-02 gzip bomb (rasio > 100×) → dibatalkan pada
+decompressed cap; H-RES-03 body tepat di bawah cap → lolos utuh.
+**Kriteria penerimaan F-002:** byte yang di-buffer tidak pernah
+melebihi cap + overhead stream yang dinyatakan, pada ketiga kasus, di
+staging.
+
+**F-003a — Satu total deadline.** File: `analyze()` (baris 236+) +
+`fetchText()`. Perilaku baru: satu anggaran waktu per pemeriksaan yang
+mencakup RDAP + page + semua redirect + semua script; timeout 12 detik
+per-fetch yang sekarang ada menjadi batas per-fetch DI DALAM anggaran
+total (bukan penggantinya). Nilai anggaran total diputuskan saat
+implementasi dengan merujuk keputusan D-1 s.d. D-8 (timeout global
+target awal 20 detik) — anggaran total TIDAK BOLEH melebihi timeout
+global yang diputuskan.
+**F-003b — Cancellation budget.** Satu sinyal batal dibagikan ke semua
+fetch dalam pemeriksaan; saat anggaran habis, semua fetch yang berjalan
+dibatalkan (bukan hanya yang terakhir); hasil parsial dibuang.
+**F-003c — Concurrency/rate bounds.** Batas pemeriksaan bersamaan
+yang dinyatakan (merujuk lease global maks 5 — §A.5.6 — dan semaphore
+DNS); kelebihan DITOLAK fail-closed (429/503), bukan antre tanpa batas;
+rate limit per IP yang sudah diputuskan (10/menit, 100/jam) tetap
+berlaku.
+**Harness F-003 — H-RES-04..06:** H-RES-04 slow drip (1 byte/10
+detik) → pemeriksaan berakhir pada total deadline; H-RES-05 rantai 7
+fetch lambat → total waktu ≤ deadline + toleransi yang dinyatakan;
+H-RES-06 20 pemeriksaan bersamaan → tidak melebihi batas konkurensi,
+kelebihan ditolak fail-closed. **Kriteria penerimaan F-003:** waktu
+total dan jumlah fetch bersamaan selalu dalam anggaran yang dinyatakan,
+di staging.
+
+**F-004a — Unique constraint DB.** File: `site/server/src/schema.ts`
+(tabel `projects`) + migrasi drizzle baru. Perilaku baru: unique
+constraint pada nama ternormalisasi DAN pada alamat kontrak
+ternormalisasi. Normalisasi: trim, lowercase; untuk alamat kontrak,
+perbandingan tanpa prefix `0x` — nilai tersimpan tetap bentuk kanonik
+(hex asli). Dua constraint terpisah (bukan satu composite): duplikat
+nama DITOLAK walau alamat berbeda; duplikat alamat DITOLAK walau nama
+berbeda.
+**F-004b — Insert atomik.** File: `addProject()` (~baris 987–1046).
+Perilaku baru: hapus pola baca-semua-lalu-insert; insert atomik dengan
+penanganan konflik DB (satu baris menang, yang lain menerima respons
+konflik — bukan duplikat, bukan error 500 yang tidak tertangani).
+**F-004c — Migrasi.** Migrasi drizzle baru yang menambahkan kedua
+constraint; migrasi TIDAK menghapus data katalog yang ada (data 14
+proyek tetap utuh); bila katalog yang ada sudah mengandung duplikat
+menurut normalisasi baru, migrasi GAGAL dengan laporan — duplikat
+diselesaikan manual dulu, bukan dihapus diam-diam oleh migrasi.
+**Harness F-004 — H-CAT-01..03:** H-CAT-01 10 request duplikat
+bersamaan (nama sama) → tepat 1 baris; H-CAT-02 alamat sama dengan
+perbedaan case/spasi → tepat 1 baris; H-CAT-03 dua nama berbeda, alamat
+sama → tepat 1 baris (konflik alamat). **Kriteria penerimaan F-004:**
+hitung baris di DB setelah tiap run cocok dengan yang dinyatakan, di
+staging.
+
+**F-005a — Trust boundary (didokumentasikan apa adanya).** Dari mirror
+saja, TIDAK DAPAT DIVERIFIKASI apakah ada lapisan otorisasi di luar
+`actions.ts` (mis. di runtime artifact atau di pemanggil cron) —
+status: **NOT VERIFIED**, bukan "tidak ada". Fakta yang terverifikasi:
+tidak ada pemeriksaan otorisasi di `actions.ts` (grep `auth|authorize|
+role`: nol, kecuali "registrar" RDAP dan peran Gibran); `checkLink`
+(~baris 1204–1210) adalah `defineAction` biasa tanpa wrapper auth.
+**F-005b — Otorisasi addProject.** Perilaku baru: `addProject` hanya
+boleh dipanggil dari jalur terotorisasi yang didokumentasikan;
+panggilan tanpa otorisasi DITOLAK dan di-log. Mekanisme otorisasi eksak
+(sesi admin / token layanan / daftar pemanggil) adalah keputusan desain
+yang butuh pemilik + fakta runtime artifact — v2.3.8 TIDAK mengarang
+mekanisme yang tidak dapat diverifikasi; keputusan dicatat sebagai
+butir keputusan pemilik (§7 matriks).
+**F-005c — Provenance.** Setiap penambahan katalog mencatat: sumber
+resmi (URL), yang mengajukan, yang memverifikasi, tanggal. Penambahan
+tanpa provenance DITOLAK.
+**F-005d — checkLink.** `checkLink` tetap dapat dipanggil publik untuk
+pemeriksaan (itu fungsinya), tetapi TIDAK BOLEH menjadi jalur mutasi
+katalog — pemisahan ini dinyatakan eksplisit di dokumentasi aksi.
+**Harness F-005 — H-AUTH-01..03:** H-AUTH-01 panggilan tanpa otorisasi
+→ ditolak + tercatat; H-AUTH-02 panggilan terotorisasi → diterima +
+provenance lengkap; H-AUTH-03 panggilan terotorisasi tanpa provenance →
+ditolak. **Kriteria penerimaan F-005:** keputusan otorisasi cocok
+dengan kebijakan yang didokumentasikan pada tiap kasus, di staging.
+
+**DG-1 — Mode file lock 0600 (persyaratan desain, v2.3.8).** File lock
+dibuat dengan mode `0600` (owner read/write saja), direktori lock
+`0700`; mode diverifikasi saat startup — gagal → NOT_READY. Kriteria
+tes: `stat` mode file `0600`; proses UID lain tidak dapat
+membaca/menulis file. (§G U-47.)
+**DG-2 — Open O_NOFOLLOW + validasi fstat (persyaratan desain,
+v2.3.8).** Pembukaan file lock memakai `O_NOFOLLOW` (atau padanan
+Bun/Node); setelah open, `fstat` memvalidasi fd adalah file regular
+milik UID layanan dengan (dev,ino) yang dicatat; mismatch → tolak +
+page. Kriteria tes: symlink di path lock → open gagal ELOOP; file
+diganti antara open dan fstat → terdeteksi. (§G U-48.)
+**DG-3 — Penolakan symlink/non-regular (persyaratan desain, v2.3.8).**
+Path lock yang berupa symlink, FIFO, socket, atau direktori DITOLAK
+saat startup (bukan diikuti). Kriteria tes: tiap jenis non-regular di
+path lock → startup NOT_READY dengan alasan tercatat. (§G U-49.)
+
+### D.4.19 Inventaris staging template — tahap 3, tanpa menjalankan tes (BARU)
+
+Lingkungan staging produksi **belum ada** — itu blocker yang sudah
+diketahui (U-42). Bagian ini adalah TEMPLATE inventaris yang wajib
+diisi sebelum SATU PUN tes staging dijalankan (menjawab V2 §8 butir 8).
+Tidak ada tes yang dijalankan di v2.3.8. Tiap gate ST-01..ST-16
+mendapat: owner, precondition, prosedur aman, aturan PASS/FAIL, dan
+destinasi bukti. Template diisi dengan nilai nyata saat staging
+tersedia; sampai saat itu, semua kolom bernilai "BELUM ADA".
+
+| Gate | Inventaris yang wajib dicatat | Owner | Precondition | Prosedur aman | PASS / FAIL | Destinasi bukti |
+| --- | --- | --- | --- | --- | --- | --- |
+| ST-01 | Digest artifact staging; runtime + versi (Bun/Node) + konfigurasi sandbox; kernel | BELUM ADA — owner: pemilik proyek | Staging artifact ter-deploy dari commit yang dicatat; runtime sama dengan produksi | Jalankan probe read-only (FLK-06 + PIDFD-T8) di dalam sandbox staging; tidak ada akses ke endpoint internal produksi | PASS: `bun:ffi` → `flock` + `pidfd_open`/`pidfd_send_signal` bekerja; FAIL: satu pun primitif tidak tersedia → implementasi DIBLOKIR | Log probe + manifest (format `evidence/v236/`) di repo |
+| ST-02 | Filesystem direktori lock: jenis, `df`/`mount`, ACL | BELUM ADA | Direktori lock di filesystem lokal (bukan NFS) | Uji FLK-T1..T8 di staging pada filesystem produksi; catat `df`/`mount` | PASS: flock saling mengecualikan + lepas saat close; FAIL: sebaliknya → DIBLOKIR | Log FLK + output `df`/`mount` |
+| ST-03 | Topologi egress: firewall/security group/VPC/egress proxy; apakah NAT64/DNS64 dipakai + prefix NSP | BELUM ADA | Dokumen egress dari penyedia runtime | Minta dokumen tertulis; jalankan DNS64 uji dengan prefix NSP yang diketahui (uji S-49/S-50) | PASS: prefix terdokumentasi + uji lolos, atau pernyataan tertulis tidak ada NAT64/DNS64; FAIL: tidak ada dokumen → U-11 tetap TERBUKA | Dokumen egress + log S-49/S-50 |
+| ST-04 | Identitas supervisor: nama, restart otomatis (ya/tidak), kill process group (ya/tidak), apakah mount lock dapat diganti saat deploy | BELUM ADA | Dokumentasi supervisor + deployment | Uji SUP-01: matikan parent, amati restart + kill process group | PASS: restart otomatis + process group terbunuh; FAIL: sebaliknya → U-22/U-36 tetap TERBUKA | Log SUP-01 + dokumen supervisor |
+| ST-05 | Suite SU-T1..SU-T9 di staging | BELUM ADA | ST-01..ST-04 PASS | Jalankan ulang SU-T1..SU-T9 di staging (bukan pengulangan bukti VM) | PASS: 9/9; FAIL: satu pun gagal | Log mentah + manifest |
+| ST-06 | Suite AUTH (otoritas flock, mixed-version, zombie) di staging | BELUM ADA | ST-01..ST-02 PASS | Jalankan ulang AUTH-T1..T11 + AUTH-C1 di staging; AUTH-T9c bila NFS terlibat | PASS: 18/18; FAIL: satu pun gagal | Log mentah + manifest |
+| ST-07 | Supervisor + parent crash di staging | BELUM ADA | ST-04 PASS | Uji PARENT-T1a/T1b: crash parent, amati pemulihan state + pidfile cleanup | PASS: satu pemilik setelah crash; FAIL: dua pemilik / state hilang | Log PARENT + pidfile |
+| ST-08 | SU-T1..SU-T9 + pidfd di staging (aspek staging dari ST-08) | BELUM ADA | ST-05 PASS | Lihat ST-05 + PIDFD-T1..T12 di staging | PASS: 9/9 + pidfd terikat identitas; FAIL: sebaliknya | Log mentah + manifest |
+| ST-09 | NFS (bila direktori lock di NFS — default: DILARANG) | BELUM ADA | Keputusan: lock di filesystem lokal | Bila NFS tetap dipakai: uji FLK-07 + AUTH-T9c di NFS staging | PASS: flock benar di NFS + AUTH-T9c lolos; FAIL: sebaliknya → pindah ke filesystem lokal | Log FLK-07/AUTH-T9c |
+| ST-10 | Observabilitas: log + metrik + alert (forceReleased, orphaned, workerExitUnconfirmed) | BELUM ADA | Pipeline log staging aktif | Picu tiap kondisi sekali; verifikasi alert sampai ke operator | PASS: tiap alert sampai < batas latensi yang dinyatakan (U-45); FAIL: alert tidak sampai | Log alert + bukti pengiriman |
+| ST-11 | DNS/semaphore/orphaned/breaker di staging | BELUM ADA | ST-01 PASS | Jalankan ulang SEM-T1..T6, ORPH-T1..T5 di staging | PASS: semua dalam batas; FAIL: sebaliknya | Log mentah + manifest |
+| ST-12 | Observabilitas + audit trail (auditd/eBPF untuk unlink lock) | BELUM ADA | ST-10 PASS | Verifikasi rule audit `-w <lockdir> -p wa` atau eBPF aktif; hapus file lock uji, verifikasi jejak | PASS: jejak tercatat + alert; FAIL: tidak ada jejak → U-43 tidak terdeteksi | Jejak audit + log |
+| ST-13 | pid_max produksi + hitung P tabrakan starttime (U-41) | BELUM ADA | Baca pid_max produksi (HANYA baca — tidak diubah) | Hitung P per cleanup; bandingkan ambang | PASS ≤ 1e-6; kondisional ≤ 1e-5 (persetujuan owner tertulis); BLOCK > 1e-5 | Nilai pid_max + perhitungan |
+| ST-14 | DNS/pinning di staging (DNS64, jawaban campuran, rebinding) | BELUM ADA | ST-03 PASS | Jalankan H-SSRF-10..12, H-SSRF-16..17 di staging (dari §D.4.18) | PASS: semua; FAIL: satu pun gagal → F-001 tetap OPEN | Log harness + manifest |
+| ST-15 | Lease PostgreSQL staging (atomicity + beban) | BELUM ADA | Detail PostgreSQL staging: host, versi, skema `scan_leases` | Uji LSE-01..LSE-06 + R-15 (ratusan acquire bersamaan) | PASS: atomicity + latensi p95 dalam batas; FAIL: sebaliknya | Log LSE/R-15 + detail DB |
+| ST-16 | NAT64/NSP staging (lanjutan ST-03) | BELUM ADA | ST-03 PASS | Uji S-49/S-50 dengan prefix NSP produksi | PASS: guard mengekstrak IPv4 tertanam dengan benar; FAIL: sebaliknya → U-11 tetap TERBUKA | Log S-49/S-50 |
+
+**Operator alert yang akuntabel:** BELUM ADA — wajib dinamai (nama +
+saluran + jam jaga) sebelum tes staging pertama; sampai saat itu,
+ST-10/ST-12 tidak dapat PASS. **Egress policy staging:** BELUM ADA —
+wajib didokumentasikan (daftar egress yang diizinkan + yang diblokir)
+sebelum H-SSRF dijalankan di staging. **Detail PostgreSQL staging:**
+BELUM ADA — host, versi, kredensial akses baca (bukan password di
+dokumen), dan skema `scan_leases` wajib dicatat saat ST-15 disiapkan.
 
 ---
 
@@ -3765,7 +4080,10 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | U-43 | **Root yang sengaja menghapus/mengganti lock (v2.3.6 — BARU, sisa U-33)** | OPS-T4 membuktikan root melewati DAC — tidak ada permission Unix yang mengikat root. Bind-mount ro (OPS-T3) hanya menghentikan root yang tidak sadar; root yang sengaja me-remount rw lalu menghapus tidak dapat dicegah oleh kontrol teknis apa pun di level ini | File lock hilang → parent aktif mendeteksi dan berhenti fail-closed (OPS-T7) — dampaknya ketersediaan, bukan dua pemilik yang saling membersihkan; tetapi bila penghapusan dilakukan berulang/sengaja, scanner tidak dapat berjalan stabil | Jejak audit (STAGE-P12) sebagai deteksi pasca-kejadian + runbook operator yang mengikat (§A.5.5.4g) + monitoring mount/direktori. Risiko ini TIDAK dapat ditutup secara teknis — diterima secara eksplisit atau ditangani di luar rancangan ini (mis. MAC/SELinux/AppArmor — di luar lingkup P0, perlu keputusan terpisah) |
 | U-44 | **Ro-bind-mount bukan default deployment (v2.3.6 — BARU, sisa U-33)** | Bind-mount read-only direktori lock adalah prosedur deployment (§A.5.5.4g), bukan default platform — ia harus dipasang, didokumentasikan di inventaris mount, dan dicek berkala. Bila langkah ini dilewati (deployment manual, environment baru, lupa), lapis pertahanan terhadap penghapusan tak sengaja oleh root hilang tanpa peringatan | Penghapusan tak sengaja oleh root yang seharusnya dicegah ro-mount menjadi mungkin | Cek otomatis di skrip deployment (verifikasi mount masih `ro` sebelum parent start — gagal → deployment berhenti); monitoring berkala mount; STAGE-P12 memverifikasi kontrol ini di staging |
 | U-45 | **Latensi deteksi — monitoring inode mendeteksi pemisahan lock setelah terjadi (v2.3.7 — BARU, dari evaluasi §8 butir 9)** | v2.3.6 memiliki monitoring sebagai deteksi tetapi tidak pernah merumuskan latensi deteksi sebagai risiko: pemindaian proses/inode terjadi berkala, sehingga ada interval di mana dua pemilik dapat hidup bersamaan tanpa terdeteksi. Tidak ada bukti yang membuktikan tidak ada interval split-lock di antara pemindaian | Dua pemilik hidup bersamaan selama interval antar pemindaian tanpa alert; bila keduanya melakukan cleanup dalam interval itu, kerusakan terjadi sebelum deteksi | Batas latensi dirumuskan + alert teruji sampai ke operator (ST-12, §5 butir 11 `SSRF_RECONCILIATION_V237.md`); pemindaian pre-start + gating per-tindakan membatasi apa yang dapat dilakukan pemilik basi dalam interval itu |
-| U-46 | **Divergensi fallback numeric-kill — evaluasi melarang, v2.3.6 mengizinkan dengan persetujuan owner (v2.3.7 — BARU, dari evaluasi §2.2 vs desain §A.5.5.2a/STAGE-P07)** | Evaluasi §2.2: "Never fall back to numeric kill(pid)". Desain v2.3.6 STAGE-P07: fallback numeric-kill terkuantifikasi (jendela ~46 µs, P ≈ 7e-9/cleanup pada pid_max default) diizinkan HANYA dengan persetujuan eksplisit owner dan BUKAN sebagai default. Alternatif yang diizinkan evaluasi (§2.4) — retained child-process handle, supervisor, atau Bun documented termination API — ketiganya belum ada di desain. Ini divergensi kebijakan, bukan perbedaan penamaan | Bila owner menerima fallback: risiko kill-salah-sasaran terkuantifikasi tetap ada (U-41). Bila owner mengadopsi larangan: fallback harus diganti sebelum implementasi — desain fallback berubah | **Keputusan owner tertulis wajib sebelum implementasi:** (a) terima fallback terkuantifikasi v2.3.6, ATAU (b) adopsi larangan evaluasi dan ganti fallback dengan retained-handle/supervisor/API Bun. v2.3.7 tidak memutuskan sepihak |
+| U-46 | **Divergensi fallback numeric-kill — evaluasi melarang, v2.3.6 mengizinkan dengan persetujuan owner (v2.3.7 — BARU — DIDEFINISIKAN LENGKAP v2.3.8, TANPA KEPUTUSAN)** | **Definisi masalah:** evaluasi §2.2 melarang fallback ke numeric `kill(pid)` ("Never fall back to numeric kill(pid)"). Desain v2.3.6 STAGE-P07 mengizinkan fallback numeric-kill terkuantifikasi HANYA dengan persetujuan eksplisit owner dan BUKAN sebagai default. Kedua posisi tidak dapat dipenuhi bersamaan — salah satu harus dipilih sebelum implementasi pensinyalan worker. **Status:** TERBUKA — belum diputuskan (blokir B-11 register V2). Tidak memblokir pekerjaan desain tahap (a), tetapi MEMBLOKIR implementasi pensinyalan (tahap b) sampai diputuskan. **Owner keputusan:** Rama (pemilik proyek) — bukan Muse, bukan ChatGPT; keputusan harus tertulis dan menyebut opsi + tanggal. **Fakta teknis (terbukti di VM):** jalur utama pidfd menutup kill-salah-sasaran (PIDFD-T2/T12d, `evidence/v236/pidfd-run1/2.txt`, `pidfd-t12-run1/2.txt`); residual pidfd adalah tabrakan starttime U-41 (P ≈ 7e-9/cleanup pada pid_max default 4.194.304; ≈ 8,8e-7 pada 32768; ≈ 7,1e-6 pada 4096; ≈ 2,8e-5 pada 1024 — PIDFD-T9, `window-run1/2.txt`, estimasi orde-besaran); fallback memakai mitigasi v2.3.2 (validasi sesaat sebelum sinyal + baca ulang starttime) dengan jendela ~46 µs (p99 terukur 41,7–46,0 µs). **Opsi (a) terima fallback terkuantifikasi:** numeric-kill diizinkan HANYA bila pidfd tidak tersedia, HANYA dengan persetujuan owner tertulis per deployment, BUKAN default — risiko residual kill-salah-sasaran terkuantifikasi tetap ada (U-41). **Opsi (b) adopsi larangan evaluasi:** fallback numeric-kill DILARANG mutlak; bila pidfd tidak tersedia, pensinyalan harus memakai retained child-process handle, supervisor, atau Bun documented termination API (evaluasi §2.4) — ketiganya BELUM ADA di desain dan BELUM TERBUKTI — masing-masing butuh desain + bukti sendiri sebelum implementasi. **Prasyarat sebelum keputusan dapat dieksekusi:** (1) pid_max produksi tercatat (STAGE-P08); (2) ketersediaan `bun:ffi` → pidfd di runtime produksi terbukti atau tidak (STAGE-P01) — bila pidfd terbukti tersedia, urgensi U-46 turun; (3) bila opsi (b) dipilih, desain + bukti alternatif pengganti harus selesai DULU. **Kriteria penerimaan (U-46 TERTUTUP):** keputusan tertulis pemilik menyebut opsi (a) ATAU (b) + tanggal; bila (a): persetujuan tertulis per deployment tercatat, STAGE-P08 PASS ≤ 1e-6 atau kondisional ≤ 1e-5 dengan persetujuan, fallback TIDAK menjadi default di kode; bila (b): desain alternatif selesai + bukti VM-nya ada + fallback numeric-kill dihapus dari desain. Sampai semua itu terpenuhi, U-46 tetap TERBUKA dan implementasi pensinyalan tetap DIBLOKIR. Definisi lengkap juga di `SSRF_RESPONSE_MATRIX_V238.md` §3. | Bila owner menerima fallback: risiko kill-salah-sasaran terkuantifikasi tetap ada (U-41). Bila owner mengadopsi larangan: fallback harus diganti sebelum implementasi — desain fallback berubah; bila pengganti belum didesain, pensinyalan tidak memiliki jalur fallback sama sekali | **Keputusan owner tertulis wajib sebelum implementasi pensinyalan.** v2.3.8 mendefinisikan lengkap dan TIDAK memutuskan. |
+| U-47 | **DG-1 — mode file lock 0600 belum menjadi persyaratan implementasi (v2.3.8 — BARU)** | Persyaratan dirumuskan di §D.4.18 (file lock `0600`, direktori `0700`, verifikasi saat startup → NOT_READY bila gagal) — tetapi belum diimplementasikan (tahap b) dan belum diuji | File lock dapat dibaca proses lain → informasi lock bocor / dimanipulasi | Implementasi + kriteria tes DG-1 (§D.4.18) di staging |
+| U-48 | **DG-2 — open O_NOFOLLOW + validasi fstat belum menjadi persyaratan implementasi (v2.3.8 — BARU)** | Persyaratan dirumuskan di §D.4.18 (`O_NOFOLLOW` + validasi `fstat` dev/ino/UID) — tetapi belum diimplementasikan (tahap b) dan belum diuji | Symlink di path lock diikuti → lock menunjuk file yang dikontrol pihak lain | Implementasi + kriteria tes DG-2 (§D.4.18) di staging |
+| U-49 | **DG-3 — penolakan symlink/non-regular belum menjadi persyaratan implementasi (v2.3.8 — BARU)** | Persyaratan dirumuskan di §D.4.18 (symlink/FIFO/socket/direktori di path lock DITOLAK saat startup) — tetapi belum diimplementasikan (tahap b) dan belum diuji | Path lock non-regular diterima → startup memakai lock yang bukan file regular | Implementasi + kriteria tes DG-3 (§D.4.18) di staging |
 
 ## H. Rencana pengujian dan rollback FINAL (v2)
 
@@ -3779,8 +4097,8 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | G3 — Regresi 3 URL acuan | `scamsem.solbarn.cc` → BAHAYA 100; `binance.com` → LEBIH AMAN; `ptah.trade/poa` → WASPADA (toleransi skor ±5) | Vonis sama | Hentikan; diskusikan (jangan sesuaikan ambang diam-diam) |
 | G4 — Uji blokir S-01..S-50 | Semua ditolak SEBELUM fetch; server uji menerima 0 koneksi (termasuk S-44..S-48 NAT64 v2.1 dan S-49/S-50 NSP staging v2.2) | 50/50 ditolak | Perbaiki titik yang lolos; uji ulang dari G3 |
 | G5 — Uji legit L-01..L-08 | Semua lolos | 8/8 lolos | Perbaiki false positive; uji ulang dari G3 |
-| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) + pidfd & jendela reuse PIDFD-01..PIDFD-08 + kontrol operasional OPS-01..OPS-03 + matriks prasyarat staging STAGE-P01..P12 (v2.3.6) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c NOT RUN — lihat §D.4.13), SU-T1..SU-T9 re-run v2.3.6: 9/9 × 4 (AUTH-16), pensinyalan terikat identitas via pidfd + kuantifikasi jendela reuse + falsifikasi dirfd pinning (PIDFD-01..PIDFD-08: PIDFD-T1..T12 + OPS-T1..T7 — lihat §D.4.14), kontrol operasional lock + pemulihan penghapusan (OPS-01..OPS-03), prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL (lihat §D.4.15), rekonsiliasi bukti v2.3.7 — matriks ST-01..ST-12, SU-T1..SU-T9 9/9 TERBUKTI (VM), penomoran kanonik ST-01..ST-16 (lihat §D.4.16 dan `SSRF_RECONCILIATION_V237.md`)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
-| G7 — Uji akhir + evaluasi ChatGPT | Seluruh hasil G0–G6 + dokumen v2.3.7 dievaluasi ChatGPT. **Catatan v2.3.7:** evaluasi atas v2.3.6 (`SSRF_EVALUATION_V235.md`) ditulis TANPA membaca bukti v2.3.6 — status NOT RUN-nya sudah dikoreksi oleh `SSRF_RECONCILIATION_V237.md`. Re-evaluasi WAJIB membaca `SSRF_SPIKE_V236.md` dan `SSRF_RECONCILIATION_V237.md` sebelum menyatakan satu pun tes "belum dijalankan" | Tidak ada keberatan P0 yang belum dijawab | Jawab keberatan; uji ulang yang terdampak |
+| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) + pidfd & jendela reuse PIDFD-01..PIDFD-08 + kontrol operasional OPS-01..OPS-03 + matriks prasyarat staging STAGE-P01..P12 (v2.3.6) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c NOT RUN — lihat §D.4.13), SU-T1..SU-T9 re-run v2.3.6: 9/9 × 4 (AUTH-16) [koreksi v2.3.8: 3 log lengkap + 1 ekor — lihat §D.4.17], pensinyalan terikat identitas via pidfd + kuantifikasi jendela reuse + falsifikasi dirfd pinning (PIDFD-01..PIDFD-08: PIDFD-T1..T12 + OPS-T1..T7 — lihat §D.4.14), kontrol operasional lock + pemulihan penghapusan (OPS-01..OPS-03), prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL (lihat §D.4.15), rekonsiliasi bukti v2.3.7 — matriks ST-01..ST-12, SU-T1..SU-T9 9/9 TERBUKTI (VM), penomoran kanonik ST-01..ST-16 (lihat §D.4.16 dan `SSRF_RECONCILIATION_V237.md`), matriks respons v2.3.8 atas audit kode V1+V2 — F-001..F-009, desain remediasi + harness H-SSRF-01..20, definisi lengkap U-46, inventaris staging ST-01..ST-16 (lihat §D.4.17, §D.4.18, §D.4.19 dan `SSRF_RESPONSE_MATRIX_V238.md`)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
+| G7 — Uji akhir + evaluasi ChatGPT | Seluruh hasil G0–G6 + dokumen v2.3.7 dievaluasi ChatGPT. **Catatan v2.3.7:** evaluasi atas v2.3.6 (`SSRF_EVALUATION_V235.md`) ditulis TANPA membaca bukti v2.3.6 — status NOT RUN-nya sudah dikoreksi oleh `SSRF_RECONCILIATION_V237.md`. Re-evaluasi WAJIB membaca `SSRF_SPIKE_V236.md` dan `SSRF_RECONCILIATION_V237.md` sebelum menyatakan satu pun tes "belum dijalankan". **Catatan v2.3.8:** evaluasi berikutnya WAJIB membaca `SSRF_RESPONSE_MATRIX_V238.md`, `evidence/v236/MANIFEST.md` (+ 21 file bukti), dan `SSRF_REPRODUCIBILITY_V238.md` — dan memverifikasi F-001..F-005 tetap OPEN/blocked sampai implementasi tahap (b) + harness staging PASS; F-007 dibaca dengan caveat su-run4/OPS-T7; F-008 dibaca dengan koreksi SU-T5 | Tidak ada keberatan P0 yang belum dijawab | Jawab keberatan; uji ulang yang terdampak |
 | G8 — Cutover | Persetujuan eksplisit pemilik + ChatGPT; mitigasi (a) dicabut; scanner dibuka kembali | Semua gerbang G0–G7 lolos + tanda tangan di §D.5 v2 | Scanner TETAP nonaktif; lanjutkan perbaikan |
 
 ### H.2 Perintah dan bukti pengujian
@@ -3818,9 +4136,15 @@ dengan status kepatuhan yang sebenarnya; (e) dokumen ini ditandai
 
 ## Pernyataan penutup
 
-Dokumen ini adalah **rancangan v2.3.7 untuk dievaluasi ChatGPT** — bukan persetujuan
+Dokumen ini adalah **rancangan v2.3.8 untuk dievaluasi ChatGPT** — bukan persetujuan
 implementasi. **Dokumen final BUKAN berarti implementasi otomatis
-disetujui** — itu dua keputusan berbeda. Status tetap: **DESIGN ACCEPTED
+disetujui** — itu dua keputusan berbeda. **Pemisahan tiga tahap (keputusan
+pemilik, mengikat v2.3.8):** (a) desain remediasi boleh dilanjutkan dan
+ditinjau; (b) implementasi pada source code butuh persetujuan eksplisit
+terpisah dari pemilik proyek — TIDAK diberikan saat ini; (c) penerapan ke
+situs live butuh persetujuan dan prosedur deployment tersendiri.
+Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live
+berubah. Status tetap: **DESIGN ACCEPTED
 WITH CONDITIONS — IMPLEMENTATION NOT APPROVED**. Tidak ada kode yang
 diubah, tidak ada data yang diubah, dan tidak ada akun/kredensial yang
 dibuat dalam penyusunan revisi ini. Spike runtime dilakukan HANYA di
@@ -3892,4 +4216,4 @@ wajib evaluasi ChatGPT atas v2.3.1 (aturan startup parent baru pada
 §A.5.5: NOT_READY yang tidak dapat dinegosiasi, validasi identitas
 proses sebelum SIGKILL, pidfile atomik, startup lock) tanpa mengubah
 satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN
-ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik.*
+ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.8 adalah respons atas DUA audit independen ChatGPT terhadap kode sumber mirror (V1 `SSRF_CODE_SECURITY_AUDIT_V1.md`, commit 52724d6 — F-001..F-006; V2 `SSRF_INDEPENDENT_AUDIT_V2.md`, commit 789797e — F-007..F-009, B-01..B-12): matriks respons F-001..F-009 (`SSRF_RESPONSE_MATRIX_V238.md`), publikasi bundle bukti mentah v2.3.6 (`evidence/v236/` + `MANIFEST.md`), koreksi penjelasan SU-T5 (F-008) dan caveat bukti su-run4, redaksi `site/DATA-PLAN.md` di mirror (F-006), `site/bun.lock` di-mirror + manifest reproduksibilitas (`SSRF_REPRODUCIBILITY_V238.md`), desain remediasi F-001..F-005 + harness diperketat H-SSRF-01..20 (§D.4.18), persyaratan DG-1..DG-3 (§G U-47..U-49), definisi lengkap U-46 tanpa keputusan (§G, §D.4.19 inventaris staging ST-01..ST-16) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik.*

@@ -1,0 +1,6 @@
+PASS PIDFD-T11a :: signal worker 28225 (starttime 160854) -> {"ok":true,"reason":"signaled-and-confirmed"}; exited=true
+PASS PIDFD-T11b :: starttime salah -> {"ok":false,"reason":"identity-mismatch","detail":"starttime"}; worker hidup=true
+PASS PIDFD-T11c :: marker salah -> {"ok":false,"reason":"identity-mismatch","detail":"cmdline"}; worker hidup=true
+PASS PIDFD-T11d :: target mati+reap -> {"ok":false,"reason":"pid-not-alive"} (tidak ada sinyal ke proses lain)
+PASS PIDFD-T11e :: zombie setup state=Z -> {"ok":false,"reason":"already-dead","detail":"state=Z"} (pidfd TIDAK dipakai untuk membunuh zombie)
+=== PIDFD-T11: 5/5 PASS ===

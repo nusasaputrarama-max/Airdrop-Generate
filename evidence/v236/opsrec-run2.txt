@@ -1,0 +1,5 @@
+OPS-T7a two-owners-reproduced=true A.ino=329 B.ino=331 A.pid=325 B.pid=331
+OPS-T7b proc-scan-detected-stale-holder=true scan=[{"pid":325,"fd":"5"}]
+OPS-T7c A-stood-down=true verifiedFalse=true
+OPS-T7d B-still-owner=true
+PASS OPS-T7 :: twoOwners=true detected=true aStoodDown=true bStillOwner=true
