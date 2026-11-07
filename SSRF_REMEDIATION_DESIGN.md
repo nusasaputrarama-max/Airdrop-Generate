@@ -1,7 +1,13 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.5 (7 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.5 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.6 (7 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.6 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
+  PIDFD-T9 + OPS-T1..T7 + re-run SU-T1..SU-T9 9/9 × 4 — lihat §D.4.14;
+  matriks prasyarat staging STAGE-P01..P12 — lihat §D.4.15) — bukti dari
+  VM ini, BUKAN dari runtime artifact produksi (lihat batas bukti di file
+  tersebut). Harness disalin ke `spike-harness-v236/` agar dapat
+  dijalankan ulang.
 - **Bukti uji v2.3.4:** `SSRF_SPIKE_V234.md` (race TERBUKTI pada kode v2.3.3 — ADV-T1: 2 pemilik, 3/3 × 2; perbaikan flock TERUJI — ADV-T2/T2sim/T5/T6: 4/4 × 2; semantik flock kernel TERUJI — FLK-T1..T8: 9/9 × 2 tmpfs, 9/9 × 2 overlay) — bukti dari VM ini, BUKAN dari runtime artifact produksi (lihat batas bukti di file tersebut). Harness disalin ke `spike-harness-v234/` agar dapat dijalankan ulang.
 - **Bukti uji v2.3.5:** `SSRF_SPIKE_V235.md` (suite adversarial AUTH 18/18 PASS,
   dijalankan ulang **2×**: AUTH-T1..T11 + AUTH-C1 — otoritas flock, mixed-version,
@@ -63,6 +69,25 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.6 (7 November 2026)
+
+Revisi teknis terbatas atas TIGA KEBERATAN ChatGPT terhadap v2.3.5
+("REQUEST V2.3.6: FINAL SECURITY REVIEW FOLLOW-UP"): PID reuse saat
+SIGKILL (U-38), never-unlink dan kontrol operasional (U-33), dan matriks
+prasyarat staging. Tidak ada keputusan D-1 s.d. D-8 yang diubah. Risiko
+U-11, U-16 s.d. U-23, U-25 s.d. U-32, U-36, U-37, U-39, U-40 tetap
+tercatat (U-24/U-29/U-33/U-34/U-35/U-38 diperbarui — lihat bawah);
+ditambah risiko baru U-41 s.d. U-44. Status tetap: **DESIGN ACCEPTED WITH
+CONDITIONS — IMPLEMENTATION NOT APPROVED**. Bukti uji: `SSRF_SPIKE_V236.md`.
+
+| # | Bagian | Perubahan |
+| --- | --- | --- |
+| 1 | §A.5.5.2a (baru — pensinyalan terikat identitas via pidfd, U-38 DIJAWAB) | Urutan mengikat baru: validasi identitas → `pidfd_open` → re-validasi starttime → `pidfd_send_signal` → konfirmasi exit. Sinyal terikat struct pid kernel, bukan nomor PID — kill-salah-sasaran DITUTUP (bukan hanya dipersempit). Implementasi referensi `signalWorkerByPidfd` (Bun `bun:ffi`) + fallback terkuantifikasi (jendela ~46 µs, P ≈ 7e-9/cleanup pada pid_max default) bila pidfd tidak tersedia. Jendela residual yang tersisa: tabrakan starttime (U-41) dan kebutaan zombie pidfd (ditutup pemeriksaan `/proc` zombie-aware). Alternatif pinning lewat dirfd `/proc/<pid>` DITOLAK oleh eksperimen (PIDFD-T10). |
+| 2 | §A.5.5.4g (baru — kontrol operasional never-unlink, U-33 DIJAWAB) | Katalog kontrol OS-enforced vs runbook-only dengan bukti per kontrol (OPS-T1..T6): direktori 0700 + user layanan dan isolasi antar-user DITEGAKKAN kernel; `chattr +i/+a` TIDAK tersedia di VM ini (bukan kontrol yang dapat diandalkan tanpa bukti staging); bind-mount ro menghentikan penghapusan tak sengaja tetapi bukan root yang sengaja; root melewati DAC (hanya audit + runbook); auditd/eBPF TIDAK ADA di VM ini (wajib staging). Prosedur deployment/rollback/maintenance yang mengikat + runbook pemulihan bila lock terhapus saat parent aktif (OPS-T7: dua pemilik terdeteksi dan diselesaikan tanpa cleanup ganda). |
+| 3 | §D.4.14 (baru) + §D.4.15 (baru) + §H | Tambah uji pidfd/ops (PIDFD-01..PIDFD-08, OPS-01..OPS-03) dan matriks prasyarat staging STAGE-P01..P12 (masing-masing dengan kriteria PASS/FAIL eksplisit + konsekuensi FAIL: BLOCK atau fallback terbukti) ke gerbang G6; G7 menyebut evaluasi atas v2.3.6. §D.4.13 diperbarui: AUTH-16 (SU-T1..SU-T9) kini TERJAWAB di VM — 9/9 PASS × 4 run (diagnosis SU-T5 §0.1 `SSRF_SPIKE_V236.md`: bug setup harness, bukan regresi). |
+| 4 | §G | U-38 dijawab v2.3.6 (pidfd, residual U-41); U-24 dijawab v2.3.6 (TOCTOU kill-by-number diganti pidfd, residual pindah ke U-41); U-33 dijawab v2.3.6 (kontrol dikatalogkan, residual U-43/U-44); U-29 diperbarui (pidfd via `bun:ffi` TERBUKTI di Bun 1.4.4; binding Node tetap belum terbukti); U-34/U-35/U-36 diperbarui (dirujuk ke STAGE-P01/P02/P04). Tambah U-41 (tabrakan starttime — residual pidfd), U-42 (celah bukti staging — matriks itu sendiri), U-43 (root sengaja menghapus lock — hanya audit + runbook), U-44 (ro-bind-mount bukan default deployment). |
+| 5 | Pernyataan penutup | Paragraf v2.3.6 ditambahkan. Estimasi TETAP ~8–14 hari kerja — perubahan v2.3.6 (pidfd + prosedur operasional) masuk dalam P0-1b/P0-UJI yang sudah ada. G0 tetap wajib dibuktikan aktif; dokumen final BUKAN persetujuan implementasi. |
 
 ## Perubahan di revisi v2.3.5 (7 November 2026)
 
@@ -1661,14 +1686,20 @@ pemeriksaan gagal, JANGAN kirim SIGKILL.
 **Kasus batas yang ditetapkan:**
 
 - PID hidup kembali di antara pemeriksaan (2) dan pengiriman SIGKILL:
-  jendela TOCTOU ini tidak dapat dihilangkan sepenuhnya — pemeriksaan
-  dan pengiriman sinyal adalah dua syscall terpisah. Mitigasi:
-  validasi dilakukan SESAAT sebelum sinyal (dalam tick yang sama,
-  tanpa `await` di antaranya), dan bila proses mati dan PID dipakai
-  ulang tepat di jendela itu, start time yang dibaca ulang sesaat
-  sebelum sinyal akan berbeda — karena itu implementasi WAJIB membaca
-  ulang start time tepat sebelum `kill()` dan membatalkannya bila
-  berbeda. Sisa risiko yang tidak dapat ditutup dicatat sebagai U-24.
+  jendela TOCTOU ini **DITUTUP untuk kill-salah-sasaran oleh pidfd**
+  (v2.3.6, §A.5.5.2a): sinyal dikirim via `pidfd_send_signal` pada
+  pidfd yang dibuka SETELAH validasi, sehingga sinyal terikat pada
+  struct pid korban — bila korban mati dan PID dipakai ulang, sinyal
+  mengembalikan ESRCH dan TIDAK mengenai proses baru (dibuktikan
+  PIDFD-T2/T12d). Yang tersisa adalah jendela **validasi-kedaluwarsa**
+  yang dipersempit: korban mati + PID dipakai ulang + proses baru
+  KEBETULAN memiliki starttime yang sama persis — dicatat sebagai U-41
+  (terkuantifikasi di §A.5.5.2a). Bila pidfd tidak tersedia, fallback
+  adalah mitigasi v2.3.2 (validasi sesaat sebelum sinyal dalam tick
+  yang sama + baca ulang starttime tepat sebelum `kill()`) dengan
+  jendela residual ~46 µs dan P ≈ 7e-9 per cleanup — lihat §A.5.5.2a.
+  Sisa risiko yang tidak dapat ditutup dicatat sebagai U-24 (dijawab
+  v2.3.6; residual pindah ke U-41).
 - PID tidak hidup saat pemeriksaan (1) tetapi proses muncul kembali:
   tidak mungkin — PID yang mati tidak dapat "hidup kembali" sebagai
   proses yang sama; PID baru dengan nomor yang sama adalah proses
@@ -1678,6 +1709,106 @@ Dibuktikan SU-T2 (`SSRF_SPIKE_V232.md` §2): pidfile menunjuk proses
 `sleep` dengan start time yang diklaim digeser → validasi gagal
 `starttime-mismatch` → 0 SIGKILL, `page=1`, decoy tetap hidup, parent
 tetap `NOT_READY`.
+
+#### A.5.5.2a Pensinyalan terikat identitas via pidfd (v2.3.6 — MENJAWAB U-38)
+
+**Keberatan yang dijawab.** U-38 (v2.3.5) mencatat jendela mikro residual
+antara revalidasi dan tindakan destruktif: pemeriksaan starttime +
+command line TIDAK menghilangkan seluruh race PID reuse — keduanya
+hanya mempersempit jendela validasi. Revisi ini mengganti mekanisme
+pengiriman sinyal itu sendiri: dari `kill(pid)` (terikat NOMOR) ke
+`pidfd_send_signal` (terikat IDENTITAS proses).
+
+**Primitif.** Linux `pidfd_open(2)` (syscall 434 x86_64) mengembalikan
+file descriptor yang menunjuk struct pid kernel dari proses target;
+`pidfd_send_signal(2)` (syscall 424) mengirim sinyal lewat fd itu.
+Bila proses target mati, pidfd tetap menunjuk struct pid yang mati —
+sinyal mengembalikan ESRCH dan TIDAK PERNAH diteruskan ke proses yang
+kemudian memakai ulang nomor PID itu. Bila `pidfd_open` dipanggil pada
+PID yang sudah mati, ia mengembalikan ESRCH. Primitif ini TIDAK
+membutuhkan hubungan parent-child (`pidfd_open(1)` berhasil, PIDFD-T6).
+
+**Urutan yang mengikat (`signalWorkerByPidfd` — semua sinkron, tanpa
+`await` di antaranya).** Implementasi referensi (Bun):
+`spike-harness-v236/pidfd-signal.js`.
+
+1. **Validasi identitas by-number** — `/proc/<pid>/stat` (starttime,
+   state zombie-aware) + `/proc/<pid>/cmdline` (marker `dns-worker`),
+   persis §A.5.5.2 butir 1–3. Gagal → batal (`identity-mismatch` /
+   `already-dead` / `pid-not-alive`), TIDAK ADA sinyal ke mana pun.
+2. **`pidfd_open(pid, 0)`** — ikat identitas. Gagal ESRCH → batal
+   (`pid-not-alive`).
+3. **Re-validasi starttime by-number SETELAH `pidfd_open`** — bila PID
+   dipakai ulang di antara langkah 1 dan 2, starttime berubah → batal
+   (`identity-changed`). Langkah ini menutup jendela
+   validasi-kedaluwarsa; tanpanya, sinyal via pidfd tetap aman (lihat
+   PIDFD-T12d) tetapi urutan akan menunggu konfirmasi exit yang tidak
+   pernah datang.
+4. **`pidfd_send_signal(pidfd, SIGKILL)`** — sinyal terikat struct pid.
+   ESRCH → target sudah mati (`already-dead`).
+5. **Konfirmasi exit** — poll `/proc` zombie-aware (state `Z`/`X` =
+   mati), maks 2 dtk skala tes. Bila tidak terkonfirmasi → parent
+   tetap `NOT_READY` (§A.5.5.1, TERM-T3).
+
+**Yang dibuktikan (bukti: `SSRF_SPIKE_V236.md` §1):**
+
+| Bukti | Hasil |
+|---|---|
+| PIDFD-T1..T7 (Python ctypes) | 7/7 PASS × 2 — primitif bekerja; T2: reuse paksa (7.871 spawn, pid_max=8192) → sinyal via pidfd lama ESRCH, decoy hidup; T3 (kontrol): `kill(pid)` biasa SETELAH reuse MEMBUNUH decoy — membuktikan race kill-by-number itu nyata |
+| PIDFD-T8 (Bun `bun:ffi`) | 2/2 PASS × 2 — `pidfd_open`/`pidfd_send_signal` via `bun:ffi` BEKERJA di Bun 1.4.4 (fd pidfd 5/6, errno via `__errno_location`) |
+| PIDFD-T11 (urutan referensi Bun) | 5/5 PASS × 3 — signaled+confirmed (T11a); starttime salah / marker salah / target mati+reap / zombie → ditolak, TIDAK ADA sinyal ke proses lain (T11b–T11e) |
+| PIDFD-T12 (oracle reuse paksa) | 4/4 PASS × 2 — urutan penuh lolos di semua titik injeksi reuse: sebelum langkah 1 (`identity-mismatch`), di antara open dan re-validasi (`identity-changed`), dan setelah open dengan re-validasi dilewati sengaja (ESRCH, decoy hidup) |
+
+**Jendela race yang TETAP ADA — dinyatakan dengan jujur:**
+
+- **(a) Kill-salah-sasaran: DITUTUP oleh pidfd.** Tidak ada jendela
+  waktu di mana `pidfd_send_signal` dapat mengenai proses lain
+  (T2, T12d). Satu-satunya jalur yang tersisa membutuhkan tabrakan
+  starttime — lihat (b).
+- **(b) Tabrakan starttime (U-41):** `pidfd_open` pada langkah 2 dapat
+  terjadi SETELAH reuse — bila proses baru KEBETULAN memiliki starttime
+  yang sama persis dengan korban, langkah 3 juga lolos dan sinyal
+  mengenai proses baru. `starttime` beresolusi ~10 ms (100 tick/detik);
+  tabrakan membutuhkan reuse dalam jendela langkah 1→2 DAN start dalam
+  tick yang sama. Jendela langkah 1→2 diukur (PIDFD-T9): p99 ≈ 42–46 µs;
+  P per cleanup ≈ 6–7e-9 pada pid_max default 4.194.304 (laju spawn
+  628/detik), naik menjadi ≈ 2,8e-5 pada pid_max=1024. Angka ini adalah
+  estimasi orde-besaran (asumsi laju spawn konstan + sebaran seragam),
+  bukan probabilitas eksak — lihat STAGE-P08 untuk ambang keputusan.
+- **(c) Kebutaan zombie pidfd (temuan PIDFD-T4):** pada zombie,
+  `pidfd_open` berhasil DAN `pidfd_send_signal` (sig 0 maupun SIGKILL)
+  mengembalikan 0 — pidfd TIDAK dapat membedakan zombie dari hidup.
+  Karena itu pidfd TIDAK BOLEH dipakai sebagai satu-satunya probe
+  liveness; langkah 1, 3, dan 5 memakai pemeriksaan `/proc` yang
+  zombie-aware (T11e). Residual: runtime tanpa `/proc` kembali ke
+  fallback `kill(pid,0)` yang buta zombie (U-37 — tidak berubah).
+- **(d) Alternatif yang DITOLAK — pinning lewat dirfd `/proc/<pid>`:**
+  hipotesis bahwa membuka `/proc/<pid>` lalu membaca `stat` lewat
+  dirfd akan mem-pin task lama **DITOLAK oleh eksperimen**
+  (PIDFD-T10: setelah target mati + di-reap, `stat` lewat dirfd gagal
+  ESRCH — bahkan setelah PID dipakai ulang; dirfd TIDAK mem-pin task).
+  Dirfd pinning TIDAK masuk ke desain.
+
+**Fallback bila pidfd tidak tersedia (mengikat).** Bila `pidfd_open`
+tidak tersedia di runtime produksi (syscall diblokir seccomp, atau
+binding FFI tidak ada), `signalWorkerByPidfd` mengembalikan
+`pidfd-unavailable` secara eksplisit — TIDAK PERNAH diam-diam memakai
+`kill(pid)`. Pemanggil memakai fallback v2.3.2 (validasi identitas
+per-sinyal + baca ulang starttime tepat sebelum `kill()`) dengan
+jendela residual ~46 µs dan P ≈ 7e-9 per cleanup (PIDFD-T9). Fallback
+ini HANYA diizinkan dengan persetujuan eksplisit owner setelah
+STAGE-P07 FAIL (lihat §D.4.15).
+
+**Aturan yang mengikat dari bagian ini:**
+- Pensinyalan worker lama WAJIB memakai `signalWorkerByPidfd`
+  (urutan 1–5) bila pidfd tersedia di runtime; `process.kill(pid)`
+  langsung untuk worker lama DILARANG kecuali sebagai fallback yang
+  disetujui (§D.4.15 STAGE-P07).
+- `pidfd_open` TIDAK BOLEH dipakai sebagai probe liveness — liveness
+  selalu diputuskan lewat `/proc` zombie-aware.
+- Re-validasi starttime SETELAH `pidfd_open` adalah langkah wajib;
+  melewatinya DILARANG (meski sinyal via pidfd tetap aman tanpanya,
+  urutan akan menunggu konfirmasi yang tidak pernah datang).
 
 #### A.5.5.3 Pidfile atomik (v2.3.2 — TIDAK PERNAH SETENGAH TERTULIS)
 
@@ -2299,6 +2430,105 @@ tanpa flag-day adalah "tepat satu pemilik yang tercatat".
 Dibuktikan AUTH-T5a/T5b/T5c + AUTH-T8a/T8b (`SSRF_SPIKE_V235.md` §3).
 
 
+#### A.5.5.4g Kontrol operasional never-unlink: permission, ownership, dan prosedur (v2.3.6 — MENJAWAB U-33)
+
+**Keberatan yang dijawab.** U-33 (v2.3.5) mencatat flock bersifat
+advisory: never-unlink adalah aturan + runbook, bukan penegakan kernel —
+kode lama, operator `rm`, dan tooling pihak ketiga tidak terikat.
+Revisi ini mengatalogkan, kontrol demi kontrol, mana yang benar-benar
+ditegakkan sistem operasi dan mana yang hanya bergantung pada runbook,
+dengan bukti eksperimen per kontrol (bukti: `SSRF_SPIKE_V236.md` §2).
+
+**Tabel kejujuran — OS-enforced vs runbook-only:**
+
+| Kontrol | Jenis | Terhadap siapa efektif | Bukti |
+|---|---|---|---|
+| Direktori lock 0700 + ownership user layanan | **OS-enforced** (DAC kernel) | Semua user non-root; layanan lain | OPS-T1 |
+| Isolasi antar user layanan (satu layanan satu uid) | **OS-enforced** (DAC kernel) | Layanan lain yang terkompromi | OPS-T6 |
+| Bind-mount read-only direktori lock | **OS-enforced sebagian** | Penghapusan tak sengaja (termasuk oleh root yang tidak sadar mount-nya ro — perintah gagal dan terlihat); TIDAK terhadap root yang sengaja me-remount rw | OPS-T3 |
+| `chattr +i/+a` (immutable/append-only) | **Tidak tersedia di VM ini** — OS-enforced HANYA bila filesystem produksi mendukung + dibuktikan di staging | — (belum terbukti) | OPS-T2 |
+| Jejak audit penghapusan (auditd/eBPF) | **OS-enforced bila terpasang**; TIDAK ADA di VM ini — wajib staging | Root yang sengaja (deteksi pasca-kejadian, bukan pencegahan) | OPS-T5 |
+| Larangan `rm` manual, flag-day, pengecualian tmpfiles | **Runbook-only** | Bergantung disiplin operator + review change | — |
+| Deteksi kehilangan otoritas + stand-down | **Kode (aplikasi)** — `guardedAction` | Siapa pun yang menghapus/mengganti file — deteksi, bukan pencegahan | OPS-T7 |
+
+**Yang TIDAK diklaim:** tidak ada kombinasi kontrol di atas yang
+menghentikan root yang SENGAJA menghapus lock (OPS-T4 membuktikan root
+melewati DAC — `rm` di direktori 0700 berhasil, rc=0). Yang dijamin
+adalah: (a) penghapusan tak sengaja oleh operator/tooling non-root
+dicegah oleh permission; (b) penghapusan tak sengaja oleh root dicegah
+oleh bind-mount ro selama tidak di-remount; (c) bila lock tetap
+terhapus, parent aktif MENDETEKSI kehilangan otoritas sebelum tindakan
+sensitif berikutnya dan berhenti fail-closed, dan prosedur pemulihan
+mengembalikan satu pemilik tanpa cleanup ganda (OPS-T7).
+
+**Prosedur deployment (urutan wajib):**
+
+1. Buat direktori lock sebagai user layanan, mode `0700`, ownership
+   user layanan (BUKAN root). Verifikasi: `stat` menunjukkan uid yang
+   benar dan mode 0700 (cek otomatis di skrip deployment; gagal →
+   deployment berhenti).
+2. (Direkomendasikan) Bind-mount direktori lock read-only setelah file
+   lock awal dibuat — dokumentasikan mount ini di inventaris mount
+   deployment; cek berkala (monitoring) bahwa mount masih `ro`.
+3. Jalankan parent sebagai user layanan (BUKAN root) — bila layanan
+   harus start sebagai root, turunkan privilege sebelum acquire
+   (setuid/setgid ke user layanan).
+4. Parent menjalankan siklus penuh: pre-start scan → acquire flock →
+   klasifikasi record → cleanup worker lama (pidfd, §A.5.5.2a) → spawn
+   worker → READY. Deployment dinyatakan sukses hanya bila parent
+   mencapai READY dan satu `guardedAction` uji lolos.
+
+**Prosedur rollback (flag-day — mengikat, §A.5.5.4d):**
+
+1. Hentikan SEMUA parent (semua versi) sebelum upgrade/rollback.
+   Verifikasi penghentian lewat pre-start scan: tidak ada proses parent
+   hidup dengan marker layanan.
+2. Baru setelah itu ganti biner dan start parent versi target.
+3. **DILARANG:** menjalankan dua versi bersamaan; me-rollback dengan
+   parent lama masih hidup; menghapus file lock sebagai "cara cepat"
+   menyelesaikan konflik (gunakan prosedur pemulihan di bawah, bukan
+   `rm`).
+
+**Prosedur maintenance (dilarang vs diizinkan):**
+
+- **DILARANG saat parent aktif:** `rm`/`mv` file lock atau pidfile;
+  `chmod`/`chown` direktori lock; me-remount direktori lock rw tanpa
+  change record; menjalankan tooling pembersih (`tmpwatch`,
+  `systemd-tmpfiles` dengan pola yang cocok dengan direktori lock) —
+  direktori lock WAJIB dikecualikan dari semua pembersih otomatis.
+- **Diizinkan:** membaca file lock/pidfile (read-only, untuk diagnosis);
+  memeriksa mount (`findmnt`); memeriksa jejak audit; me-restart parent
+  lewat supervisor (yang menjalankan siklus penuh, bukan `rm` manual).
+
+**Runbook pemulihan — bila file lock terhapus saat parent aktif
+(mengikat):**
+
+1. JANGAN membuat file lock baru secara manual.
+2. Periksa apakah parent masih hidup (pre-start scan): bila hidup,
+   biarkan parent mendeteksi kehilangan otoritas sendiri
+   (`verifyFlockOwnership` gagal pada `guardedAction` berikutnya →
+   parent keluar fail-closed) — JANGAN membunuh parent secara paksa
+   sebelum ia keluar sendiri, kecuali ia tidak keluar dalam batas
+   waktu operator (5 menit) — bila demikian, SIGTERM lalu SIGKILL
+   lewat pidfd/sinyal by-number dengan validasi identitas (§A.5.5.2a).
+3. Setelah TIDAK ADA parent hidup (scan bersih), supervisor me-restart
+   parent — parent baru membuat file lock baru lewat jalur acquire
+   normal (flock + klasifikasi record). File lock lama yang hilang
+   tidak perlu "dipulihkan" — otoritas lahir dari flock, bukan dari
+   isi file.
+4. Catat insiden (siapa/apa yang menghapus, dari jejak audit) dan
+   periksa apakah penyebabnya adalah tooling pembersih — bila ya,
+   perbaiki pengecualiannya sebelum restart berikutnya.
+
+Dibuktikan OPS-T1..T7 (`SSRF_SPIKE_V236.md` §2): OPS-T1..T6 6/6 PASS × 2;
+OPS-T7 (dua pemilik dari penghapusan file → terdeteksi via pre-start
+scan → holder lama stand-down `verified=false` → satu pemilik, 0
+cleanup) PASS × 3. **Yang TIDAK dibuktikan:** skenario parent berada
+DI TENGAH `guardedAction` tepat saat file dihapus — jendela itu tetap
+ada (residual U-38) dan ditutup oleh gating per-tindakan, bukan oleh
+prosedur pemulihan.
+
+
 ### 3. Uji yang membuktikan perilaku ini (gerbang G6 — TERM-01..TERM-04, PARENT-01..PARENT-02)
 
 Bukti lengkap: `SSRF_SPIKE_V231.md` §1–§2 (TERM 23/23 PASS, PARENT
@@ -2687,6 +2917,7 @@ ini dan mencatat perbedaannya di laporan implementasi.
 | `isBlockedAddress(ip)` | Cocokkan IP kanonik ke tabel §A.4. |
 | `checkRateLimit(callerHash)` | Kuota per IP (hash) + antrean konkurensi (P1-2). |
 | `acquireScanSlot(callerHash)` / `releaseScanSlot(leaseId)` | **v2.1 (baru):** lease konkurensi GLOBAL via tabel `scan_leases` — acquire atomik (hitung lease hidup < 5 → INSERT, bila ≥ 5 → tolak 429), TTL lease 25 detik, release eksplisit di `finally`. JANGAN memakai semaphore in-memory sebagai pengganti lease global. |
+| `signalWorkerByPidfd({ pid, expectedStarttime, cmdlineMarker, signal })` | **v2.3.6 (baru):** pensinyalan worker lama yang terikat identitas (§A.5.5.2a) — validasi identitas by-number → `pidfd_open` → re-validasi starttime → `pidfd_send_signal` → konfirmasi exit (poll `/proc` zombie-aware). Mengembalikan `{ ok, reason }` fail-closed (`identity-mismatch` / `identity-changed` / `already-dead` / `pid-not-alive` / `pidfd-unavailable` / `exit-unconfirmed`). **DILARANG** memakai `process.kill(pid)` langsung untuk worker lama kecuali sebagai fallback yang disetujui setelah STAGE-P07 FAIL. Implementasi referensi (Bun): `spike-harness-v236/pidfd-signal.js`. |
 | `logBlockedAttempt(hashUrl, kategori, waktu)` | Log keamanan terpisah (bukan tabel `checks`). |
 
 ### B.4 `src/scanner/ssrf-guard.ts` (paket fondasi) — perluasan
@@ -3145,7 +3376,55 @@ produksi belum terbukti.
 | AUTH-13 | Zombie liveness (AUTH-T11, BARU) | Setup zombie terverifikasi (state `Z` + `kill(pid,0)` SUCCEEDS); parent baru tetap READY, worker lama mati, worker baru hidup, 2/2 run |
 | AUTH-14 | O_CLOEXEC default + F_SETFD (AUTH-C1) | Bun + Node `cloexecDefault=true`; Python round-trip `CLEARED=True SET_AGAIN=True BEFORE=True`, 2/2 run |
 | AUTH-15 | flock di NFS (AUTH-T9c) | **NOT RUN di VM ini** (tidak ada NFS) — wajib di staging (FLK-07, U-30) |
-| AUTH-16 | Startup v2.3.2 SU-T1..SU-T9 (regresi) | **NOT RUN di revisi ini** (dependensi `/tmp/ssrf-v232` hilang — lihat `SSRF_SPIKE_V235.md` §0.4) — wajib dijalankan ulang setelah memperbaiki path harness, sebelum cutover |
+| AUTH-16 | Startup v2.3.2 SU-T1..SU-T9 (regresi) | **TERJAWAB v2.3.6 di VM ini — 9/9 PASS × 4 run** (`SSRF_SPIKE_V236.md` §0.1 + §4; `spike-harness-v236/su-v232/`). Diagnosis awal revisi ini (8/9 × 3, SU-T5 FAIL `no-output`) adalah bug setup harness — `lock-racer.cjs` tidak ikut disalin — BUKAN regresi desain. Re-run di staging tetap wajib (STAGE-P05). |
+
+#### D.4.14 Uji pidfd, jendela reuse, dan kontrol operasional (v2.3.6 — PIDFD-01..PIDFD-08, OPS-01..OPS-03)
+
+Uji perilaku dari `SSRF_SPIKE_V236.md` (bukti: semua suite pidfd/ops
+lolos pada pengulangan — Bun 1.4.4, Node v24.22.1, Python 3.12.3,
+Linux 7.0.0-43-generic, proses/komponen lokal yang dikontrol sendiri).
+Harness disalin ke `spike-harness-v236/` agar dapat dijalankan ulang.
+Semua uji ini wajib diulang di staging produksi (STAGE-P01..P12)
+sebelum cutover, karena runtime, filesystem, `/proc`, dan supervisor
+produksi belum terbukti.
+
+| Uji | Kasus | Kriteria lolos |
+| --- | --- | --- |
+| PIDFD-01 | Primitif pidfd (PIDFD-T1..T7) | 7/7 PASS: `pidfd_open` + `pidfd_send_signal(SIGKILL)` membunuh target; probe setelah mati ESRCH; reuse paksa → sinyal via pidfd lama ESRCH, decoy hidup; kontrol `kill(pid)` setelah reuse MEMBUNUH decoy (race nyata); zombie: pidfd buta (send mengembalikan 0); PID tidak ada ESRCH; flag tidak dikenal EINVAL |
+| PIDFD-02 | pidfd via Bun `bun:ffi` (PIDFD-T8) | 2/2 PASS: `pidfd_open`/`pidfd_send_signal` via `bun:ffi` bekerja di Bun 1.4.4; probe setelah mati ESRCH |
+| PIDFD-03 | Urutan referensi `signalWorkerByPidfd` (PIDFD-T11) | 5/5 PASS: signaled+confirmed; starttime salah / marker salah / target mati+reap / zombie → ditolak, TIDAK ADA sinyal ke proses lain |
+| PIDFD-04 | Oracle urutan penuh di bawah reuse paksa (PIDFD-T12) | 4/4 PASS: reuse sebelum validasi → `identity-mismatch`; reuse di antara open dan re-validasi → `identity-changed`; pidfd lama setelah reuse dengan re-validasi dilewati → ESRCH, decoy hidup |
+| PIDFD-05 | Pengukuran jendela + kuantifikasi (PIDFD-T9) | WINDOW-P99 ≈ 42–46 µs; P per cleanup ≈ 6–7e-9 (pid_max default) — angka dicatat per run; ambang STAGE-P08 diterapkan pada nilai staging |
+| PIDFD-06 | Falsifikasi dirfd pinning (PIDFD-T10) | T10a PASS (stat via dirfd sebelum mati sama); **T10b FAIL adalah hasil yang diharapkan** — dirfd TIDAK mem-pin task (stat setelah mati+reap ESRCH, bahkan setelah reuse). Dirfd pinning DILARANG masuk desain |
+| PIDFD-07 | Re-run SU-T1..SU-T9 (v2.3.2) | 9/9 PASS (lihat §D.4.13 AUTH-16) |
+| PIDFD-08 | pidfd di staging (STAGE-P07) | Re-run PIDFD-01..PIDFD-07 pada runtime staging; bila pidfd tidak tersedia → fallback terkuantifikasi HANYA dengan persetujuan eksplisit owner |
+| OPS-01 | Kontrol permission/ownership/mount/audit (OPS-T1..T6) | 6/6 PASS di VM: 0700 ditegakkan kernel; `chattr +i/+a` TIDAK tersedia di VM ini (dicatat, bukan diandalkan); ro-bind-mount menghentikan hapus tak sengaja, root dapat me-remount; root melewati DAC; auditd TIDAK ADA di VM ini; isolasi antar-user ditegakkan kernel |
+| OPS-02 | Pemulihan penghapusan lock (OPS-T7) | PASS: dua pemilik dari penghapusan file → terdeteksi via pre-start scan → holder lama stand-down → satu pemilik, 0 cleanup |
+| OPS-03 | Kontrol operasional di staging (STAGE-P12) | Direktori 0700 + user layanan + audit rule + bukti satu `unlink` uji tercatat; ro-bind-mount bila dipakai |
+
+#### D.4.15 Matriks prasyarat staging (v2.3.6 — STAGE-P01..P12)
+
+Daftar bukti yang WAJIB dikumpulkan SEBELUM implementasi dimulai
+(gerbang G0/G1), bukan sebelum cutover. Setiap prasyarat memiliki
+kriteria PASS/FAIL eksplisit dan konsekuensi FAIL yang dinyatakan
+sebelumnya. **Tidak satu pun prasyarat ini dapat dipenuhi di VM ini
+untuk runtime produksi** — semuanya wajib dikumpulkan di staging pada
+runtime/filesystem/supervisor yang SAMA dengan produksi.
+
+| ID | Prasyarat (bukti yang wajib dikumpulkan) | Kriteria PASS | Bila FAIL |
+|---|---|---|---|
+| STAGE-P01 | Runtime artifact + ketersediaan `bun:ffi` (versi Bun, `dlopen("libc.so.6")`, `flock`, `pidfd_open`, `pidfd_send_signal` di dalam sandbox artifact) | Semua simbol FFI terpanggil dan mengembalikan hasil yang benar (re-run FLK-06 + PIDFD-T8 di staging) | **BLOCK** — tidak ada implementasi flock/pidfd; kembali ke meja desain |
+| STAGE-P02 | Filesystem direktori lock + semantik flock (re-run FLK-T1..T8 pada filesystem produksi; uji `chattr +i/+a` bila direncanakan) | FLK 9/9 PASS pada fs produksi; `chattr` dicatat tersedia/tidak | **BLOCK** bila flock gagal; bila hanya `chattr` yang gagal → lanjut TANPA mengandalkan `chattr` (catat sebagai tidak tersedia) |
+| STAGE-P03 | Ketersediaan `/proc` + `pidAlive` zombie-aware (re-run AUTH-T11 di staging) | AUTH-T11 PASS (zombie dinilai mati, parent baru READY) | **BLOCK** — primitif liveness hilang; perlu keputusan desain alternatif |
+| STAGE-P04 | Supervisor + process-group (dokumen + tes hidup SUP-01: bunuh parent → apakah group ikut mati; restart otomatis?) | Perilaku terdokumentasi DAN terbukti lewat tes hidup | **BLOCK** kecuali owner menerima residual U-22 secara tertulis (lapis self-exit + pidfile cleanup yang sudah terbukti + monitoring orphan) |
+| STAGE-P05 | SU-T1..SU-T9 re-run di staging | 9/9 PASS pada runtime produksi | **BLOCK** — perbaiki kode, ulang dari gerbang G3 |
+| STAGE-P06 | NFS — HANYA bila filesystem produksi memakai NFS (re-run FLK-07/AUTH-T9c pada mount NFS produksi) | Semantik flock terbukti pada mount NFS tersebut | **BLOCK** — pindahkan direktori lock ke filesystem lokal |
+| STAGE-P07 | Pengujian pidfd bila mekanisme itu dipilih (re-run PIDFD-T1..T12 pada runtime staging) | Semua suite pidfd PASS | **Fallback terbukti** — pakai starttime re-read + `kill(pid)` dengan residual terkuantifikasi (§A.5.5.2a), HANYA dengan persetujuan eksplisit owner |
+| STAGE-P08 | `pid_max` produksi + reuse-interval (baca nilai, hitung P per cleanup dengan metode PIDFD-T9) | P ≤ 1e-6 | P 1e-6–1e-5 → kondisional (persetujuan owner tertulis); P > 1e-5 → **BLOCK** |
+| STAGE-P09 | DNS/pinning staging (G2/P0-1a': re-run spike runtime di staging) | Pinning + klasifikasi IP lolos pada runtime staging | **BLOCK** — kembali ke spike |
+| STAGE-P10 | PostgreSQL lease LSE-06 (mekanisme `scan_leases` pada PostgreSQL staging) | LSE-06 PASS (tidak ada pelanggaran batas 5 di bawah konkurensi) | **BLOCK** — perbaiki mekanisme lease sebelum cutover |
+| STAGE-P11 | NAT64/NSP (dokumen egress + tes S-49/S-50 dengan prefix produksi) | Dokumen egress menyatakan prefix (atau menyatakan tidak ada NAT64/DNS64) DAN tes staging lolos | **BLOCK** sampai dokumen + tes ada (U-11 tetap OPEN) |
+| STAGE-P12 | Kontrol operasional lock (direktori 0700 + user layanan + audit rule `-w <lockdir> -p wa` atau eBPF + bukti satu `unlink` uji tercatat; ro-bind-mount bila dipakai) | Semua kontrol terverifikasi di staging; satu `unlink` uji tercatat di jejak audit | **BLOCK** sampai kontrol diperbaiki (kontrol ini murah diperbaiki — tidak ada alasan melanjutkan tanpa mereka) |
 
 
 #### D.4.7 Uji matcher allowlist RDAP (v2.1 — RD-01..RD-20)
@@ -3348,7 +3627,7 @@ implementasi** itu sendiri (ya/tidak, dan bila ya, tanggal mulai P0-0).
 
 ---
 
-## G. Risiko yang BELUM terselesaikan setelah revisi v2.3.5
+## G. Risiko yang BELUM terselesaikan setelah revisi v2.3.6
 
 Daftar ini jujur: risiko-risiko berikut TIDAK ditutup oleh rancangan ini,
 dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
@@ -3378,7 +3657,7 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | U-21 | **Exit worker tidak terkonfirmasi (v2.3.1 — BARU)** | Bila proses worker tidak mati setelah SIGKILL (D-state / uninterruptible sleep, namespace bermasalah), tidak ada event `exit` — counter tetap, breaker tetap terbuka, dan satu-satunya jalan keluar adalah intervensi operator atau restart manual proses layanan. Perilaku ini TERBUKTI sebagai fail-closed (TERM-T3), tetapi berarti satu worker yang tidak bisa mati dapat menahan breaker terbuka sampai intervensi manual | Breaker terbuka berkepanjangan → seluruh lookup DNS baru ditolak sampai intervensi manual; ketersediaan scanner mati sementara | Alert `workerExitUnconfirmed > 0` → page; runbook: periksa proses (`ps`), bila proses ada tetapi tidak merespons, eskalasi ke operator infra; JANGAN memaksa decrement counter secara manual tanpa bukti proses mati |
 | U-22 | **Parent crash / supervisor platform belum terbukti (v2.3.1 — BARU)** | Dua lapis pertahanan TERBUKTI di VM ini (worker self-exit via `disconnect`/ppid-watchdog + pidfile cleanup oleh parent baru — PARENT-T1a/T1b). Lapis ketiga — supervisor platform yang me-restart proses dan membunuh process group saat crash — TIDAK DAPAT diperiksa di VM ini; perilaku supervisor runtime produksi tidak terdokumentasi | Bila supervisor tidak membunuh process group DAN dua lapis pertama gagal (mis. worker sedang menjalankan operasi yang menahan event loop tanpa handler cleanup), worker yatim dapat terus berjalan di luar penghitung parent baru | Persyaratan staging SUP-01 (gerbang G6): dokumentasi supervisor HARUS menyatakan restart otomatis + kill process group; bila tidak dapat dibuktikan, pertahanan yang tersisa adalah self-exit + pidfile cleanup yang teruji — dan harus diuji ulang di staging produksi |
 | U-23 | **Batas global orphaned belum ada — worst-case lintas instance 8N (v2.3.1 — BARU, kuantifikasi U-18)** | Batas 8 operasi hidup adalah batas per proses; tidak ada mekanisme bersama yang mengikat total orphaned lintas instance. `scan_leases` tidak mengikatnya (lihat §A.5.6). Store bersama untuk orphaned global membutuhkan heartbeat/lease-TTL pada entri orphaned + failure mode baru (DB down → seluruh DNS fail-closed) | 100 instance × 8 = 800 operasi DNS hidup pada resolver yang menggantung; akumulasi tidak terlihat oleh satu pun breaker per proses | Batas per proses + breaker + restart worker + metrik/alert sebagai mitigasi P0; batas global orphaned adalah keputusan P2 dengan syarat di §A.5.6 (store bersama teruji + failure mode terdokumentasi + keputusan pemilik) |
-| U-24 | **Jendela TOCTOU validasi-identitas → SIGKILL (v2.3.2 — BARU)** | Validasi identitas dan pengiriman SIGKILL adalah dua syscall terpisah: PID dapat mati dan dipakai ulang tepat di antara pembacaan `/proc` dan `kill()`. Mitigasi: validasi dilakukan sesaat sebelum sinyal dalam tick yang sama (tanpa `await` di antaranya) dan start time dibaca ulang tepat sebelum `kill()` — bila berbeda, sinyal dibatalkan. Sisa jendela (proses mati + PID dipakai ulang + start time baru KEBETULAN sama) praktis tidak mungkin (start time berbeda per instans), tetapi tidak dapat dibuktikan nol secara formal | SIGKILL mengenai proses yang salah (proses lain yang memakai ulang PID) | Validasi sesaat-sebelum-sinyal + pembacaan ulang start time; bila ada keraguan, JANGAN kirim sinyal (fail-closed ke NOT_READY + page); uji ulang perilaku ini di staging produksi (U-16) |
+| U-24 | **Jendela TOCTOU validasi-identitas → SIGKILL (v2.3.2 — DIJAWAB v2.3.6, residual pindah ke U-41)** | Mitigasi v2.3.2 (validasi sesaat sebelum sinyal + baca ulang starttime) diganti oleh pidfd (§A.5.5.2a): sinyal kini terikat struct pid, bukan nomor — kill-salah-sasaran DITUTUP (dibuktikan PIDFD-T2/T12d). Yang tersisa dari U-24 adalah jendela validasi-kedaluwarsa yang membutuhkan tabrakan starttime — dicatat sebagai U-41 (terkuantifikasi: P ≈ 7e-9/cleanup pada pid_max default). Fallback tanpa pidfd tetap memakai mitigasi v2.3.2 dengan jendela ~46 µs | SIGKILL mengenai proses yang salah HANYA bila terjadi tabrakan starttime (U-41) | pidfd sebagai mekanisme utama; fallback terkuantifikasi HANYA dengan persetujuan eksplisit owner (STAGE-P07) |
 | U-25 | **Race reklamasi lock basi — TERBUKTI (v2.3.2 — DIPERSEMPIT v2.3.3 — DITARIK DAN DIGANTI v2.3.4)** | Klaim v2.3.3 ("balapan hapus+create diselesaikan oleh O_EXCL", "SU10-T1 membuktikan balapan terkelola") TERBUKTI SALAH: ADV-T1 mereproduksi 2 pemilik secara deterministik (2/2 run) — B meng-unlink file lock baru milik A berdasarkan probe basi, lalu memperoleh lock sendiri; A tidak pernah tahu. Akar masalah: (1) unlink tak bersyarat setelah probe basi; (2) verify hanya pemeriksaan sesaat — otoritas lock menguap begitu path dihapus. Seluruh jalur probe+unlink DIHAPUS v2.3.4 dan diganti flock (§A.5.5.4c); ADV-T2/T2sim membuktikan perbaikan (tepat satu pemilik, 2/2 run). Sisa dari U-25 yang masih relevan: PID reuse antara probe dan unlink (proses baru kehilangan file yang bukan miliknya — tidak ada dampak) | Dua parent sama-sama berstatus pemilik dan sama-sama melakukan cleanup (pada KODE LAMA) | Mekanisme flock + never-unlink + verifikasi ulang (ADV-T2/T2sim/T5, FLK-T1..T8); uji ulang di staging produksi tetap wajib (balapan di bawah beban/latensi runtime produksi belum teruji) |
 | U-26 | **Startup macet sampai intervensi operator (v2.3.3 — BARU — DIPERBARUI v2.3.4)** | Aturan ketat v2.3.3 (PID hidup/EPERM/lock tak terbaca -> NOT_READY sampai operator memeriksa) menjadi TIDAK RELEVAN untuk lock setelah v2.3.4: jalur probe+unlink yang memicunya sudah dihapus — tidak ada lagi keputusan hapus yang dapat macet. Residual yang TETAP: (a) bila verifikasi ulang kepemilikan gagal (mis. file diganti pihak ketiga), parent keluar `ownership-revalidation-failed` + page dan TIDAK BOLEH start ulang sebelum operator memeriksa (runbook §A.5.5.4c); (b) bila flock dipegang proses yang tidak mati-mati (holder hidup tetapi tidak sehat), parent baru keluar `held-by-live-holder` dan supervisor harus menangani holder lama — bukan parent baru yang memaksakan akuisisi. Operator yang salah menghapus file lock pemegang yang hidup tetap dapat menciptakan dua pemilik (flock bersifat advisory) | Scanner tetap nonaktif sampai operator memeriksa; penghapusan file lock yang ceroboh oleh operator adalah satu-satunya jalan tersisa menuju dua pemilik di luar masa transisi versi | Page segera saat `ownership-revalidation-failed`; runbook operator wajib: (1) JANGAN PERNAH `rm` file lock saat parent berjalan; (2) periksa `ps` + `/proc` untuk PID yang diklaim; (3) bila proses hidup, biarkan pemegangnya atau matikan pemegang itu terlebih dahulu (flock lepas otomatis saat proses mati — FLK-T2), jangan hapus file-nya; (4) catat keputusan di log insiden |
 | U-27 | **Durabilitas pidfile belum terbukti di filesystem produksi (v2.3.3 — BARU)** | SU-T4 membuktikan atomic visibility (rename atomik), BUKAN durabilitas. Seluruh bukti di VM ini berjalan di `/tmp` bertipe tmpfs (fsync tidak menguji durabilitas disk) dan `/home` di overlay btrfs dengan `fsync=volatile` — tidak ada bukti durability di VM ini yang membuktikan durability di filesystem produksi. Bila filesystem produksi mengabaikan fsync, crash tepat setelah rename dapat mengembalikan pidfile lama (atau menghilangkan pidfile) setelah reboot | Pidfile lama yang kembali setelah reboot dapat membuat parent baru menilai worker lama sebagai masih hidup (NOT_READY yang tidak perlu) atau, sebaliknya, kehilangan jejak worker yang sebenarnya masih hidup — dalam kedua kasus, keputusan startup didasarkan pada data basi | Pidfile + lock WAJIB di penyimpanan persisten (bukan tmpfs); uji crash staging D-01..D-03 wajib dijalankan di lingkungan dengan filesystem yang sama dengan produksi sebelum cutover; lokasi pidfile/lock + output `df`/`mount` didokumentasikan saat implementasi (P0-1b) |
@@ -3386,18 +3665,23 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 ---
 
 | U-28 | **Masa transisi versi campuran (v2.3.4 — BARU)** | ADV-T6 membuktikan: parent berkode LAMA (unlink-reclaim) yang berjalan bersamaan dengan holder berkode BARU (flock) dapat menghasilkan DUA pemilik — unlink kode lama menghapus file holder baru. Jaring pengaman (verifikasi ulang inode+token) menangkapnya sebelum cleanup pada 2/2 run, tetapi itu jaring pengaman, bukan penutup struktural. flock bersifat advisory: ia tidak menghalangi proses yang tidak memanggil flock | Dua parent berstatus pemilik selama masa transisi; bila verifikasi ulang dilewati/diabaikan implementasi, keduanya melakukan cleanup | Flag-day WAJIB (§A.5.5.4d): hentikan SEMUA parent sebelum upgrade/rollback; verifikasi ulang sebelum cleanup apa pun; uji ADV-T6 diulang di staging sebelum cutover |
-| U-29 | **Binding flock untuk runtime produksi belum terbukti (v2.3.4 — BARU — DIPERBARUI v2.3.5)** | `bun:ffi` -> libc flock TERBUKTI di Bun 1.4.4 (acquire / EWOULDBLOCK errno 11 / release on close). `fs-ext` untuk Node GAGAL dibangun di VM ini (node-gyp EPERM fchown — pembatasan sandbox, bukan cacat fs-ext) — dikonfirmasi ketiga kalinya di v2.3.5 (`npm install fs-ext` di `/tmp/fsext-retest2` → error yang sama). Bila runtime produksi memakai Node (bukan Bun), jalur binding belum terbukti. Selain itu, fd lock WAJIB O_CLOEXEC — FLK-T8b membuktikan bila fd diwariskan ke worker, flock tidak lepas sampai worker mati. Ketersediaan `bun:ffi` di dalam sandbox artifact produksi sendiri adalah risiko terpisah U-34 (NOT VERIFIED) | Parent baru tidak dapat memperoleh lock (startup macet) atau implementasi fallback tanpa flock mengembalikan race lama | Buktikan binding di staging pada runtime yang sama dengan produksi (FLK-06); verifikasi O_CLOEXEC pada API open yang dipakai (FLK-T8a/T8b diulang di staging); bila tidak ada binding yang terbukti, JANGAN implementasikan mekanisme flock — kembali ke meja desain |
+| U-29 | **Binding flock/pidfd untuk runtime produksi belum terbukti (v2.3.4 — BARU — DIPERBARUI v2.3.5 — DIPERBARUI v2.3.6)** | `bun:ffi` -> libc flock TERBUKTI di Bun 1.4.4 (acquire / EWOULDBLOCK errno 11 / release on close). `fs-ext` untuk Node GAGAL dibangun di VM ini (node-gyp EPERM fchown — pembatasan sandbox, bukan cacat fs-ext) — dikonfirmasi ketiga kalinya di v2.3.5 (`npm install fs-ext` di `/tmp/fsext-retest2` → error yang sama). **BARU v2.3.6:** `bun:ffi` -> libc `pidfd_open`/`pidfd_send_signal` TERBUKTI di Bun 1.4.4 (PIDFD-T8, 2/2 × 2). Bila runtime produksi memakai Node (bukan Bun), jalur binding flock MAUPUN pidfd belum terbukti. Selain itu, fd lock WAJIB O_CLOEXEC — FLK-T8b membuktikan bila fd diwariskan ke worker, flock tidak lepas sampai worker mati. Ketersediaan `bun:ffi` di dalam sandbox artifact produksi sendiri adalah risiko terpisah U-34 (NOT VERIFIED, kini STAGE-P01) | Parent baru tidak dapat memperoleh lock (startup macet), pensinyalan pidfd tidak dapat berjalan, atau implementasi fallback tanpa flock mengembalikan race lama | Buktikan binding di staging pada runtime yang sama dengan produksi (FLK-06 + PIDFD-T8, STAGE-P01/P07); verifikasi O_CLOEXEC pada API open yang dipakai (FLK-T8a/T8b diulang di staging); bila tidak ada binding yang terbukti, JANGAN implementasikan mekanisme flock/pidfd — kembali ke meja desain |
 | U-30 | **flock di network filesystem belum terbukti (v2.3.4 — BARU — DIPERBARUI v2.3.5)** | FLK-T1..T8 teruji di tmpfs dan overlay (perilaku identik). NFS TIDAK diuji — tidak ada NFS di VM ini; AUTH-T9c NOT RUN di v2.3.5. flock di NFS bergantung pada lockd (NFSv3) atau delegasi (NFSv4); perilaku saat network partition / server restart berbeda dari filesystem lokal dan dapat memberi hasil yang salah (lock yang tidak saling mengecualikan, atau lock yang tidak lepas) | Dua parent memperoleh lock di atas NFS, atau parent baru macet selamanya pada lock yang tidak pernah lepas | Direktori lock WAJIB di filesystem lokal (bukan NFS) kecuali bukti staging menyatakan sebaliknya (FLK-07); lokasi + `df`/`mount` didokumentasikan saat implementasi (P0-1b) |
 | U-31 | **Jendela mikro verifikasi ulang -> tindakan destruktif — DIJAWAB v2.3.5 (otoritas flock)** | U-31 v2.3.4 bertanya apakah pemeriksaan (dev,ino)/token cukup sebagai otoritas. Jawaban v2.3.5 (§A.5.5.4e): TIDAK — otoritas adalah flock kernel pada fd yang dipegang; (dev,ino)+token adalah detektor, bukan otoritas. Setiap tindakan sensitif di-gating `assertOwnership()` segar dalam tick sinkron yang sama (`guardedAction`); CLOEXEC diverifikasi via fdinfo; tiap tindakan di-gating identitas (SIGKILL per-sinyal, token pidfile ditolak worker). Dibuktikan AUTH-T1..T11 + AUTH-C1, 18/18 × 2 | Sisa jendela yang tidak dapat dibuat nol dicatat sebagai U-38 (residual, dampak dibatasi fail-closed) | Verifikasi ulang sesaat sebelum tiap langkah destruktif; validasi identitas per-sinyal; token pidfile; uji ulang di staging produksi |
 | U-32 | **Bahaya reverse mixed-version: old parent memperoleh lock DULU (v2.3.5 — BARU)** | Parent lama tidak pernah memanggil flock, sehingga parent baru dapat memperoleh flock pada file yang sama sementara holder lama hidup — (dev,ino) sama, tidak ada unlink yang dapat dideteksi verifikasi ulang. Pencegahan harus terjadi SEBELUM penimpaan record | Dua pemilik tercatat bersamaan sampai salah satu keluar; parent baru dapat berjalan dengan keyakinan palsu bahwa ia pemilik tunggal | Pre-start scan `/proc` (AUTH-T5a) + klasifikasi record sebelum penimpaan (AUTH-T5b) sebagai dua lapis; flag-day tetap mengikat (§A.5.5.4d); uji ulang di staging sebelum cutover |
-| U-33 | **flock bersifat advisory — tidak menghentikan proses yang tidak memanggilnya (v2.3.5 — BARU)** | flock hanya mengikat proses yang memanggil flock pada inode yang sama. Kode lama, operator `rm`, dan tooling pihak ketiga tidak terikat — never-unlink adalah aturan + runbook, bukan penegakan kernel | Dua pemilik (satu via flock, satu via jalur lain) atau kehilangan file lock oleh penghapusan ceroboh | Never-unlink + runbook operator (JANGAN PERNAH `rm` file lock saat parent berjalan); verifikasi ulang + gating per-tindakan memastikan tidak ada cleanup tanpa otoritas; flag-day untuk transisi versi |
-| U-34 | **Runtime artifact produksi: versi dan ketersediaan `bun:ffi` TIDAK DAPAT DIVERIFIKASI (v2.3.5 — BARU)** | Dari VM ini hanya Bun CLI 1.4.4 yang terverifikasi. Versi/konfigurasi runtime di dalam sandbox artifact tidak terdokumentasi di bundle bukti mana pun; tidak ada cara mengaksesnya dari VM ini | `bun:ffi` tidak tersedia / perilaku berbeda di runtime produksi → implementasi flock tidak dapat berjalan → kembali ke meja desain di tengah jalan | Probe staging pada runtime yang SAMA dengan produksi (FLK-06 diperluas): buktikan `bun:ffi` → libc `flock` (acquire / EWOULDBLOCK / release) di dalam sandbox artifact; bila tidak terbukti, JANGAN implementasikan mekanisme flock |
-| U-35 | **Filesystem direktori lock produksi TIDAK DAPAT DIVERIFIKASI (v2.3.5 — BARU)** | Jenis filesystem, dukungan semantik flock, dan apakah mount/inode dapat diganti oleh container/deployment/supervisor tidak diketahui dari VM ini. Yang teruji hanya tmpfs dan overlay di VM ini | flock tidak saling mengecualikan / tidak lepas pada filesystem produksi → dua pemilik atau startup macet | Lokasi lock WAJIB di filesystem lokal; `df`/`mount` didokumentasikan saat implementasi (P0-1b); uji FLK-T1..T8 diulang di staging pada filesystem produksi; NFS dilarang tanpa bukti (U-30) |
-| U-36 | **Supervisor / container / deployment dapat mengganti mount atau inode (v2.3.5 — BARU, perluasan U-22)** | Perilaku supervisor platform (restart otomatis, kill process group) dan apakah deployment me-replace mount tidak terdokumentasi; tidak dapat diperiksa dari VM ini | Mount diganti di tengah jalan → (dev,ino) berubah → parent keluar `ownership-revalidation-failed` (fail-closed, tetapi scanner mati) atau, lebih buruk, dua mount dengan dua file lock yang masing-masing memberi satu pemilik | Persyaratan staging SUP-01 diperluas: dokumentasi supervisor + deployment HARUS menyatakan (a) restart otomatis, (b) kill process group, (c) apakah mount direktori lock dapat diganti saat deploy; bila mount dapat diganti, direktori lock harus di luar path yang di-replace |
+| U-33 | **flock bersifat advisory — tidak menghentikan proses yang tidak memanggilnya (v2.3.5 — DIJAWAB v2.3.6, residual U-43/U-44)** | Jawaban v2.3.6 (§A.5.5.4g): kontrol dikatalogkan dengan bukti per kontrol (OPS-T1..T7). Yang OS-enforced dan TERBUKTI: direktori lock 0700 + ownership user layanan (OPS-T1) dan isolasi antar-user layanan (OPS-T6) — keduanya ditegakkan kernel terhadap semua user non-root. Bind-mount ro TERBUKTI menghentikan penghapusan tak sengaja, tetapi root dapat me-remount rw (OPS-T3). `chattr +i/+a` TIDAK tersedia di VM ini (OPS-T2) — bukan kontrol yang dapat diandalkan tanpa bukti staging. Auditd/eBPF TIDAK ADA di VM ini (OPS-T5) — wajib staging (STAGE-P12). Pemulihan penghapusan TERBUKTI: dua pemilik dari penghapusan file terdeteksi via pre-start scan dan diselesaikan tanpa cleanup ganda (OPS-T7). Yang TETAP residual: root yang SENGAJA menghapus (U-43) dan ro-bind-mount yang bukan default deployment (U-44) | Dua pemilik (satu via flock, satu via jalur lain) atau kehilangan file lock oleh penghapusan ceroboh | Never-unlink + prosedur deployment/rollback/maintenance yang mengikat (§A.5.5.4g) + runbook pemulihan; verifikasi ulang + gating per-tindakan memastikan tidak ada cleanup tanpa otoritas; flag-day untuk transisi versi; audit sebagai jejak atas root |
+| U-34 | **Runtime artifact produksi: versi dan ketersediaan `bun:ffi` TIDAK DAPAT DIVERIFIKASI (v2.3.5 — BARU — DIPERBARUI v2.3.6)** | Dari VM ini hanya Bun CLI 1.4.4 yang terverifikasi. Versi/konfigurasi runtime di dalam sandbox artifact tidak terdokumentasi di bundle bukti mana pun; tidak ada cara mengaksesnya dari VM ini. **BARU v2.3.6:** prasyarat ini kini dirumuskan sebagai STAGE-P01 (matriks §D.4.15) dengan kriteria PASS/FAIL eksplisit — FAIL = implementasi DIBLOKIR | `bun:ffi` tidak tersedia / perilaku berbeda di runtime produksi → implementasi flock/pidfd tidak dapat berjalan → kembali ke meja desain di tengah jalan | Probe staging pada runtime yang SAMA dengan produksi (FLK-06 diperluas + PIDFD-T8): buktikan `bun:ffi` → libc `flock` DAN `pidfd_open`/`pidfd_send_signal` (acquire / EWOULDBLOCK / release) di dalam sandbox artifact; bila tidak terbukti, JANGAN implementasikan mekanisme flock/pidfd |
+| U-35 | **Filesystem direktori lock produksi TIDAK DAPAT DIVERIFIKASI (v2.3.5 — BARU — DIPERBARUI v2.3.6)** | Jenis filesystem, dukungan semantik flock, dan apakah mount/inode dapat diganti oleh container/deployment/supervisor tidak diketahui dari VM ini. Yang teruji hanya tmpfs dan overlay di VM ini. **BARU v2.3.6:** prasyarat ini kini dirumuskan sebagai STAGE-P02 (matriks §D.4.15) — FAIL = implementasi DIBLOKIR (kecuali hanya `chattr` yang gagal, yang dicatat sebagai tidak tersedia) | flock tidak saling mengecualikan / tidak lepas pada filesystem produksi → dua pemilik atau startup macet | Lokasi lock WAJIB di filesystem lokal; `df`/`mount` didokumentasikan saat implementasi (P0-1b); uji FLK-T1..T8 diulang di staging pada filesystem produksi; NFS dilarang tanpa bukti (U-30, STAGE-P06) |
+| U-36 | **Supervisor / container / deployment dapat mengganti mount atau inode (v2.3.5 — BARU, perluasan U-22 — DIPERBARUI v2.3.6)** | Perilaku supervisor platform (restart otomatis, kill process group) dan apakah deployment me-replace mount tidak terdokumentasi; tidak dapat diperiksa dari VM ini. **BARU v2.3.6:** prasyarat ini kini dirumuskan sebagai STAGE-P04 (matriks §D.4.15) — FAIL = implementasi DIBLOKIR kecuali owner menerima residual U-22 secara tertulis | Mount diganti di tengah jalan → (dev,ino) berubah → parent keluar `ownership-revalidation-failed` (fail-closed, tetapi scanner mati) atau, lebih buruk, dua mount dengan dua file lock yang masing-masing memberi satu pemilik | Persyaratan staging SUP-01 diperluas: dokumentasi supervisor + deployment HARUS menyatakan (a) restart otomatis, (b) kill process group, (c) apakah mount direktori lock dapat diganti saat deploy; bila mount dapat diganti, direktori lock harus di luar path yang di-replace |
 | U-37 | **Zombie liveness — DITUTUP v2.3.5, residual runtime tanpa `/proc` (v2.3.5 — BARU)** | `pidAlive()` v2.3.4 hanya memakai `kill(pid,0)` dan mengklasifikasi zombie sebagai hidup → parent baru menolak start (`lock-record-contradiction`, dibuktikan §4.1 `SSRF_SPIKE_V235.md`). Perbaikan v2.3.5: baca state `/proc/<pid>/stat` (`Z`/`X` = tidak hidup), dibuktikan AUTH-T11 (2/2 run). Residual: perbaikan bergantung pada `/proc` | Bila runtime produksi tidak menyediakan `/proc`, `pidAlive()` kembali ke fallback `kill(pid,0)` dan zombie kembali memblokir startup | Staging wajib memverifikasi ketersediaan `/proc` di runtime produksi; bila tidak ada `/proc`, liveness harus memakai primitif lain yang terbukti (keputusan desain terpisah, bukan diam-diam) |
-| U-38 | **Jendela mikro residual: revalidasi → tindakan tidak dapat dibuat nol (v2.3.5 — BARU, sisa U-31)** | Revalidasi dan tindakan adalah dua syscall terpisah; jendela di antaranya tidak dapat dibuat nol dengan syscall file biasa. AUTH-T6 membuktikan konsekuensi jendela itu fail-closed (tindakan tidak berjalan bila otoritas hilang; SIGKILL di-gating identitas per-sinyal; worker menolak token yang tidak cocok) — BUKAN bahwa jendela itu tidak ada | Pihak ketiga yang mengganti file TEPAT di antara revalidasi dan tindakan: pemilik basi paling buruk membunuh worker yang identitasnya cocok dengan pidfile (SIGKILL idempotent) atau menulis pidfile yang ditolak worker (token mismatch) — dampak dibatasi, bukan dihilangkan | Revalidasi sesaat sebelum tiap langkah destruktif (bukan sekali di awal); validasi identitas per-sinyal; token pidfile; penutup struktural penuh membutuhkan primitif atomik check-and-act yang tidak tersedia lewat syscall file biasa — diterima sebagai residual |
+| U-38 | **Jendela mikro residual: revalidasi → tindakan tidak dapat dibuat nol (v2.3.5 — DIJAWAB v2.3.6, residual terkuantifikasi U-41)** | Jawaban v2.3.6 (§A.5.5.2a): untuk pensinyalan worker lama, jendela ini DITUTUP sebagai jalur kill-salah-sasaran — `pidfd_send_signal` terikat struct pid, bukan nomor (dibuktikan PIDFD-T2/T12d). Yang tersisa adalah jendela validasi-kedaluwarsa yang membutuhkan tabrakan starttime, terkuantifikasi di PIDFD-T9 (P ≈ 7e-9/cleanup pada pid_max default) dan dicatat sebagai U-41. Untuk tindakan lain (tulis pidfile, spawn worker, transisi READY), jendela mikro v2.3.5 TETAP: revalidasi dan tindakan adalah dua syscall terpisah — konsekuensinya fail-closed (tindakan tidak berjalan bila otoritas hilang; SIGKILL di-gating identitas per-sinyal; worker menolak token yang tidak cocok), BUKAN bahwa jendela itu tidak ada | Pihak ketiga yang mengganti file TEPAT di antara revalidasi dan tindakan: pemilik basi paling buruk membunuh worker yang identitasnya cocok dengan pidfile (SIGKILL idempotent) atau menulis pidfile yang ditolak worker (token mismatch) — dampak dibatasi, bukan dihilangkan | Revalidasi sesaat sebelum tiap langkah destruktif (bukan sekali di awal); validasi identitas per-sinyal (kini via pidfd); token pidfile; penutup struktural penuh membutuhkan primitif atomik check-and-act yang tidak tersedia lewat syscall file biasa — diterima sebagai residual (U-41 untuk pensinyalan) |
 | U-39 | **PID yang di-spawn supervisor dapat berbeda dari PID proses yang melayani (v2.3.5 — BARU)** | Teramati pada peluncuran via shell (debug manual: `$!` = 3859 vs PID parent sebenarnya 3863); mekanisme TIDAK ditentukan. Pada spawn Node langsung, PID spawn == PID proses (4506 == 4506, dibuktikan). Supervisor yang membunuh hanya PID yang di-spawn dapat membiarkan parent asli tetap hidup memegang lock | Parent lama yang dikira mati ternyata hidup → parent baru terblokir `held-by-live-holder` atau, bila supervisor me-restart tanpa verifikasi, dua parent hidup bersamaan | Supervisor WAJIB membunuh berdasarkan PID yang tercatat di pidfile/lock record (ditulis dari dalam proses itu sendiri) dan memverifikasi kematian via state `/proc` (bukan hanya `kill(pid,0)`); staging wajib membuktikan jalur kill supervisor (SUP-01) |
 | U-40 | **Scan parent false positive via pencocokan substring (v2.3.5 — BARU — DITUTUP)** | Pemindaian `/proc` versi awal mencocokkan marker sebagai substring — shell `bash -c` peluncur mengandung marker di cmdline-nya dan terdeteksi sebagai "parent lain" (tertangkap saat diagnosis AUTH-T3). Perbaikan: marker harus cocok sebagai TOKEN argv persis (cmdline dipecah `\0`), dibuktikan suite AUTH 18/18 × 2 | Sebelum perbaikan: startup sehat ditolak `other-parent-alive` tanpa alasan yang benar | Aturan mengikat: marker adalah token argv persis dan unik per layanan; bila dua layanan berbagi marker yang sama, false positive kembali — penamaan marker didokumentasikan saat implementasi |
+
+| U-41 | **Tabrakan starttime — residual pidfd (v2.3.6 — BARU, sisa U-24/U-38)** | pidfd menutup kill-salah-sasaran, tetapi `pidfd_open` pada langkah 2 dapat terjadi SETELAH reuse — bila proses baru KEBETULAN memiliki starttime yang sama persis dengan korban, re-validasi langkah 3 juga lolos dan sinyal mengenai proses baru. `starttime` beresolusi ~10 ms (100 tick/detik). Jendela langkah 1→2 diukur (PIDFD-T9): p99 ≈ 42–46 µs; P per cleanup ≈ 6–7e-9 pada pid_max default 4.194.304, ≈ 8,8e-7 pada pid_max=32768, ≈ 7,1e-6 pada pid_max=4096, ≈ 2,8e-5 pada pid_max=1024. Angka ini estimasi orde-besaran (asumsi laju spawn konstan + sebaran seragam), bukan probabilitas eksak — dan TIDAK mencakup lonjakan spawn (fork bomb) | SIGKILL mengenai proses yang salah (proses lain yang memakai ulang PID DAN starttime yang sama) | STAGE-P08: catat pid_max produksi + hitung P; PASS ≤ 1e-6, kondisional ≤ 1e-5 (persetujuan owner tertulis), BLOCK > 1e-5. Tidak ada penutup struktural yang tersedia lewat syscall biasa — diterima sebagai residual terkuantifikasi |
+| U-42 | **Celah bukti staging — matriks itu sendiri (v2.3.6 — BARU)** | STAGE-P01..P12 (§D.4.15) adalah daftar bukti yang wajib dikumpulkan — tetapi belum satu pun dikumpulkan, karena staging produksi belum tersedia/didokumentasikan dari VM ini. Sampai prasyarat itu dipenuhi, SEMUA kesimpulan v2.3.6 tentang runtime produksi tetap bersyarat | Implementasi dimulai tanpa bukti staging → kegagalan ditemukan di tengah jalan (runtime tidak mendukung, filesystem tidak cocok, supervisor tidak berperilaku seperti asumsi) | Matriks STAGE-P01..P12 dengan konsekuensi FAIL yang dinyatakan sebelumnya; implementasi DIBLOKIR sampai prasyarat BLOCK terpenuhi atau fallback-nya disetujui owner secara eksplisit |
+| U-43 | **Root yang sengaja menghapus/mengganti lock (v2.3.6 — BARU, sisa U-33)** | OPS-T4 membuktikan root melewati DAC — tidak ada permission Unix yang mengikat root. Bind-mount ro (OPS-T3) hanya menghentikan root yang tidak sadar; root yang sengaja me-remount rw lalu menghapus tidak dapat dicegah oleh kontrol teknis apa pun di level ini | File lock hilang → parent aktif mendeteksi dan berhenti fail-closed (OPS-T7) — dampaknya ketersediaan, bukan dua pemilik yang saling membersihkan; tetapi bila penghapusan dilakukan berulang/sengaja, scanner tidak dapat berjalan stabil | Jejak audit (STAGE-P12) sebagai deteksi pasca-kejadian + runbook operator yang mengikat (§A.5.5.4g) + monitoring mount/direktori. Risiko ini TIDAK dapat ditutup secara teknis — diterima secara eksplisit atau ditangani di luar rancangan ini (mis. MAC/SELinux/AppArmor — di luar lingkup P0, perlu keputusan terpisah) |
+| U-44 | **Ro-bind-mount bukan default deployment (v2.3.6 — BARU, sisa U-33)** | Bind-mount read-only direktori lock adalah prosedur deployment (§A.5.5.4g), bukan default platform — ia harus dipasang, didokumentasikan di inventaris mount, dan dicek berkala. Bila langkah ini dilewati (deployment manual, environment baru, lupa), lapis pertahanan terhadap penghapusan tak sengaja oleh root hilang tanpa peringatan | Penghapusan tak sengaja oleh root yang seharusnya dicegah ro-mount menjadi mungkin | Cek otomatis di skrip deployment (verifikasi mount masih `ro` sebelum parent start — gagal → deployment berhenti); monitoring berkala mount; STAGE-P12 memverifikasi kontrol ini di staging |
 
 ## H. Rencana pengujian dan rollback FINAL (v2)
 
@@ -3411,8 +3695,8 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | G3 — Regresi 3 URL acuan | `scamsem.solbarn.cc` → BAHAYA 100; `binance.com` → LEBIH AMAN; `ptah.trade/poa` → WASPADA (toleransi skor ±5) | Vonis sama | Hentikan; diskusikan (jangan sesuaikan ambang diam-diam) |
 | G4 — Uji blokir S-01..S-50 | Semua ditolak SEBELUM fetch; server uji menerima 0 koneksi (termasuk S-44..S-48 NAT64 v2.1 dan S-49/S-50 NSP staging v2.2) | 50/50 ditolak | Perbaiki titik yang lolos; uji ulang dari G3 |
 | G5 — Uji legit L-01..L-08 | Semua lolos | 8/8 lolos | Perbaiki false positive; uji ulang dari G3 |
-| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c + SU-T1..SU-T9 NOT RUN — lihat §D.4.13)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
-| G7 — Uji akhir + evaluasi ChatGPT | Seluruh hasil G0–G6 + dokumen v2.3.5 dievaluasi ChatGPT | Tidak ada keberatan P0 yang belum dijawab | Jawab keberatan; uji ulang yang terdampak |
+| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) + pidfd & jendela reuse PIDFD-01..PIDFD-08 + kontrol operasional OPS-01..OPS-03 + matriks prasyarat staging STAGE-P01..P12 (v2.3.6) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c NOT RUN — lihat §D.4.13), SU-T1..SU-T9 re-run v2.3.6: 9/9 × 4 (AUTH-16), pensinyalan terikat identitas via pidfd + kuantifikasi jendela reuse + falsifikasi dirfd pinning (PIDFD-01..PIDFD-08: PIDFD-T1..T12 + OPS-T1..T7 — lihat §D.4.14), kontrol operasional lock + pemulihan penghapusan (OPS-01..OPS-03), prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL (lihat §D.4.15)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
+| G7 — Uji akhir + evaluasi ChatGPT | Seluruh hasil G0–G6 + dokumen v2.3.6 dievaluasi ChatGPT | Tidak ada keberatan P0 yang belum dijawab | Jawab keberatan; uji ulang yang terdampak |
 | G8 — Cutover | Persetujuan eksplisit pemilik + ChatGPT; mitigasi (a) dicabut; scanner dibuka kembali | Semua gerbang G0–G7 lolos + tanda tangan di §D.5 v2 | Scanner TETAP nonaktif; lanjutkan perbaikan |
 
 ### H.2 Perintah dan bukti pengujian
@@ -3450,17 +3734,18 @@ dengan status kepatuhan yang sebenarnya; (e) dokumen ini ditandai
 
 ## Pernyataan penutup
 
-Dokumen ini adalah **rancangan v2.3.5 untuk dievaluasi ChatGPT** — bukan persetujuan
+Dokumen ini adalah **rancangan v2.3.6 untuk dievaluasi ChatGPT** — bukan persetujuan
 implementasi. **Dokumen final BUKAN berarti implementasi otomatis
 disetujui** — itu dua keputusan berbeda. Status tetap: **DESIGN ACCEPTED
 WITH CONDITIONS — IMPLEMENTATION NOT APPROVED**. Tidak ada kode yang
 diubah, tidak ada data yang diubah, dan tidak ada akun/kredensial yang
 dibuat dalam penyusunan revisi ini. Spike runtime dilakukan HANYA di
 `/tmp/ssrf-spike`, `/tmp/ssrf-spike-v21`, `/tmp/ssrf-v22`, `/tmp/ssrf-v23`,
-`/tmp/ssrf-v231`, `/tmp/ssrf-v232`, `/tmp/ssrf-v233`, dan `/tmp/ssrf-v234`
+`/tmp/ssrf-v231`, `/tmp/ssrf-v232`, `/tmp/ssrf-v233`, `/tmp/ssrf-v234`,
+`/tmp/ssrf-v235`, dan `/tmp/ssrf-v236`
 terhadap server/komponen lokal yang dikontrol sendiri; tidak ada akses ke
 endpoint internal produksi atau metadata cloud. Semua bukti uji v2.1,
-v2.2, v2.3, v2.3.1, v2.3.2, v2.3.3, dan v2.3.4 berasal dari VM ini —
+v2.2, v2.3, v2.3.1, v2.3.2, v2.3.3, v2.3.4, v2.3.5, dan v2.3.6 berasal dari VM ini —
 BUKAN dari runtime artifact produksi.
 
 **Gerbang yang tetap mengikat:** G0 tetap wajib dibuktikan aktif
@@ -3470,7 +3755,7 @@ dilewati dengan alasan dokumen ini sudah "final".
 
 Implementasi dimulai **hanya setelah**:
 
-1. ChatGPT mengevaluasi rancangan v2.3.5 ini dan keberatannya dijawab,
+1. ChatGPT mengevaluasi rancangan v2.3.6 ini dan keberatannya dijawab,
 2. Pemilik memberikan **persetujuan implementasi eksplisit** (keputusan D-1
    s.d. D-8 sudah disetujui 7 Nov 2026 — yang masih menunggu adalah
    persetujuan implementasi itu sendiri),
@@ -3497,7 +3782,7 @@ dijalankan ulang 3×; harness disalin ke `spike-harness-v232/`),
 `SSRF_SPIKE_V234.md` (7 Nov 2026 — bukti uji v2.3.4: race TERBUKTI ADV-T1 2 pemilik 3/3 × 2; perbaikan flock TERUJI 4/4 × 2; FLK 9/9 × 2 tmpfs + overlay), `SSRF_SPIKE_V235.md` (7 Nov 2026 — bukti uji v2.3.5: AUTH 18/18 PASS × 2; regresi ADV 4/4 × 2, FLK 9/9 tmpfs + overlay; AUTH-T9c + SU-T1..SU-T9 NOT RUN; harness disalin ke `spike-harness-v235/`) dan `SSRF_SPIKE_V233.md` (7 Nov 2026 — bukti uji v2.3.3: RUN=3 suite v2.3.2
 9/9 PASS, regresi SU-T1..SU-T9 terhadap kode yang diperkeras 9/9 PASS
 × 2, tes baru RCL-T1..T6 + SU10-T1/T2 8/8 PASS × 2; harness disalin ke
-`spike-harness-v233/`),
+`spike-harness-v233/`), `SSRF_SPIKE_V236.md` (7 Nov 2026 — bukti uji v2.3.6: pidfd PIDFD-T1..T12, window PIDFD-T9, OPS-T1..T7, re-run SU-T1..SU-T9 9/9 PASS × 4; matriks prasyarat staging STAGE-P01..P12; harness disalin ke `spike-harness-v236/`),
 `SECURITY_REQUIREMENTS.md`, `CLASSIFICATION.md`, dan
 `src/scanner/ssrf-guard.ts` (guard fondasi, lolos uji 25/25, belum terintegrasi
 ke kode live). Revisi v2 menjawab enam hal yang diminta pemilik (A–F) dan
@@ -3523,4 +3808,4 @@ wajib evaluasi ChatGPT atas v2.3.1 (aturan startup parent baru pada
 §A.5.5: NOT_READY yang tidak dapat dinegosiasi, validasi identitas
 proses sebelum SIGKILL, pidfile atomik, startup lock) tanpa mengubah
 satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN
-ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik.*
+ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik.*
