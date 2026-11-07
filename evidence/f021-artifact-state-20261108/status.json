@@ -1,0 +1,13 @@
+{
+  "build": null,
+  "card": {
+    "widget_id": "web-artifact-build-completed-343c5072-9432-46ee-bde4-408d34675b74"
+  },
+  "note": "No build is running for this artifact. Start changes with `artifact.edit`.",
+  "ok": true,
+  "share": {
+    "shared": false,
+    "url": null
+  },
+  "slug": "cek-link-airdrop"
+}

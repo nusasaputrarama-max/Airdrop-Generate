@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.11 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.11 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4:** `SSRF_RESPONSE_MATRIX_V2311.md` (F-016..F-020, jawaban Handoff V4 §9 8 butir, keputusan cache F-016/F-017, bukti tenancy SDK F-018, bukti runtime F-019, klarifikasi scope F-020) — lihat §D.4.22. Matriks v2.3.10 (`SSRF_RESPONSE_MATRIX_V2310.md`) dipertahankan utuh sebagai catatan sejarah. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.12 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.12 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5:** `SSRF_RESPONSE_MATRIX_V2312.md` (F-021, F-022, jawaban Handoff V5 §8 9 butir, cabang cache eksplisit, koreksi oracle H-CACHE/H-RES, kutipan `.d.ts` minimal F-018, paket bukti artifact F-021, kriteria latensi alert ST-12) — lihat §D.4.23. Matriks v2.3.11 (`SSRF_RESPONSE_MATRIX_V2311.md`) dipertahankan utuh sebagai catatan sejarah. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,20 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.12 (8 November 2026)
+
+| # | Lokasi | Perubahan |
+| --- | --- | --- |
+| 1 | §D.4.23 (baru) + matriks §2 F-021 | **F-021 — paket bukti artifact-state yang dapat diaudit:** `artifact.list_actions` + `artifact.status` slug `cek-link-airdrop` dipanggil ulang read-only 2026-11-08 03:47 WIB dan responsnya dipublikasikan apa adanya di `evidence/f021-artifact-state-20261108/` (`list_actions.json` SHA-256 `dbe989b5…`, `status.json` SHA-256 `3b343a27…`) beserta `README.md` metadata capture. Hasil konsisten dengan v2.3.11: `checklink` MASIH TERDAFTAR; tidak ada build berjalan; `share.shared=false`, `share.url=null`. Tool/API version, request/response IDs, dan artifact version/digest TIDAK terekspos tool — dicatat NOT PROVIDED (tidak ditebak). Deskripsi `addproject`/`askgibran` terpotong persis seperti dikembalikan tool — dicatat sebagai artefak respons, tidak direkonstruksi. `checkLink` TIDAK di-invoke; tidak ada perubahan runtime state; tidak ada public share yang dibuat. |
+| 2 | §D.4.23 (baru) + matriks §2 F-022 | **F-022 — cabang implementasi cache DINYATAKAN eksplisit:** cabang pilihan = HAPUS cache fetch dari SEMUA jalur security-scan (halaman + script); konsekuensinya F-017 + H-CACHE-05/06 menjadi **NOT APPLICABLE untuk jalur security-scan** pada cabang ini, sementara F-002 streamed byte cap tetap berlaku terpisah dan H-CACHE-01..04 tetap berlaku. Cabang alternatif (cache dipertahankan) didokumentasikan lengkap dengan 6 syarat sekaligus (enumerasi caller, key `url + cap + policy-version`, kegagalan tidak pernah di-cache, freshness terlihat, re-check wajib fresh, H-CACHE-01..06 semua berlaku) — bukan rekomendasi, hanya opsi lengkap untuk keputusan owner. |
+| 3 | §D.4.23 (baru) + matriks §2 F-022 + §H G6 | **Koreksi oracle tes H-CACHE/H-RES:** cap didefinisikan sebagai **raw bytes pada lapisan response stream** (sebelum decoding, sebelum dekompresi selesai dibaca); `res.text().slice()` dinyatakan **BUKAN bukti byte cap**. H-RES-02 (multibyte UTF-8 — oracle membedakan byte vs UTF-16 code unit), H-RES-03 (compressed/decompressed limit), H-RES-04 (redirect chains), H-RES-05 (aggregate per-scan limit) ditambahkan; H-RES-06 adalah total-deadline (penomoran ulang dari H-RES-04..06 v2.3.11, isi tidak berubah). H-CACHE-05/06 dicatat NOT APPLICABLE pada cabang pilihan. |
+| 4 | §D.4.23 (baru) + matriks §2 F-018 | **F-018 — kutipan `.d.ts` minimal dipublikasikan:** tarball SDK 0.14.0 dibaca ulang read-only (SHA-256 `f2cb7b25…` — SAMA dengan v2.3.11) dan kutipan verbatim `PortableCtx`/`Viewer`/`LocalViewer`/`CloudflareViewer` dari `server-contract.d.ts` kini ada di matriks v2.3.12 §2 F-018. Dicatat jujur: `db` adalah accessor per-invocation — kata itu TIDAK menyatakan scope data; grep tenancy pada `.d.ts` + README SDK nol; **tidak ada kesimpulan dari nama tipe saja**. Principal key stabil per varian didefinisikan (local: `ownerUserId`/`userId` + `spaceSlug`; cloudflare: `shareId` + `tokenId`); `viewer` hilang ditangani fail-closed. Pernyataan resmi provider tetap BELUM ADA; tenancy tetap NOT VERIFIED. |
+| 5 | §D.4.23 (baru) + matriks §2 F-020 | **F-020 — HOLD dipertahankan:** v2.3.12 TIDAK mengubah satu pun file source aplikasi; d85a1e2 TIDAK di-revert; tidak ada artefak approval terpisah di repo. |
+| 6 | §D.4.23 (baru) + matriks §2 F-009/F-014 | **Keputusan Bun (F-009/F-014):** versi kanonik untuk build bersih kelak adalah **1.3.10 (yang dideklarasikan di `packageManager`)**; bukti VM 1.4.4 dicatat sebagai bukti dengan versi BERBEDA dan tidak boleh dikutip sebagai bukti build 1.3.10. Bila owner memilih 1.4.4, deklarasi harus diubah eksplisit (perubahan source — masuk HOLD F-020). Jalur retrievable SDK source/provenance dicatat BELUM ADA (tarball builder-local saja). Status keseluruhan tetap NOT REPRODUCIBLE untuk clean external builder. |
+| 7 | §D.4.23 (baru) + matriks §2 F-006b/c | **F-006b/c:** lokasi F-006b diverifikasi ulang pada mirror `d85a1e2` — nomor baris bergeser vs v2.3.11: `KNOWN_BAD_DOMAINS` baris **52** (dulu 51), `GIBRAN_SITE_KNOWLEDGE` baris **1245** (dulu ~1089), plus string detail user-facing baris **483** (baru dicatat); disebutkan hanya sebagai pengenal lokasi TANPA mengutip narasi. Bukti versi/diff live F-006c didefinisikan (a)–(c) tetapi tetap belum tersedia; status tetap "reported by Muse, not independently verified". |
+| 8 | §D.4.23 (baru) + matriks §5 + §H G6 | **Risk register + ST-12:** risiko baru U-55 (cabang cache), U-56 (oracle cap), U-57 (bukti artifact-state), U-58 (kutipan `.d.ts`); U-38/U-33/U-41/U-43/U-44/U-45/U-46 dipertahankan tanpa perubahan status. Kriteria latensi alert **ST-12-LAT-01..03** ditambahkan (alert ≤ 5 menit, wajib memuat timestamp + lock path + identitas proses, tanpa kanal = NOT RUN bukan PASS). |
+| 9 | §D.4.23 (baru) + §H G6 | **Gate konkret berikutnya diperluas:** gate baru **G-F** (keputusan cache F-022: cabang pilihan vs alternatif) dan **G-G** (keputusan Bun F-009: kanonik 1.3.10 vs 1.4.4); G-A..G-E dipertahankan. Sampai gate terpenuhi, tidak ada pekerjaan tahap (b). |
 
 ## Perubahan di revisi v2.3.11 (8 November 2026)
 
@@ -4493,7 +4507,10 @@ BLOCKED; tidak ada gate READY. Kriteria penerimaan handoff V4 butir
 cleanup matriks v2.3.10 §4 tetap berlaku; commit d85a1e2 sengaja
 tidak menyentuh string narasi (`KNOWN_BAD_DOMAINS` baris 51,
 `GIBRAN_SITE_KNOWLEDGE` ~1089) — commit message mencatatnya
-eksplisit. F-006c tetap **"reported by Muse, not independently
+eksplisit. **[KOREKSI v2.3.12: nomor baris di atas bergeser setelah
+verifikasi ulang pada mirror `d85a1e2` — lokasi yang benar adalah
+`KNOWN_BAD_DOMAINS` baris 52, `GIBRAN_SITE_KNOWLEDGE` baris 1245,
+plus string detail user-facing baris 483; lihat §D.4.23.]** F-006c tetap **"reported by Muse, not independently
 verified"** — redaksi live DATA-PLAN dilakukan + diverifikasi nol
 kecocokan 2026-11-08 ~00:59 WIB (artifact v13), tetapi konfirmasi
 independen belum ada; v2.3.11 tidak menambah bukti baru untuk
@@ -4541,6 +4558,252 @@ no production testing (termasuk tidak memanggil `checkLink`).
 F-001..F-005 tetap OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..20
 terhadap implementasi aktual di staging terisolasi + log mentah +
 review independen — hasil VM saja tidak cukup.
+
+### D.4.23 Jawaban atas audit independen V5 — F-021, F-022 + Handoff §8 (BARU, v2.3.12)
+
+**F-021 — bukti artifact-state tidak dapat diaudit independen
+(Medium, evidence/provenance).** Audit V5 benar: matriks v2.3.11
+merangkum hasil `artifact.list_actions` + `artifact.status` dalam
+prosa tanpa respons mentah yang disanitasi. v2.3.12 menutup celah
+provenance itu: kedua tool dipanggil ulang read-only 2026-11-08
+03:47 WIB (2026-11-07 20:47 UTC) untuk slug `cek-link-airdrop` dan
+responsnya dipublikasikan apa adanya di
+`evidence/f021-artifact-state-20261108/` — `list_actions.json`
+(SHA-256 `dbe989b520de47bc031602e164096ef75b3805d35968a0b6f9e1343fca4436d9`),
+`status.json` (SHA-256
+`3b343a27720ef3aa156845a98c7c8cb26ded566de5808fdbaae950ce3d230019`),
+beserta `README.md` yang mencatat metadata capture, yang terbukti
+dan yang tidak terbukti, serta keterbatasan pencatatan. Hasilnya
+konsisten dengan v2.3.11: `checklink` MASIH TERDAFTAR sebagai
+published action; tidak ada build berjalan; `share.shared=false`,
+`share.url=null`. `checkLink` TIDAK di-invoke; tidak ada perubahan
+runtime state; tidak ada public share yang dibuat. Yang TIDAK dapat
+disediakan — dicatat NOT PROVIDED, bukan ditebak: artifact
+version/digest, tool/API version, dan request/response IDs tidak
+diekspos oleh kedua tool. Deskripsi `addproject`/`askgibran`
+terpotong di ujung persis seperti dikembalikan tool — artefak
+respons, bukan redaksi; isi terpotong tidak direkonstruksi dan
+tidak memengaruhi kesimpulan (nama action + keberadaan `checklink`
+lengkap). Paket ini menutup F-021 sebagai celah provenance, tetapi
+TIDAK menutup F-019: kontrol runtime (a)–(e) tetap belum satu pun
+terpenuhi, dan F-019 tetap BLOCKED / NOT VERIFIED.
+
+**F-022 — cabang implementasi cache + oracle tes cap (Medium,
+design/test-oracle).** Audit V5 benar pada dua hal: (1) F-016
+(hapus cache) dan F-017 (key wajib menyertakan cap) tidak dinyatakan
+sebagai cabang yang saling eksklusif; (2) H-CACHE-05/06
+mendeskripsikan batas "300 KB"/"400 KB" sementara implementasi saat
+ini memakai `(await res.text()).slice(0, cap)` — slicing string JS
+menghitung UTF-16 code unit, bukan byte UTF-8, dan terjadi SETELAH
+seluruh body di-buffer — sehingga nilai 300.000/400.000 saat ini
+TIDAK menegakkan byte cap atau memory cap apa pun.
+
+Keputusan cabang v2.3.12 — **cabang pilihan: HAPUS cache fetch dari
+SEMUA jalur security-scan** (halaman utama `fetchText(..., 400_000)`
+DAN script `fetchText(..., 300_000)`, karena keduanya memakai helper
+`fetchText` yang sama dan keduanya adalah jalur vonis keamanan).
+Konsekuensi eksplisit: **F-017 (cache key menyertakan cap) dan
+H-CACHE-05/06 menjadi NOT APPLICABLE untuk jalur security-scan**
+pada cabang ini — tidak ada cache di jalur itu, sehingga tidak ada
+key yang perlu diperbaiki. **F-002 (streamed byte cap) tetap berlaku
+secara terpisah** — penghapusan cache tidak menggantikan streamed
+cap; keduanya kontrol yang berbeda (freshness vs batas resource)
+dan diuji harness yang berbeda (H-CACHE vs H-RES). **H-CACHE-01..04
+tetap berlaku** pada cabang ini (menguji bahwa TIDAK ADA cache di
+jalur scan). Cache RDAP dipertahankan apa adanya (hanya sukses yang
+di-cache, TTL 1 jam) — RDAP bukan jalur vonis konten.
+
+**Cabang alternatif (hanya bila owner secara eksplisit memilih
+mempertahankan cache):** cache dipertahankan HANYA dengan seluruh
+syarat berikut sekaligus: (a) enumerasi lengkap SEMUA caller cache
+yang tersisa; (b) key cache = `url + "|" + cap + "|" +
+policy-version`; (c) kegagalan TIDAK PERNAH di-cache; (d) TTL
+eksplisit + setiap baris `checks` menyimpan `fetchedAt`,
+`cacheHit`, umur data, ditampilkan di UI; (e) re-check dari history
+WAJIB melewati cache (jalur fresh) dan menyimpan baris baru;
+(f) H-CACHE-01..06 SEMUA berlaku pada cabang ini. Cabang alternatif
+BUKAN rekomendasi dan TIDAK dipilih oleh revisi ini — ia hanya
+didokumentasikan agar keputusan owner kelak memiliki dua opsi
+lengkap. Sampai owner memilih, cabang pilihan adalah keputusan
+desain yang berlaku.
+
+**Koreksi oracle tes (mengikat v2.3.12).** Cap adalah **raw bytes
+pada lapisan response stream**, diukur SEBELUM decoding ke string
+dan SEBELUM dekompresi selesai dibaca ke memori. Satuan oracle
+adalah **byte**, bukan UTF-16 code unit, bukan code point Unicode,
+bukan karakter JS. **`res.text().slice()` dinyatakan BUKAN bukti
+byte cap** — dalam dokumen ini, dalam matriks respons, dan dalam
+implementasi kelak, pemotongan string setelah `res.text()` tidak
+boleh dikutip sebagai bukti penegakan cap. Bukti cap yang sah hanya
+berasal dari instrumentasi stream (byte yang dibaca dari stream ≤
+cap + overhead yang dinyatakan) atau dari abort koneksi pada cap.
+
+Spesifikasi oracle yang dikoreksi (DESAIN tes staging — TIDAK
+dijalankan di v2.3.12): **H-CACHE-01..04** tetap (benign→malicious
+terlihat; failure tidak terkunci; freshness + bypass re-check);
+**H-CACHE-05/06 NOT APPLICABLE pada cabang pilihan** (hanya pada
+cabang alternatif, dengan oracle raw bytes); **H-RES-01** body 50 MB
+ASCII — stream abort pada cap, byte ter-buffer ≤ cap + overhead;
+**H-RES-02 (BARU)** payload multibyte UTF-8 — konten berbahaya
+ditempatkan SETELAH batas yang setara dengan 300.000 UTF-16 code
+unit tetapi SEBELUM 300.000 raw bytes (dan sebaliknya) — oracle
+menghitung raw bytes, bukan `string.length`; tes ini MEMBEDAKAN
+oracle byte vs oracle code-unit (tes ASCII saja tidak cukup);
+**H-RES-03 (BARU)** payload terkompresi (gzip/br) yang mengembang
+melewati cap saat didekompresi — abort saat ukuran TERDEKOMPRESI
+melewati cap, meskipun ukuran terkompresi di bawah cap;
+**H-RES-04 (BARU)** redirect chain (3+ hop) dengan payload besar di
+hop terakhir + total deadline — setiap hop divalidasi (F-001), byte
+ter-buffer kumulatif dihitung per scan; **H-RES-05 (BARU)**
+aggregate per-scan limit — halaman 400.000 + N script 300.000
+masing-masing — total byte ter-buffer per pemeriksaan ≤ aggregate
+limit yang dinyatakan, kelebihan → abort fail-closed; **H-RES-06**
+total-deadline — penomoran ulang dari H-RES-04..06 v2.3.11 (deadline
+30 detik, konkurensi dalam batas, hasil parsial dibuang; isi tidak
+berubah). Kriteria penerimaan F-022: matriks, kontrak kode, dan test
+ID sepakat pada satu cabang cache; H-RES-01..06 membuktikan streamed
+byte cap secara independen; H-CACHE hanya berlaku di mana cache
+benar-benar tersisa. Belum diimplementasikan; belum dijalankan di
+staging mana pun.
+
+**F-018 — kutipan `.d.ts` minimal dipublikasikan (carry-forward
+v2.3.12).** Tarball SDK 0.14.0 dibaca ulang read-only (ekstrak ke
+`/tmp/sdk-v2312`, BUKAN ke repo; SHA-256
+`f2cb7b25d35a7ade70a59ddbc5a3b7aefc727306d570d2356eaeb91d120ad49e` —
+SAMA dengan yang tercatat v2.3.11; ukuran 2.051.070 byte; mtime
+1 Jan 1980). Kutipan verbatim `PortableCtx` / `Viewer` /
+`LocalViewer` / `CloudflareViewer` dari
+`package/dist/server-contract.d.ts` (baris 20–44 dan 123–129) kini
+ada di matriks v2.3.12 §2 F-018 — audit berikutnya dapat memeriksanya
+dari repo tanpa mengakses tarball. Yang dinyatakan kutipan itu:
+`db` adalah accessor per-invocation (`SpaceDbAccessor`); `viewer`
+opsional (`viewer?: Viewer`). Yang TIDAK dinyatakan: apakah database
+di balik accessor itu per-user, per-space, atau shared per artifact
+— grep tenancy pada `.d.ts` dan `package/README.md` mengembalikan
+nol. **Tidak ada kesimpulan tenancy yang ditarik dari nama tipe
+saja.** Principal key stabil per varian (DESAIN): local —
+`ownerUserId` (fallback `userId`) + `spaceSlug`; cloudflare —
+`shareId` + `tokenId` (dengan `tokenExpiresAt` — key kedaluwarsa
+tidak boleh dipakai sebagai identitas stabil lintas sesi).
+Penanganan `viewer` hilang: fail closed — handler yang membutuhkan
+ownership WAJIB menolak bila `viewer` tidak ada (default TOLAK,
+bukan "perlakukan sebagai owner"). Pernyataan resmi runtime provider
+tentang scope `ctx.db` tetap BELUM ADA; H-TEN-01..05 dipertahankan
+sebagai tes staging; public tester TIDAK BOLEH memuat data pengguna
+sampai tenancy terbukti.
+
+**F-020 — HOLD dipertahankan (v2.3.12).** Revisi ini TIDAK mengubah
+satu pun file source aplikasi (hanya dokumen desain, matriks
+respons, dan paket bukti read-only). d85a1e2 TIDAK di-revert.
+Tidak ada artefak approval terpisah di repo. HOLD tetap berlaku
+penuh: tidak ada perubahan `.ts`/`.tsx`, skema, migrasi, client,
+build, atau live artifact sampai ada keputusan scope tertulis
+terpisah.
+
+**F-001..F-005 — spesifikasi dipertahankan + oracle F-002 dikoreksi
+(v2.3.12).** Desain §D.4.18 tetap menjadi spesifikasi; yang berubah
+adalah oracle F-002 (lihat koreksi di atas): streamed byte cap dalam
+RAW BYTES di lapisan stream, cap per request DAN aggregate per
+pemeriksaan, diuji H-RES-01..05; total deadline diuji H-RES-06
+(penomoran ulang). Keterkaitan v2.3.11 dipertahankan: cache F-016/
+F-022 berada di jalur kode yang sama dengan guard F-001
+(`fetchText`) — wajib dikirim bersama dalam satu implementasi tahap
+(b); unique constraint F-004 dan kolom ownership F-018 adalah SATU
+migrasi; `ctx.viewer` adalah kandidat sumber identitas F-005
+(principal key per varian kini didefinisikan di atas).
+
+**Reproducibility (F-009/F-014) — keputusan Bun v2.3.12.**
+`site/package.json` mendeklarasikan `packageManager` Bun 1.3.10,
+sedangkan bukti VM (frozen install + typecheck) memakai Bun 1.4.4.
+Keputusan yang dicatat: **versi kanonik untuk build bersih kelak
+adalah 1.3.10 (yang dideklarasikan)**; bukti VM dengan 1.4.4 dicatat
+sebagai bukti dengan versi yang BERBEDA dan tidak boleh dikutip
+sebagai bukti build 1.3.10. Bila owner memilih 1.4.4, deklarasi
+`packageManager` harus diubah eksplisit (perubahan source — masuk
+HOLD F-020, tidak dilakukan di v2.3.12). Jalur retrievable SDK
+source/provenance: BELUM ADA — tarball hanya tersedia di path
+builder-local; tidak ada URL paket publik atau signature yang dapat
+diverifikasi clean builder. Tidak ada test suite site (hanya
+`typecheck`, `build`, `build:server`, `build:client`); tidak ada CI
+(tidak ada file `.github/workflows/*` — dikonfirmasi ulang V5 §2.3,
+diterima). Status keseluruhan tetap: **NOT REPRODUCIBLE untuk clean
+external builder**.
+
+**Ownership staging (F-013) — tidak ada fakta baru kecuali kriteria
+latensi ST-12.** Staging operator, kanal alert, egress policy,
+staging DB+runtime tetap **UNASSIGNED/BLOCKED**; ST-01..ST-16 dan
+STAGE-P01..P12 tetap BLOCKED; tidak ada gate READY. **BARU v2.3.12 —
+kriteria latensi alert ST-12 (ST-12-LAT-01..03):** alert atas
+penghapusan/inkonsistensi lock uji HARUS terkirim ke kanal alert
+yang dinamai dalam ≤ 5 menit sejak kejadian (kriteria DESAIN —
+kanal alert sendiri masih UNASSIGNED, sehingga kriteria ini belum
+dapat diuji); setiap alert HARUS memuat timestamp kejadian, lock
+path, dan identitas proses yang terdeteksi — alert tanpa ketiganya
+= FAIL; bila kanal alert tidak tersedia saat uji, ST-12 = NOT RUN
+(bukan PASS, bukan FAIL). Kriteria ini masuk gerbang G6 bersama
+ST-12 yang sudah ada.
+
+**F-006b/c (carry-forward v2.3.12).** Lokasi F-006b diverifikasi
+ulang pada mirror commit `d85a1e2` — nomor baris BERGESER vs
+v2.3.11: `KNOWN_BAD_DOMAINS` baris **52** (dulu 51),
+`GIBRAN_SITE_KNOWLEDGE` baris **1245** (dulu ~1089), plus string
+detail user-facing baris **483** (baru dicatat v2.3.12). Lokasi
+disebutkan hanya sebagai pengenal (nama + nomor baris) TANPA
+mengutip narasi, nilai, atau detail insiden apa pun. Proposal
+cleanup tetap berlaku (butuh edit source live tahap (b) + otorisasi
+owner terpisah). F-006c tetap **"reported by Muse, not
+independently verified"** — bukti versi/diff live yang dibutuhkan
+didefinisikan v2.3.12: (a) versi/digest artifact live yang dapat
+dikutip; (b) diff isi DATA-PLAN live sebelum vs sesudah redaksi,
+atau hash konten sebelum/sesudah; (c) timestamp capture. Yang
+tersedia saat ini: TIDAK SATU PUN dari (a)–(c) — tool read-only
+tidak mengekspos versi/digest atau isi file live (celah yang sama
+dengan F-019/F-021); `artifact.inspect` TIDAK dipakai karena inspect
+adalah delegasi diagnosis atas laporan malfungsi pengguna, bukan
+pembaca state read-only.
+
+**U-46 — tetap OPEN, scope sempit dipertahankan.** Pemetaan v2.3.10
+tidak berubah: U-46 hanya memblokir worker-signaling fallback path
+(§A.5.5.2a / STAGE-P07). Pekerjaan v2.3.12 (paket bukti, cabang
+cache, oracle, kutipan SDK, kriteria ST-12) TIDAK bergantung pada
+U-46 — tidak ada satu pun jalur di atas yang memakai pensinyalan
+worker. Keputusan owner tertulis atas opsi (a)/(b) tetap belum ada.
+
+**Risiko baru v2.3.12 (§G):** U-55 (F-022 — cabang cache tidak
+dinyatakan; partially addressed desain), U-56 (F-022 — oracle cap
+mengukur string bukan byte; partially addressed desain), U-57
+(F-021 — bukti artifact-state tidak auditable; partially addressed —
+paket + digest dipublikasikan, version/digest tetap NOT PROVIDED),
+U-58 (F-018 — kutipan `.d.ts` tidak ada di repo; partially
+addressed — kutipan dipublikasikan, pernyataan provider tetap belum
+ada).
+
+**Gate konkret berikutnya (v2.3.12 → v2.3.13).** Revisi ini bukan
+pengulangan status: ia menambah paket bukti yang dapat diaudit
+(F-021), keputusan cabang cache yang eksplisit + oracle yang
+dikoreksi (F-022), kutipan `.d.ts` yang dapat diperiksa (F-018),
+keputusan Bun, koreksi lokasi F-006b, dan kriteria latensi ST-12.
+Gate berikutnya dan prasyaratnya: **(G-A)** keputusan owner atas
+scope perubahan source (F-020); **(G-B)** bukti runtime F-019
+(versi/digest + kontrol disabled (a)–(e)); **(G-C)** keputusan
+tenancy F-018 (pernyataan resmi provider tentang scope `ctx.db`);
+**(G-D)** keputusan U-46; **(G-E)** staging tersedia + peran
+UNASSIGNED terisi; **(G-F) BARU** keputusan cache F-022 — owner
+memilih cabang pilihan vs alternatif; **(G-G) BARU** keputusan Bun
+F-009 — kanonik 1.3.10 vs 1.4.4. Pemicu revisi v2.3.13: keputusan
+owner atas G-A/G-C/G-D/G-F/G-G, ATAU bukti runtime G-B, ATAU audit
+independen V6 — mana pun yang datang dulu. Tidak ada revisi baru
+yang hanya mengulang status v2.3.12.
+
+**Hard gates — ditegaskan kembali (v2.3.12):** no Link Scanner
+activation, no public deployment, no production build, no DB/catalog
+change, no source implementation tanpa owner approval terpisah
+(HOLD perubahan source mirror sampai klarifikasi F-020 tetap
+berlaku), no production testing (termasuk tidak memanggil
+`checkLink`). F-001..F-005, F-016/F-017/F-022, F-018 tetap
+OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..20 terhadap
+implementasi aktual di staging terisolasi + log mentah + review
+independen — hasil VM saja tidak cukup.
 
 ---
 
@@ -4715,6 +4978,10 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | U-52 | **F-018 — isolasi data antar-pengguna belum terbukti: skema tanpa owner + semantik tenancy ctx.db tidak dinyatakan SDK (v2.3.11 — BARU)** | Fakta skema TERBUKTI: `checks` tanpa kolom owner/principal; `savedProjects` PK `projectId` tanpa identitas pengguna; `listChecks`/`deleteCheck`/`askGibran` tanpa filter kepemilikan; `actions.ts` tidak pernah merujuk `ctx.viewer`. Bukti SDK read-only v2.3.11 (§D.4.22): `server-contract.d.ts` mendefinisikan `PortableCtx.db` + `viewer?: Viewer` (`ownerUserId`/`isOwner`) tetapi TIDAK menyatakan apakah DB per-user atau per-artifact/shared. Exploitability NOT VERIFIED | Bila DB shared per artifact: riwayat cek terbaca/dihapus lintas pengguna; bookmark/status menjadi state bersama; Gibran dapat memasukkan riwayat principal lain ke jawaban | Pernyataan resmi runtime provider tentang scope `ctx.db` + desain ownership (§D.4.22) + H-TEN-01..05 PASS di staging |
 | U-53 | **F-019 — status Link Scanner nonaktif tidak memiliki bukti kontrol runtime (v2.3.11 — BARU)** | Bukti read-only 2026-11-08 ~02:47–02:50 WIB (§D.4.22): action `checklink` MASIH TERDAFTAR sebagai published action di artifact `cek-link-airdrop`; `artifact.status`: tidak ada build berjalan, `share.shared=false`, `share.url=null`; tidak ada versi/digest yang terekspos tool read-only; tidak ada feature flag/guard di mirror source. Status: NOT VERIFIED / BLOCKED | Scanner masih dapat dipanggil (jalur owner/agent) tanpa kontrol yang terbukti; klaim "nonaktif" hanya bersandar pada dokumen, bukan bukti runtime | Bukti versi/digest + kontrol disabled yang dapat diverifikasi (butir (a)–(e) §D.4.22); sampai ada, deployment BLOCKED |
 | U-54 | **F-020 — scope perubahan source mirror tanpa artefak approval owner terpisah (v2.3.11 — BARU)** | Fakta TERBUKTI via git: commit `d85a1e2` mengubah 3 file source/dokumen (`site/server/src/actions.ts`, `site/client/src/App.tsx`, `docs/AUDIT_FIX_LIST_V1.md`); dasar otorisasi yang tercatat adalah arahan Rama 2026-11-08 ~02:11 WIB ("tingkatkan kualitas web") + konsolidasi 10 audit performa; TIDAK ADA artefak approval owner terpisah di repo. Pernyataan v2.3.10 "tidak ada kode aplikasi yang diubah" menjadi basi setelah commit ini. HOLD perubahan source lanjutan sampai klarifikasi owner (§D.4.22) | Perubahan source berikutnya dapat melampaui batas tahap (b) tanpa disadari; sejarah klaim menyesatkan bila tidak dikoreksi | Keputusan owner atas 3 pertanyaan scope (matriks v2.3.11 §6); HOLD tetap berlaku sampai ada jawaban tertulis |
+| U-55 | **F-022 — cabang implementasi cache tidak dinyatakan eksplisit (v2.3.12 — BARU)** | Audit V5 benar: F-016 (hapus cache) dan F-017 (key wajib cap) tidak dinyatakan sebagai cabang saling eksklusif di v2.3.11. Keputusan v2.3.12 (§D.4.23): cabang pilihan = hapus cache fetch dari SEMUA jalur security-scan; F-017 + H-CACHE-05/06 NOT APPLICABLE untuk jalur itu pada cabang pilihan; cabang alternatif didokumentasikan lengkap (6 syarat). Belum diimplementasikan (tahap b + HOLD F-020) dan belum diuji | Implementasi kelak dapat mengirim cabang yang salah atau mengerjakan key cache yang tidak perlu setelah cache dihapus | Owner memilih cabang (G-F); implementasi + H-CACHE-01..04 PASS di staging |
+| U-56 | **F-022 — oracle tes cap mengukur string, bukan byte (v2.3.12 — BARU)** | Cacat oracle TERBUKTI di kode mirror: `(await res.text()).slice(0, cap)` menghitung UTF-16 code unit setelah buffering penuh — nilai 300.000/400.000 TIDAK menegakkan byte cap. Koreksi v2.3.12 (§D.4.23): cap = raw bytes di lapisan stream; `res.text().slice()` BUKAN bukti byte cap; H-RES-02 (multibyte UTF-8), H-RES-03 (compressed/decompressed), H-RES-04 (redirect chains), H-RES-05 (aggregate per-scan limit) ditambahkan; H-RES-06 = total-deadline (penomoran ulang) | Tes ASCII saja dapat lolos sementara batas byte/resource yang sebenarnya gagal — false confidence pada F-002 | Implementasi streamed cap + H-RES-01..06 PASS di staging |
+| U-57 | **F-021 — bukti artifact-state tidak dapat diaudit independen (v2.3.12 — BARU)** | Matriks v2.3.11 hanya merangkum hasil `list_actions`/`status` dalam prosa. Paket bukti dipublikasikan v2.3.12 (`evidence/f021-artifact-state-20261108/`, capture 2026-11-08 03:47 WIB, digest SHA-256 per respons). Tool/API version, request/response IDs, dan artifact version/digest TIDAK terekspos tool — dicatat NOT PROVIDED | Klaim tentang state live tidak dapat direproduksi independen; F-019 tetap tidak dapat ditutup dari paket ini | Jalur read-only baru yang mengekspos versi/digest, bila tersedia; sampai ada, F-019 tetap BLOCKED |
+| U-58 | **F-018 — kutipan `.d.ts` SDK tidak ada di repo (v2.3.12 — BARU)** | Matriks v2.3.11 mendeskripsikan deklarasi SDK tanpa kutipan yang dapat diperiksa. Kutipan verbatim `PortableCtx`/`Viewer`/`LocalViewer`/`CloudflareViewer` kini dipublikasikan di matriks v2.3.12 §2 F-018 (tarball SHA-256 `f2cb7b25…`). Kutipan membuktikan permukaan API saja — TIDAK menyatakan scope DB; pernyataan resmi provider tetap belum ada; tenancy tetap NOT VERIFIED | Audit berikutnya tetap tidak dapat memastikan tenancy dari repo; risiko lintas-pengguna tidak dapat diputuskan | Pernyataan resmi runtime provider tentang scope `ctx.db` + H-TEN-01..05 PASS di staging |
 
 ## H. Rencana pengujian dan rollback FINAL (v2)
 
@@ -4728,7 +4995,7 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | G3 — Regresi 3 URL acuan | `scamsem.solbarn.cc` → BAHAYA 100; `binance.com` → LEBIH AMAN; `ptah.trade/poa` → WASPADA (toleransi skor ±5) | Vonis sama | Hentikan; diskusikan (jangan sesuaikan ambang diam-diam) |
 | G4 — Uji blokir S-01..S-50 | Semua ditolak SEBELUM fetch; server uji menerima 0 koneksi (termasuk S-44..S-48 NAT64 v2.1 dan S-49/S-50 NSP staging v2.2) | 50/50 ditolak | Perbaiki titik yang lolos; uji ulang dari G3 |
 | G5 — Uji legit L-01..L-08 | Semua lolos | 8/8 lolos | Perbaiki false positive; uji ulang dari G3 |
-| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) + pidfd & jendela reuse PIDFD-01..PIDFD-08 + kontrol operasional OPS-01..OPS-03 + matriks prasyarat staging STAGE-P01..P12 (v2.3.6) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c NOT RUN — lihat §D.4.13), SU-T1..SU-T9 re-run v2.3.6: 9/9 × 4 (AUTH-16) [koreksi v2.3.8: 3 log lengkap + 1 ekor — lihat §D.4.17; suplemen v2.3.9: 4 run lengkap + OPS-T7 run ke-3 — lihat §D.4.20], pensinyalan terikat identitas via pidfd + kuantifikasi jendela reuse + falsifikasi dirfd pinning (PIDFD-01..PIDFD-08: PIDFD-T1..T12 + OPS-T1..T7 — lihat §D.4.14), kontrol operasional lock + pemulihan penghapusan (OPS-01..OPS-03), prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL (lihat §D.4.15), rekonsiliasi bukti v2.3.7 — matriks ST-01..ST-12, SU-T1..SU-T9 9/9 TERBUKTI (VM), penomoran kanonik ST-01..ST-16 (lihat §D.4.16 dan `SSRF_RECONCILIATION_V237.md`), matriks respons v2.3.8 atas audit kode V1+V2 — F-001..F-009, desain remediasi + harness H-SSRF-01..20, definisi lengkap U-46, inventaris staging ST-01..ST-16 (lihat §D.4.17, §D.4.18, §D.4.19 dan `SSRF_RESPONSE_MATRIX_V238.md`), matriks respons v2.3.10 atas audit V3 — F-010..F-015, koreksi akuntansi bukti SU + checker manifest, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 (lihat §D.4.21 dan `SSRF_RESPONSE_MATRIX_V2310.md`), matriks respons v2.3.11 atas audit V4 — F-016..F-020, keputusan freshness cache + cap-aware cache key, bukti tenancy SDK, bukti runtime scanner, klarifikasi scope d85a1e2 (lihat §D.4.22 dan `SSRF_RESPONSE_MATRIX_V2311.md`), regresi cache H-CACHE-01..06 + isolasi tenancy H-TEN-01..05 (v2.3.11, §D.4.22)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
+| G6 — Uji sumber daya R-01..R-15 + matcher RDAP RD-01..RD-20 + semaphore SEM-01..SEM-06 + lease LSE-01..LSE-06 (v2.2) + orphaned/breaker/worker ORPH-01..ORPH-06 (v2.3) + konfirmasi terminasi TERM-01..TERM-04 + parent crash PARENT-01..PARENT-02 + rekonsiliasi RECON-01 + supervisor SUP-01 (v2.3.1) + aturan startup STARTUP-01..STARTUP-10 (v2.3.2) + reklamasi yang diperkeras RCL-01..RCL-06 + reklamasi bersamaan SU10-T1/T2 + durabilitas pidfile D-01..D-03 (v2.3.3) + uji adversarial reklamasi lock ADV-01..ADV-06 + semantik flock FLK-01..FLK-07 (v2.3.4) + otoritas flock & mixed-version AUTH-01..AUTH-16 (v2.3.5) + pidfd & jendela reuse PIDFD-01..PIDFD-08 + kontrol operasional OPS-01..OPS-03 + matriks prasyarat staging STAGE-P01..P12 (v2.3.6) | Timeout global, bombe dekompresi (jalur Node Agent), abort per tahap, rate limit multi-instance, anti-spoofing, konkurensi global (R-14), matcher RDAP 20/20, **siklus hidup semaphore DNS (SEM-01..SEM-06), atomicity lease global termasuk PostgreSQL di staging (LSE-01..LSE-06), uji beban konkurensi ratusan instance (R-15), penghitung orphaned + circuit breaker + pemulihan worker (ORPH-01..ORPH-06, termasuk pengulangan SEM-01..SEM-06 setelah perubahan), konfirmasi terminasi worker (TERM-01..TERM-04), crash/restart parent dan pemulihan state (PARENT-01..PARENT-02), pengulangan + rekonsiliasi SEM-R1..R6 + ORPH-T0..T5 (RECON-01), dokumentasi supervisor platform (SUP-01), aturan startup NOT_READY + validasi identitas PID + pidfile atomik + startup lock (STARTUP-01..STARTUP-09), reklamasi lock basi bersamaan di VM ini (STARTUP-10), reklamasi yang diperkeras — heartbeat bukan bukti kematian, EPERM/tidak-pasti → fail-closed, lock tak terbaca tidak pernah dihapus otomatis (RCL-01..RCL-06), durabilitas pidfile pada filesystem produksi (D-01..D-03), race reklamasi lock TERBUKTI pada kode v2.3.3 dan perbaikan flock TERUJI (ADV-01..ADV-06: ADV-T1 2 pemilik 2/2, ADV-T2/T2sim/T5/T6 4/4 × 2), semantik flock kernel pada tmpfs dan overlay (FLK-01..FLK-05: 9/9 × 2 tiap fs), binding flock + flock di NFS wajib dibuktikan di staging (FLK-06/FLK-07), otoritas flock + mixed-version + zombie liveness (AUTH-01..AUTH-16: 18/18 × 2; AUTH-T9c NOT RUN — lihat §D.4.13), SU-T1..SU-T9 re-run v2.3.6: 9/9 × 4 (AUTH-16) [koreksi v2.3.8: 3 log lengkap + 1 ekor — lihat §D.4.17; suplemen v2.3.9: 4 run lengkap + OPS-T7 run ke-3 — lihat §D.4.20], pensinyalan terikat identitas via pidfd + kuantifikasi jendela reuse + falsifikasi dirfd pinning (PIDFD-01..PIDFD-08: PIDFD-T1..T12 + OPS-T1..T7 — lihat §D.4.14), kontrol operasional lock + pemulihan penghapusan (OPS-01..OPS-03), prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL (lihat §D.4.15), rekonsiliasi bukti v2.3.7 — matriks ST-01..ST-12, SU-T1..SU-T9 9/9 TERBUKTI (VM), penomoran kanonik ST-01..ST-16 (lihat §D.4.16 dan `SSRF_RECONCILIATION_V237.md`), matriks respons v2.3.8 atas audit kode V1+V2 — F-001..F-009, desain remediasi + harness H-SSRF-01..20, definisi lengkap U-46, inventaris staging ST-01..ST-16 (lihat §D.4.17, §D.4.18, §D.4.19 dan `SSRF_RESPONSE_MATRIX_V238.md`), matriks respons v2.3.10 atas audit V3 — F-010..F-015, koreksi akuntansi bukti SU + checker manifest, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 (lihat §D.4.21 dan `SSRF_RESPONSE_MATRIX_V2310.md`), matriks respons v2.3.11 atas audit V4 — F-016..F-020, keputusan freshness cache + cap-aware cache key, bukti tenancy SDK, bukti runtime scanner, klarifikasi scope d85a1e2 (lihat §D.4.22 dan `SSRF_RESPONSE_MATRIX_V2311.md`), regresi cache H-CACHE-01..06 + isolasi tenancy H-TEN-01..05 (v2.3.11, §D.4.22), matriks respons v2.3.12 atas audit V5 — F-021, F-022, cabang cache eksplisit (H-CACHE-05/06 NOT APPLICABLE pada cabang pilihan), oracle byte cap yang dikoreksi H-RES-01..06 (multibyte UTF-8, compressed/decompressed, redirect chains, aggregate per-scan limit), kutipan `.d.ts` minimal, paket bukti artifact F-021, kriteria latensi alert ST-12-LAT-01..03 (lihat §D.4.23 dan `SSRF_RESPONSE_MATRIX_V2312.md`)** | Semua dalam batas | Perbaiki; uji ulang dari G3 |
 | G7 — Uji akhir + evaluasi ChatGPT | Seluruh hasil G0–G6 + dokumen v2.3.7 dievaluasi ChatGPT. **Catatan v2.3.7:** evaluasi atas v2.3.6 (`SSRF_EVALUATION_V235.md`) ditulis TANPA membaca bukti v2.3.6 — status NOT RUN-nya sudah dikoreksi oleh `SSRF_RECONCILIATION_V237.md`. Re-evaluasi WAJIB membaca `SSRF_SPIKE_V236.md` dan `SSRF_RECONCILIATION_V237.md` sebelum menyatakan satu pun tes "belum dijalankan". **Catatan v2.3.8:** evaluasi berikutnya WAJIB membaca `SSRF_RESPONSE_MATRIX_V238.md`, `evidence/v236/MANIFEST.md` (+ 21 file bukti), dan `SSRF_REPRODUCIBILITY_V238.md` — dan memverifikasi F-001..F-005 tetap OPEN/blocked sampai implementasi tahap (b) + harness staging PASS; F-007 dibaca dengan caveat su-run4/OPS-T7; F-008 dibaca dengan koreksi SU-T5 | Tidak ada keberatan P0 yang belum dijawab | Jawab keberatan; uji ulang yang terdampak |
 | G8 — Cutover | Persetujuan eksplisit pemilik + ChatGPT; mitigasi (a) dicabut; scanner dibuka kembali | Semua gerbang G0–G7 lolos + tanda tangan di §D.5 v2 | Scanner TETAP nonaktif; lanjutkan perbaikan |
 
@@ -4847,4 +5114,4 @@ wajib evaluasi ChatGPT atas v2.3.1 (aturan startup parent baru pada
 §A.5.5: NOT_READY yang tidak dapat dinegosiasi, validasi identitas
 proses sebelum SIGKILL, pidfile atomik, startup lock) tanpa mengubah
 satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN
-ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.8 adalah respons atas DUA audit independen ChatGPT terhadap kode sumber mirror (V1 `SSRF_CODE_SECURITY_AUDIT_V1.md`, commit 52724d6 — F-001..F-006; V2 `SSRF_INDEPENDENT_AUDIT_V2.md`, commit 789797e — F-007..F-009, B-01..B-12): matriks respons F-001..F-009 (`SSRF_RESPONSE_MATRIX_V238.md`), publikasi bundle bukti mentah v2.3.6 (`evidence/v236/` + `MANIFEST.md`), koreksi penjelasan SU-T5 (F-008) dan caveat bukti su-run4, redaksi `site/DATA-PLAN.md` di mirror (F-006), `site/bun.lock` di-mirror + manifest reproduksibilitas (`SSRF_REPRODUCIBILITY_V238.md`), desain remediasi F-001..F-005 + harness diperketat H-SSRF-01..20 (§D.4.18), persyaratan DG-1..DG-3 (§G U-47..U-49), definisi lengkap U-46 tanpa keputusan (§G, §D.4.19 inventaris staging ST-01..ST-16) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik. Revisi v2.3.9 mempersempit celah bukti tanpa otorisasi implementasi (bundle suplemen F-007 — 4 run SU lengkap + OPS-T7 run ke-3; verifikasi F-005 dari kode — auth di dalam kode TERBUKTI TIDAK ADA; verifikasi F-009 di salinan scratch — SDK tarball ada, frozen install + typecheck exit 0) atas perintah pemilik; public tester DITAHAN oleh pemilik dan tidak dikerjakan di v2.3.9 — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.10 menjawab audit independen V3 (F-010..F-015 + Handoff §8 7 butir): koreksi akuntansi bukti SU asli + checker manifest, koreksi matriks fitur tester, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 lengkap dengan UNASSIGNED/BLOCKED eksplisit, rekonsiliasi reproduksibilitas dengan output mentah, koreksi DATA-PLAN F-015, dan pemetaan dependensi U-46 yang presisi — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.11 menjawab audit independen V4 (F-016..F-020 + Handoff §9 8 butir): keputusan desain freshness cache (hapus cache untuk security scan sebagai rekomendasi utama) dan cap-aware cache key, bukti tenancy SDK read-only (permukaan API `viewer`/`db` ditemukan, semantik per-user vs shared tetap NOT VERIFIED), bukti runtime read-only bahwa action `checklink` masih ter-publish (F-019 NOT VERIFIED / BLOCKED), klarifikasi scope commit d85a1e2 berbasis git dengan HOLD perubahan source lanjutan sampai owner memutuskan, pemetaan ulang rencana F-001..F-005 ke harness + keterkaitan cache/migrasi/otorisasi, serta risiko baru U-50..U-54 dan gate konkret G-A..G-E — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED.*
+ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.8 adalah respons atas DUA audit independen ChatGPT terhadap kode sumber mirror (V1 `SSRF_CODE_SECURITY_AUDIT_V1.md`, commit 52724d6 — F-001..F-006; V2 `SSRF_INDEPENDENT_AUDIT_V2.md`, commit 789797e — F-007..F-009, B-01..B-12): matriks respons F-001..F-009 (`SSRF_RESPONSE_MATRIX_V238.md`), publikasi bundle bukti mentah v2.3.6 (`evidence/v236/` + `MANIFEST.md`), koreksi penjelasan SU-T5 (F-008) dan caveat bukti su-run4, redaksi `site/DATA-PLAN.md` di mirror (F-006), `site/bun.lock` di-mirror + manifest reproduksibilitas (`SSRF_REPRODUCIBILITY_V238.md`), desain remediasi F-001..F-005 + harness diperketat H-SSRF-01..20 (§D.4.18), persyaratan DG-1..DG-3 (§G U-47..U-49), definisi lengkap U-46 tanpa keputusan (§G, §D.4.19 inventaris staging ST-01..ST-16) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik. Revisi v2.3.9 mempersempit celah bukti tanpa otorisasi implementasi (bundle suplemen F-007 — 4 run SU lengkap + OPS-T7 run ke-3; verifikasi F-005 dari kode — auth di dalam kode TERBUKTI TIDAK ADA; verifikasi F-009 di salinan scratch — SDK tarball ada, frozen install + typecheck exit 0) atas perintah pemilik; public tester DITAHAN oleh pemilik dan tidak dikerjakan di v2.3.9 — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.10 menjawab audit independen V3 (F-010..F-015 + Handoff §8 7 butir): koreksi akuntansi bukti SU asli + checker manifest, koreksi matriks fitur tester, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 lengkap dengan UNASSIGNED/BLOCKED eksplisit, rekonsiliasi reproduksibilitas dengan output mentah, koreksi DATA-PLAN F-015, dan pemetaan dependensi U-46 yang presisi — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.11 menjawab audit independen V4 (F-016..F-020 + Handoff §9 8 butir): keputusan desain freshness cache (hapus cache untuk security scan sebagai rekomendasi utama) dan cap-aware cache key, bukti tenancy SDK read-only (permukaan API `viewer`/`db` ditemukan, semantik per-user vs shared tetap NOT VERIFIED), bukti runtime read-only bahwa action `checklink` masih ter-publish (F-019 NOT VERIFIED / BLOCKED), klarifikasi scope commit d85a1e2 berbasis git dengan HOLD perubahan source lanjutan sampai owner memutuskan, pemetaan ulang rencana F-001..F-005 ke harness + keterkaitan cache/migrasi/otorisasi, serta risiko baru U-50..U-54 dan gate konkret G-A..G-E — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.12 menjawab audit independen V5 (F-021, F-022 + Handoff §8 9 butir): paket bukti artifact-state read-only yang dapat diaudit (`evidence/f021-artifact-state-20261108/`, digest SHA-256 per respons; version/digest tetap NOT PROVIDED karena tidak diekspos tool), cabang implementasi cache yang dinyatakan eksplisit (pilihan: hapus cache dari semua jalur security-scan; F-017 + H-CACHE-05/06 NOT APPLICABLE pada cabang itu), koreksi oracle tes cap ke raw bytes di lapisan stream (H-RES-02..05 baru: multibyte UTF-8, compressed/decompressed, redirect chains, aggregate per-scan limit; `res.text().slice()` bukan bukti byte cap), kutipan `.d.ts` minimal `PortableCtx`/`Viewer`/`LocalViewer`/`CloudflareViewer` yang dipublikasikan, keputusan Bun kanonik 1.3.10, koreksi lokasi F-006b (baris 52, 483, 1245), kriteria latensi alert ST-12-LAT-01..03, risiko baru U-55..U-58, dan gate baru G-F (keputusan cache) + G-G (keputusan Bun) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED.*

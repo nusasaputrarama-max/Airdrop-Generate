@@ -1,0 +1,36 @@
+{
+  "artifact": {
+    "available_actions": [
+      {
+        "action": "addproject",
+        "description": "Adds a new project to the verified airdrop catalog (used by the scheduled auto-discovery job). Strict rules enforced inside the action: rejects a project whose name or contract address already exists in the catalog, rejects any project without a valid official URL, rejects contract-based projects wi"
+      },
+      {
+        "action": "askgibran",
+        "description": "Asks Gibran, the in-site AIRDROP GENERATE assistant. Answers in Indonesian strictly from the site's own data — the verified project catalog, the link-check history, and the published guide/safety content — and honestly says it does not know (pointing to the project's official source) when the answer"
+      },
+      {
+        "action": "checklink",
+        "description": "Live-checks a pasted airdrop/claim link: fetches the page, scans it for wallet-connect requests, signing code, contract addresses, bait language and obfuscation, looks up the domain age via RDAP, saves the result to history, and returns the verdict with per-signal evidence."
+      },
+      {
+        "action": "deletecheck",
+        "description": "Deletes one check from history by id."
+      },
+      {
+        "action": "listchecks",
+        "description": "Lists past link checks from history, newest first."
+      },
+      {
+        "action": "listprojects",
+        "description": "Lists the verified airdrop project catalog (live, upcoming, ended) merged with the user's bookmark and task status per project. Seeds the catalog once from the user's verified radar when the table is empty."
+      },
+      {
+        "action": "setprojectstate",
+        "description": "Sets the user's bookmark flag and/or task status (not_started, in_progress, completed) for one catalog project."
+      }
+    ],
+    "slug": "cek-link-airdrop"
+  },
+  "ok": true
+}
