@@ -74,24 +74,28 @@ const DIFFICULTY_LABEL: Record<Project["difficulty"], string> = {
 
 const GRADIENT = "linear-gradient(135deg,#f0b90b 0%,#f5c542 55%,#b8860b 100%)";
 
+// Instance formatter dibuat sekali di module scope (C6) — sebelumnya
+// `new Intl.DateTimeFormat` dibuat di setiap panggilan.
+const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Asia/Jakarta",
+});
+const dateOnlyFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Asia/Jakarta",
+});
 function fmtDateTime(iso: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Jakarta",
-  }).format(new Date(iso));
+  return dateTimeFormatter.format(new Date(iso));
 }
 
 function fmtDateOnly(iso: string): string {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Asia/Jakarta",
-  }).format(new Date(`${iso}T00:00:00+07:00`));
+  return dateOnlyFormatter.format(new Date(`${iso}T00:00:00+07:00`));
 }
 
 function go(id: string) {
@@ -418,7 +422,9 @@ function ProjectCard({
   onBookmark: (p: Project) => void;
 }) {
   const seg = SEGMENT_META[project.segment];
-  const hue = (project.id * 47) % 360;
+  // C5: monogram + hue dihitung sekali per proyek, bukan tiap render.
+  const hue = useMemo(() => (project.id * 47) % 360, [project.id]);
+  const initials = useMemo(() => monogram(project.name), [project.name]);
   return (
     <article className="flex flex-col rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[var(--accent)]">
       <div className="flex items-start gap-3">
@@ -427,7 +433,7 @@ function ProjectCard({
           className="font-display grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-base font-black text-white"
           style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue} 85% 45%), hsl(${(hue + 60) % 360} 85% 55%))` }}
         >
-          {monogram(project.name)}
+          {initials}
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="font-display truncate text-base font-bold">
@@ -542,7 +548,15 @@ function ExploreSection({
     });
   }, [projects, query, chain, segment, category]);
 
-  const featured = filtered.filter((p) => p.segment === "live");
+  // C4: pemisahan featured/sisa dilakukan sekali dalam satu useMemo
+  // (sebelumnya dua `.filter()` terpisah di luar useMemo, dihitung tiap
+  // render — plus satu `.filter()` lagi di dalam JSX).
+  const { featured, others } = useMemo(() => {
+    const featured: Project[] = [];
+    const others: Project[] = [];
+    for (const p of filtered) (p.segment === "live" ? featured : others).push(p);
+    return { featured, others };
+  }, [filtered]);
   const showFeatured = segment === "All" || segment === "live";
 
   return (
@@ -614,17 +628,15 @@ function ExploreSection({
               </div>
             </>
           )}
-          {filtered.some((p) => p.segment !== "live") && (
+          {others.length > 0 && (
             <>
               <h3 className="font-display mt-8 text-lg font-bold">
                 {segment === "ended" ? "Sudah Berakhir" : segment === "upcoming" ? "Segera Hadir" : "Lainnya dari Radar"}
               </h3>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered
-                  .filter((p) => p.segment !== "live")
-                  .map((p) => (
-                    <ProjectCard key={p.id} project={p} onDetails={onDetails} onBookmark={onBookmark} />
-                  ))}
+                {others.map((p) => (
+                  <ProjectCard key={p.id} project={p} onDetails={onDetails} onBookmark={onBookmark} />
+                ))}
               </div>
             </>
           )}
@@ -681,12 +693,19 @@ function CategoriesSection({
   projects: Project[];
   onPick: (c: Category) => void;
 }) {
+  // C3: hitung semua count kategori dalam satu loop (sebelumnya 7x
+  // `.filter()` per render — satu per kategori).
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<Category, number>();
+    for (const p of projects) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+    return counts;
+  }, [projects]);
   return (
     <section aria-label="Kategori airdrop" className="mx-auto w-full max-w-6xl px-4 pt-14">
       <SectionHead id="categories" title="Kategori Airdrop" blurb="Langsung masuk ke kategorinya — jumlahnya hanya menghitung proyek terverifikasi." />
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {CATEGORIES.map((c) => {
-          const count = projects.filter((p) => p.category === c).length;
+          const count = categoryCounts.get(c) ?? 0;
           return (
             <button
               key={c}
@@ -1238,12 +1257,20 @@ function DashboardSection({
   onTaskStatus: (p: Project, s: TaskStatus) => void;
   onBookmark: (p: Project) => void;
 }) {
-  const tracked = projects.filter((p) => p.bookmarked || p.task_status !== "not_started");
-  const counts = {
-    inProgress: tracked.filter((p) => p.task_status === "in_progress").length,
-    completed: tracked.filter((p) => p.task_status === "completed").length,
-    flagged: checks.filter((c) => c.verdict === "bahaya").length,
-  };
+  // C2: tracked + counts dihitung sekali per perubahan data, bukan tiap
+  // render (sebelumnya 1x + 3x `.filter()` per render).
+  const tracked = useMemo(
+    () => projects.filter((p) => p.bookmarked || p.task_status !== "not_started"),
+    [projects],
+  );
+  const counts = useMemo(
+    () => ({
+      inProgress: tracked.filter((p) => p.task_status === "in_progress").length,
+      completed: tracked.filter((p) => p.task_status === "completed").length,
+      flagged: checks.filter((c) => c.verdict === "bahaya").length,
+    }),
+    [tracked, checks],
+  );
   return (
     <section aria-label="Dasbor airdrop kamu" className="mx-auto w-full max-w-6xl px-4 pt-14">
       <SectionHead
@@ -1675,6 +1702,10 @@ export function App() {
   const [detail, setDetail] = useState<Project | null>(null);
   const [walletOpen, setWalletOpen] = useState(false);
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
+  // C7: pesan kesalahan aksi (bookmark/status, cek link, hapus riwayat) —
+  // sebelumnya kegagalan deleteMut/stateMut tidak terlihat sama sekali
+  // oleh pengguna.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -1689,6 +1720,10 @@ export function App() {
     mutationFn: (args: { projectId: number; bookmarked?: boolean; taskStatus?: TaskStatus }) =>
       api.setProjectState(args),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+    onError: (err) =>
+      setActionError(
+        `Gagal menyimpan perubahan proyek: ${err instanceof Error ? err.message : "terjadi kesalahan"}. Coba lagi.`,
+      ),
   });
 
   const checkMut = useMutation({
@@ -1698,6 +1733,10 @@ export function App() {
       queryClient.invalidateQueries({ queryKey: ["checks"] });
       go("checker");
     },
+    onError: (err) =>
+      setActionError(
+        `Pemeriksaan link gagal: ${err instanceof Error ? err.message : "terjadi kesalahan"}. Coba lagi.`,
+      ),
   });
 
   const deleteMut = useMutation({
@@ -1706,6 +1745,10 @@ export function App() {
       queryClient.invalidateQueries({ queryKey: ["checks"] });
       setSelectedCheck((cur) => (cur && cur.id === id ? null : cur));
     },
+    onError: (err) =>
+      setActionError(
+        `Gagal menghapus riwayat pemeriksaan: ${err instanceof Error ? err.message : "terjadi kesalahan"}. Coba lagi.`,
+      ),
   });
 
   const projects = projectsQuery.data?.projects ?? [];
@@ -1718,14 +1761,22 @@ export function App() {
     setDetail((cur) => (cur && cur.id === p.id ? { ...cur, task_status: s } : cur));
   };
   const openDetails = (p: Project) => setDetail(p);
-  const detailFresh = detail ? (projects.find((p) => p.id === detail.id) ?? detail) : null;
+  // C1: detailFresh + stats dihitung sekali per perubahan data, bukan
+  // tiap render.
+  const detailFresh = useMemo(
+    () => (detail ? (projects.find((p) => p.id === detail.id) ?? detail) : null),
+    [detail, projects],
+  );
 
-  const stats = [
-    { label: "Proyek terverifikasi di katalog", value: String(projects.length) },
-    { label: "Peluang gratis yang sedang berjalan", value: String(projects.filter((p) => p.segment === "live").length) },
-    { label: "Link yang sudah diperiksa", value: String(checks.length) },
-    { label: "Link yang divonis BAHAYA", value: String(checks.filter((c) => c.verdict === "bahaya").length) },
-  ];
+  const stats = useMemo(
+    () => [
+      { label: "Proyek terverifikasi di katalog", value: String(projects.length) },
+      { label: "Peluang gratis yang sedang berjalan", value: String(projects.filter((p) => p.segment === "live").length) },
+      { label: "Link yang sudah diperiksa", value: String(checks.length) },
+      { label: "Link yang divonis BAHAYA", value: String(checks.filter((c) => c.verdict === "bahaya").length) },
+    ],
+    [projects, checks],
+  );
 
   const pickCategory = (c: Category) => {
     setCategory(c);
@@ -1738,6 +1789,21 @@ export function App() {
       <SafeAreaTopScrim backgroundColor="var(--bg)" />
       <Navbar onConnect={() => setWalletOpen(true)} />
       <main>
+        {actionError && (
+          <div role="alert" className="mx-auto mt-4 w-full max-w-6xl px-4">
+            <div className="flex items-start gap-3 rounded-[var(--radius)] border border-red-400/60 bg-red-500/10 px-4 py-3 text-sm">
+              <span className="min-w-0 flex-1">{actionError}</span>
+              <button
+                type="button"
+                onClick={() => setActionError(null)}
+                aria-label="Tutup pesan kesalahan"
+                className="shrink-0 font-bold"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
         <Hero query={query} setQuery={setQuery} stats={stats} />
         <ExploreSection
           projects={projects}

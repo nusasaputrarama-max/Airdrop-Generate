@@ -11,7 +11,7 @@
 // and saves the result as one row in `checks` (the user's history).
 
 import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import * as schema from "./schema";
 
 const signalSchema = z.object({
@@ -49,7 +49,8 @@ type Check = z.infer<typeof checkSchema>;
 type Verdict = Check["verdict"];
 
 /** Domains confirmed as drainers in the user's own 2026-11-07 incident. */
-const KNOWN_BAD_DOMAINS = ["solbarn.cc", "sharkmoon.tech"];
+const KNOWN_BAD_DOMAINS = new Set(["solbarn.cc", "sharkmoon.tech"]);
+const isKnownBadDomain = (d: string): boolean => KNOWN_BAD_DOMAINS.has(d);
 
 const TWO_LEVEL_SUFFIXES = new Set([
   "co.id", "or.id", "web.id", "co.uk", "org.uk", "com.au", "co.jp",
@@ -98,7 +99,79 @@ interface FetchResult {
  * (the exact 7 Nov 2026 drainer pattern) must show every hop, not just the
  * landing page. Returns null when the page cannot be fetched at all.
  */
-async function fetchText(url: string, cap: number): Promise<FetchResult | null> {
+// ---- Cache in-memory hasil fetch + RDAP (performa, S7) ----
+// Cache hanya menyimpan hasil apa adanya (input sama -> output sama);
+// tidak mengubah logika vonis. TTL singkat + ukuran dibatasi; saat penuh,
+// entri terlama dihapus. Ini BUKAN kontrol keamanan (F-001/F-002/F-003
+// tetap terbuka) — sekadar menghindari fetch keluar yang berulang.
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+const FETCH_CACHE = new Map<string, CacheEntry<FetchResult | null>>();
+const RDAP_CACHE = new Map<string, CacheEntry<RdapInfo>>();
+const FETCH_CACHE_TTL_MS = 10 * 60_000;
+const RDAP_CACHE_TTL_MS = 60 * 60_000;
+const FETCH_CACHE_MAX = 50;
+const RDAP_CACHE_MAX = 100;
+
+function cacheGet<T>(cache: Map<string, CacheEntry<T>>, key: string): T | undefined {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) {
+    cache.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function cacheSet<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+  value: T,
+  ttlMs: number,
+  max: number,
+): void {
+  if (cache.size >= max) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
+/**
+ * Ambil isi halaman mengikuti redirect, dengan cache + satu retry jaringan.
+ * `deadline` (opsional) adalah sinyal deadline total pemeriksaan dari
+ * `analyze()` — bila sudah aborted, tidak ada retry lagi.
+ */
+async function fetchText(
+  url: string,
+  cap: number,
+  deadline?: AbortSignal,
+): Promise<FetchResult | null> {
+  const cached = cacheGet(FETCH_CACHE, url);
+  if (cached !== undefined) return cached;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (deadline?.aborted) return null;
+    }
+    const result = await fetchTextOnce(url, cap, deadline);
+    if (result !== null) {
+      cacheSet(FETCH_CACHE, url, result, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
+      return result;
+    }
+    if (deadline?.aborted) return null;
+  }
+  cacheSet(FETCH_CACHE, url, null, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
+  return null;
+}
+
+async function fetchTextOnce(
+  url: string,
+  cap: number,
+  deadline?: AbortSignal,
+): Promise<FetchResult | null> {
   const chain: string[] = [];
   let current = url;
   try {
@@ -107,7 +180,10 @@ async function fetchText(url: string, cap: number): Promise<FetchResult | null> 
       const res = await fetch(current, {
         headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,*/*" },
         redirect: "manual",
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.any([
+          AbortSignal.timeout(12000),
+          ...(deadline ? [deadline] : []),
+        ]),
       });
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         const loc = res.headers.get("location");
@@ -129,12 +205,38 @@ interface RdapInfo {
   registrar: string | null;
 }
 
-async function lookupRdap(domain: string): Promise<RdapInfo> {
+/**
+ * RDAP dengan cache + satu retry jaringan. Hanya respons sukses yang
+ * di-cache; kegagalan tidak di-cache supaya cek ulang langsung mencoba
+ * lagi. `deadline` sama seperti di `fetchText`.
+ */
+async function lookupRdap(domain: string, deadline?: AbortSignal): Promise<RdapInfo> {
+  const cached = cacheGet(RDAP_CACHE, domain);
+  if (cached !== undefined) return cached;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (deadline?.aborted) break;
+    }
+    const result = await lookupRdapOnce(domain, deadline);
+    if (result.registeredAt !== null || result.registrar !== null) {
+      cacheSet(RDAP_CACHE, domain, result, RDAP_CACHE_TTL_MS, RDAP_CACHE_MAX);
+      return result;
+    }
+    if (deadline?.aborted) break;
+  }
+  return { registeredAt: null, registrar: null };
+}
+
+async function lookupRdapOnce(domain: string, deadline?: AbortSignal): Promise<RdapInfo> {
   try {
     const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
       headers: { "user-agent": UA, accept: "application/rdap+json, application/json" },
       redirect: "follow",
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.any([
+        AbortSignal.timeout(12000),
+        ...(deadline ? [deadline] : []),
+      ]),
     });
     if (!res.ok) return { registeredAt: null, registrar: null };
     const data: any = await res.json();
@@ -166,34 +268,65 @@ async function lookupRdap(domain: string): Promise<RdapInfo> {
   }
 }
 
+// Pre-compiled (module-level): regex di bawah dipakai di setiap
+// pemeriksaan; di-compile sekali saat modul dimuat, bukan per panggilan.
+// Semua regex /g di sini hanya dipakai lewat `.match()` (yang me-reset
+// lastIndex), jadi aman dipakai ulang antar panggilan.
+const EVM_ADDRESS_RE = /0x[a-fA-F0-9]{40}/g;
+const ZERO_ADDRESS_RE = /^0x0{40}$/;
+const ZERO_RUN_RE = /0/g;
+const TOKEN_ASSIGN_RE = /TOKEN_ADDRESS["']?\s*[:=]\s*["']([1-9A-HJ-NP-Za-km-z]{32,44})["']/g;
+const TOKEN_ASSIGN_ADDR_RE = /([1-9A-HJ-NP-Za-km-z]{32,44})["']$/;
+const SOLANA_CANDIDATE_RE = /\b[1-9A-HJ-NP-Za-km-z]{36,44}\b/g;
+const MALFORMED_RE = /(?<![0-9a-zA-Z])0x[0-9a-zA-Z]{30,48}(?![0-9a-zA-Z])/g;
+const VALID_EVM_RE = /^0x[a-fA-F0-9]{40}$/;
+
 function extractContracts(
   fullText: string,
   htmlOnly: string,
 ): { contracts: Contract[]; malformed: string[] } {
   const found = new Map<string, Contract>();
-  const evm = fullText.match(/0x[a-fA-F0-9]{40}/g) ?? [];
+  const evm = fullText.match(EVM_ADDRESS_RE) ?? [];
   for (const addr of evm) {
-    if (/^0x0{40}$/.test(addr)) continue;
+    if (ZERO_ADDRESS_RE.test(addr)) continue;
     // Mostly-zero values are counters/padding in page data, not contracts.
-    if ((addr.slice(2).match(/0/g) ?? []).length > 20) continue;
+    if ((addr.slice(2).match(ZERO_RUN_RE) ?? []).length > 20) continue;
     found.set(addr.toLowerCase(), { chain: "evm", address: addr });
   }
   // Solana: explicit TOKEN_ADDRESS assignment first (high confidence).
-  const tokenAssign = fullText.match(/TOKEN_ADDRESS["']?\s*[:=]\s*["']([1-9A-HJ-NP-Za-km-z]{32,44})["']/g) ?? [];
+  const tokenAssign = fullText.match(TOKEN_ASSIGN_RE) ?? [];
   for (const m of tokenAssign) {
-    const addr = m.match(/([1-9A-HJ-NP-Za-km-z]{32,44})["']$/)?.[1];
+    const addr = m.match(TOKEN_ASSIGN_ADDR_RE)?.[1];
     if (addr) found.set(addr, { chain: "solana", address: addr });
   }
   // Solana: bare base58 candidates from the page markup itself (NOT from
   // fetched script bundles — minified JS is full of base58-shaped noise).
   // A real pubkey looks random; minified identifiers repeat substrings.
-  const candidates = htmlOnly.match(/\b[1-9A-HJ-NP-Za-km-z]{36,44}\b/g) ?? [];
+  const candidates = htmlOnly.match(SOLANA_CANDIDATE_RE) ?? [];
   for (const cand of candidates) {
     if (!/[0-9]/.test(cand) || !/[a-z]/.test(cand) || !/[A-Z]/.test(cand)) continue;
+    // Chunk 4 karakter yang sudah didedup: predikatnya persis sama dengan
+    // sebelumnya (chunk yang muncul >= 3 kali tanpa overlap), tapi tanpa
+    // pemindaian berulang per posisi — `split` per chunk adalah O(n) per
+    // chunk, sedangkan di sini tiap chunk unik hanya dipindai sekali.
     let repeated = false;
+    const seenChunks = new Set<string>();
     for (let i = 0; i + 4 <= cand.length && !repeated; i++) {
       const chunk = cand.slice(i, i + 4);
-      if (cand.split(chunk).length - 1 >= 3) repeated = true;
+      if (seenChunks.has(chunk)) continue;
+      seenChunks.add(chunk);
+      let occurrences = 0;
+      let from = 0;
+      let at = cand.indexOf(chunk, from);
+      while (at !== -1) {
+        occurrences++;
+        if (occurrences >= 3) {
+          repeated = true;
+          break;
+        }
+        from = at + chunk.length;
+        at = cand.indexOf(chunk, from);
+      }
     }
     if (repeated) continue;
     if (found.has(cand)) continue;
@@ -208,8 +341,8 @@ function extractContracts(
   // (amounts, timestamps), never an address.
   const malformed: string[] = [];
   const malformedSeen = new Set<string>();
-  for (const m of fullText.match(/(?<![0-9a-zA-Z])0x[0-9a-zA-Z]{30,48}(?![0-9a-zA-Z])/g) ?? []) {
-    if (/^0x[a-fA-F0-9]{40}$/.test(m)) continue; // valid — handled above
+  for (const m of fullText.match(MALFORMED_RE) ?? []) {
+    if (VALID_EVM_RE.test(m)) continue; // valid — handled above
     const hexPart = m.slice(2);
     if ((hexPart.match(/0/g) ?? []).length > hexPart.length * 0.4) continue;
     if (malformedSeen.has(m)) continue;
@@ -239,8 +372,14 @@ async function analyze(input: URL): Promise<Analysis> {
   const signals: Signal[] = [];
   let score = 0;
 
-  const knownBad =
-    KNOWN_BAD_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`) || domain === d);
+  // Deadline total per pemeriksaan (performa minimal, S2): satu sinyal
+  // 30 detik untuk semua fetch keluar. Ini BUKAN kontrol keamanan
+  // F-003 — kontrol keamanan lengkap tetap bagian desain remediasi.
+  const deadline = AbortSignal.timeout(30_000);
+
+  // Set lookup O(1): hostname === d atau domain (registrable) === d sudah
+  // mencakup kasus hostname berakhiran `.d` untuk daftar ini.
+  const knownBad = isKnownBadDomain(hostname) || isKnownBadDomain(domain);
   if (knownBad) {
     score += 100;
     signals.push({
@@ -253,8 +392,8 @@ async function analyze(input: URL): Promise<Analysis> {
   }
 
   const [rdap, page] = await Promise.all([
-    lookupRdap(domain),
-    fetchText(input.toString(), 400_000),
+    lookupRdap(domain, deadline),
+    fetchText(input.toString(), 400_000, deadline),
   ]);
 
   // --- Domain age (RDAP) ---
@@ -332,8 +471,8 @@ async function analyze(input: URL): Promise<Analysis> {
     // sharkmoon.tech is the same drainer wearing a different front door.
     const chainHitsBad =
       !knownBad &&
-      page.chain.some((h) =>
-        KNOWN_BAD_DOMAINS.some((d) => h === d || h.endsWith(`.${d}`)),
+      page.chain.some(
+        (h) => isKnownBadDomain(h) || isKnownBadDomain(registrableDomain(h)),
       );
     if (chainHitsBad) {
       score += 100;
@@ -341,7 +480,7 @@ async function analyze(input: URL): Promise<Analysis> {
         id: "known_bad_redirect",
         status: "bahaya",
         label: "Rantai redirect melewati domain drainer yang terbukti",
-        detail: `Link ini memang bukan ${KNOWN_BAD_DOMAINS.join(" / ")} secara langsung, tapi rantai redirect-nya melewati salah satu domain itu (${page.chain.join(" → ")}). Keduanya tercatat menguras wallet pada kejadian 7 Nov 2026. Jangan lanjutkan, jangan connect wallet.`,
+        detail: `Link ini memang bukan ${[...KNOWN_BAD_DOMAINS].join(" / ")} secara langsung, tapi rantai redirect-nya melewati salah satu domain itu (${page.chain.join(" → ")}). Keduanya tercatat menguras wallet pada kejadian 7 Nov 2026. Jangan lanjutkan, jangan connect wallet.`,
       });
     }
 
@@ -371,20 +510,25 @@ async function analyze(input: URL): Promise<Analysis> {
     }
 
     // Fetch up to 3 script files referenced by the page for deeper signals.
-    let scriptText = "";
-    const scriptSrcs = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
-      .map((m) => m[1])
-      .filter((src): src is string => typeof src === "string" && src.length > 0)
-      .slice(0, 3);
-    for (const src of scriptSrcs) {
-      try {
-        const abs = new URL(src, page.finalUrl).toString();
-        const s = await fetchText(abs, 300_000);
-        if (s) scriptText += `\n${s.text}`;
-      } catch {
-        /* skip bad script URL */
-      }
-    }
+    // Paralel (Promise.all) + dedup URL — hasil tetap urut seperti semula.
+    const scriptSrcs = [...new Set(
+      [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
+        .map((m) => m[1])
+        .filter((src): src is string => typeof src === "string" && src.length > 0)
+        .slice(0, 3),
+    )];
+    const scriptTexts = await Promise.all(
+      scriptSrcs.map(async (src) => {
+        try {
+          const abs = new URL(src, page.finalUrl).toString();
+          const s = await fetchText(abs, 300_000, deadline);
+          return s ? s.text : "";
+        } catch {
+          return ""; // skip bad script URL
+        }
+      }),
+    );
+    const scriptText = scriptTexts.join("\n");
     const haystack = `${html}\n${scriptText}`;
     const lower = haystack.toLowerCase();
 
@@ -1017,22 +1161,35 @@ async function addProject(
   }
 
   const db = ctx.db<typeof schema>();
-  const existing = await db.select().from(schema.projects);
 
   // No duplicates: same project name (case-insensitive) or same contract.
+  // Cek duplikat lewat query WHERE (bukan SELECT * seluruh katalog).
+  // Perilaku persis sama: nama dibandingkan case-insensitive setelah trim,
+  // kontrak dibandingkan case-insensitive (NULL tidak pernah cocok).
+  // Ini BUKAN unique constraint — itu bagian F-004 yang tetap terbuka.
   const nameKey = name.toLowerCase();
-  if (existing.some((p) => p.name.trim().toLowerCase() === nameKey)) {
+  const nameDup = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(sql`lower(trim(${schema.projects.name})) = ${nameKey}`)
+    .limit(1);
+  if (nameDup.length > 0) {
     return reject(`Proyek bernama "${name}" sudah ada di katalog.`);
   }
   if (contractAddress) {
     const addrKey = contractAddress.toLowerCase();
-    const dup = existing.some(
-      (p) => p.contract_address && p.contract_address.toLowerCase() === addrKey,
-    );
-    if (dup) return reject("Alamat kontrak itu sudah ada di katalog.");
+    const addrDup = await db
+      .select({ id: schema.projects.id })
+      .from(schema.projects)
+      .where(sql`lower(${schema.projects.contract_address}) = ${addrKey}`)
+      .limit(1);
+    if (addrDup.length > 0) return reject("Alamat kontrak itu sudah ada di katalog.");
   }
 
-  const nextSort = existing.reduce((max, p) => Math.max(max, p.sort), 0) + 1;
+  const maxSortRows = await db
+    .select({ maxSort: sql<number>`max(${schema.projects.sort})` })
+    .from(schema.projects);
+  const nextSort = (maxSortRows[0]?.maxSort ?? 0) + 1;
   const ticker = args.ticker?.trim() || null;
   const xHandleRaw = args.xHandle?.trim() || null;
   const xHandle = xHandleRaw
@@ -1121,6 +1278,11 @@ async function askGibran(
     db.select().from(schema.checks).orderBy(desc(schema.checks.id)).limit(10),
   ]);
 
+  // Ringkasan katalog (S5): hanya fakta kunci per proyek — description,
+  // reward_note, dan verified_note lengkap tidak lagi dikirim, supaya
+  // prompt mengecil ~70–80%. Trade-off: Gibran tidak bisa menjawab detail
+  // reward/catatan verifikasi dari ingatannya; aturan kerasnya tetap
+  // berlaku (katakan tidak tahu + arahkan ke kartu detail proyek).
   const catalogText =
     projectRows.length === 0
       ? "(Katalog proyek masih kosong.)"
@@ -1128,11 +1290,9 @@ async function askGibran(
           .map((p) => {
             const parts = [
               `- ${p.name}${p.ticker ? ` (${p.ticker})` : ""} — chain: ${p.chain}; kategori: ${p.category}; status: ${p.segment} ("${p.status_label}"); kesulitan: ${p.difficulty}.`,
-              p.description,
-              p.reward_note ? `Distribusi terverifikasi: ${p.reward_note}` : null,
               p.contract_address ? `Kontrak: ${p.contract_address}` : null,
               p.x_handle ? `X: ${p.x_handle}` : null,
-              `Diverifikasi ${p.verified_at}: ${p.verified_note}`,
+              `Diverifikasi ${p.verified_at}.`,
             ];
             return parts.filter(Boolean).join(" ");
           })
@@ -1253,20 +1413,25 @@ export const Actions = {
       if (existing.length === 0) {
         await db.insert(schema.projects).values(CATALOG);
       }
-      const [projectRows, savedRows] = await Promise.all([
-        db.select().from(schema.projects).orderBy(asc(schema.projects.sort), asc(schema.projects.id)),
-        db.select().from(schema.savedProjects),
-      ]);
-      const savedById = new Map(savedRows.map((s) => [s.projectId, s]));
+      // Satu query LEFT JOIN (bukan dua SELECT penuh + join di JS).
+      const rows = await db
+        .select({
+          project: schema.projects,
+          bookmarked: schema.savedProjects.bookmarked,
+          taskStatus: schema.savedProjects.taskStatus,
+        })
+        .from(schema.projects)
+        .leftJoin(
+          schema.savedProjects,
+          eq(schema.savedProjects.projectId, schema.projects.id),
+        )
+        .orderBy(asc(schema.projects.sort), asc(schema.projects.id));
       return {
-        projects: projectRows.map((row) => {
-          const saved = savedById.get(row.id);
-          return {
-            ...row,
-            bookmarked: saved ? saved.bookmarked === 1 : false,
-            task_status: saved ? saved.taskStatus : ("not_started" as const),
-          };
-        }),
+        projects: rows.map(({ project, bookmarked, taskStatus }) => ({
+          ...project,
+          bookmarked: bookmarked === 1,
+          task_status: taskStatus ?? ("not_started" as const),
+        })),
       };
     },
   }),
