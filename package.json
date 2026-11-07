@@ -1,0 +1,1 @@
+{"description":"AIRDROP GENERATE (AG-001) — Project Foundation package: documentation + modular code skeleton. Not a deployable app yet.","devDependencies":{"typescript":"^5.0.0"},"engines":{"node":">=20"},"name":"airdrop-generate-foundation","private":true,"scripts":{"check:env":"bash scripts/check-env.sh","typecheck":"tsc --noEmit -p tsconfig.json"},"version":"0.1.0"}
