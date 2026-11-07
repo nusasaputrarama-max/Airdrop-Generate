@@ -1,0 +1,21 @@
+bun version: 1.3.10
+boundary case: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars (= L2 1,000,000)
+--- A. current pattern (join / haystack / lower) ---
+A0 baseline: heapUsed=211394 rss=34820096 heapTotal=657408
+A1 after html + scriptTexts created (accepted input as JS strings): heapUsed=211394 (+0 vs baseline) rss=35999744 (+1179648) heapTotal=673792 external=1053274
+A2 after scriptTexts.join (scriptText copy): heapUsed=211394 (+0 vs baseline) rss=37179392 (+2359296) heapTotal=673792 external=1654491
+A3 after haystack template (html + scriptText copy): heapUsed=211394 (+0 vs baseline) rss=37179392 (+2359296) heapTotal=673792 external=1654506
+A4 after lower = haystack.toLowerCase() (third full copy): heapUsed=211394 (+0 vs baseline) rss=39145472 (+4325376) heapTotal=673792 external=3654470
+A5 checks ran, asksConnect = true
+A5 after checks (all derived strings still live): heapUsed=211394 (+0 vs baseline) rss=39800832 (+4980736) heapTotal=673792 external=3654470
+A6 live string chars at peak analysis point: html=399993 + scripts=599988 + join=599989 + haystack=999983 + lower=999983 = 3599936 chars (~7199872 bytes UTF-16, before engine overhead)
+A6 input accepted chars: 1000000; live chars / input chars ratio: 3.60x
+A7 after releasing input refs (derived strings still live: scriptText/haystack/lower): heapUsed=211394 (+0 vs baseline) rss=39800832 (+4980736) heapTotal=690176 external=2654538
+A8 (note): scriptText/haystack/lower are const in this script and stay live until process exit; residual after full release is measured in part B baseline instead.
+--- B. incremental alternative (no join / no combined haystack / no combined lower) ---
+B0 baseline: heapUsed=211394 rss=39800832 heapTotal=690176
+B1 checks ran, asksConnect = true
+B2 after incremental scan (all segments released): heapUsed=211394 (+0 vs baseline) rss=40718336 (+917504) heapTotal=690176 external=3356380
+B3 peak heapUsed during incremental scan: 211394 (+0 vs baseline); peak rss: 40718336 (+917504 vs baseline)
+B4 comparison: current-pattern peak heap delta (A4-A0) vs incremental peak heap delta (B3-B0) — see numbers above; both measured from a post-GC baseline on the same runtime.
+done

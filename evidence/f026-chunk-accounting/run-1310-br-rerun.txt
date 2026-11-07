@@ -1,0 +1,7 @@
+decompressed bytes: 500000
+brotli wire bytes: 51
+status: 200 | content-encoding hdr: br | content-length hdr: 51
+chunks: 2 | max single chunk bytes: 483616 | TOTAL bytes read from Response.body: 500000
+marker present: true | marker byte offset: 400000
+body bytes == decompressed size? true | == brotli wire size? false
+done

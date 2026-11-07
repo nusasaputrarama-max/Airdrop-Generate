@@ -1,0 +1,31 @@
+bun version: 1.3.10
+listening: http://127.0.0.1:45243
+--- P1 single /plain500k cap=300000 (script cap) ---
+P1: chunks=2 firstChunk=16384 maxChunk=483616 accepted=16384 abortedByBudget=true chunkSizes=[16384,483616]
+P1 transient-first-chunk bytes (allocated before any check): 16384
+P1 accepted bytes: 16384 | first chunk exceeded cap by: -283616
+P1 after: rss=50327552 heapUsed=1826745 heapTotal=932864 external=2090785 | peak rss=50327552 heapUsed=1826745 external=2090785
+--- P2 three parallel /plain500k cap=300000 each, shared L2=1000000 ---
+P2-r0: chunks=2 firstChunk=16384 maxChunk=483616 accepted=16384 abortedByBudget=true chunkSizes=[16384,483616]
+P2-r1: fetch aborted before first chunk (shared abort already fired)
+P2-r2: fetch aborted before first chunk (shared abort already fired)
+P2 total accepted bytes: 16384 | shared L2 used: 16384
+P2 sum of first chunks (each allocated before its own check): 16384
+P2 max single chunk: 483616
+P2 after: rss=51544064 heapUsed=1826745 heapTotal=955392 external=2661514 | peak rss=51019776 heapUsed=1826745 external=2661514
+--- P2b three parallel /stream64k cap=300000 each, shared L2=1000000 ---
+P2b-r0: chunks=2 firstChunk=262144 maxChunk=262144 accepted=262144 abortedByBudget=true chunkSizes=[262144,237856]
+P2b-r1: chunks=0 firstChunk=0 maxChunk=0 accepted=0 abortedByBudget=false chunkSizes=[]
+P2b-r2: chunks=0 firstChunk=0 maxChunk=0 accepted=0 abortedByBudget=false chunkSizes=[]
+P2b total accepted bytes: 262144 | shared L2 used: 262144
+P2b max single chunk: 262144
+P2b after: rss=62816256 heapUsed=2305563 heapTotal=1039360 external=2464075 | peak rss=62685184 heapUsed=2305563 external=2464075
+--- P3 single /plain1m cap=400000 (page cap) ---
+P3: chunks=1 firstChunk=528384 maxChunk=528384 accepted=0 abortedByBudget=true chunkSizes=[528384]
+P3 transient-first-chunk bytes: 528384 | accepted: 0
+P3 after: rss=64258048 heapUsed=2305563 heapTotal=986112 external=1697046 | peak rss=64126976 heapUsed=2305563 external=1697046
+--- P4 single /stream64k cap=300000 ---
+P4: chunks=1 firstChunk=500000 maxChunk=500000 accepted=0 abortedByBudget=true chunkSizes=[500000]
+P4 accepted bytes (must be <= 300000): 0
+P4 after: rss=65044480 heapUsed=2305563 heapTotal=1009664 external=3197244 | peak rss=65044480 heapUsed=2305563 external=3197244
+done

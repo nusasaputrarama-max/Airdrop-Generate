@@ -1,0 +1,14 @@
+$ bun x tsc --noEmit -p client/tsconfig.json && bun x tsc --noEmit -p server/tsconfig.json
+Resolving dependencies
+Resolved, downloaded and extracted [45]
+Saved lockfile
+error TS2688: Cannot find type definition file for 'bun-types'.
+  The file is in the program because:
+    Entry point of type library 'bun-types' specified in compilerOptions
+error TS2688: Cannot find type definition file for 'react'.
+  The file is in the program because:
+    Entry point of type library 'react' specified in compilerOptions
+error TS2688: Cannot find type definition file for 'react-dom'.
+  The file is in the program because:
+    Entry point of type library 'react-dom' specified in compilerOptions
+error: script "typecheck" exited with code 1

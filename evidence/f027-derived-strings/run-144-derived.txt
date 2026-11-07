@@ -1,0 +1,21 @@
+bun version: 1.4.4
+boundary case: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars (= L2 1,000,000)
+--- A. current pattern (join / haystack / lower) ---
+A0 baseline: heapUsed=133659 rss=18685952 heapTotal=514048
+A1 after html + scriptTexts created (accepted input as JS strings): heapUsed=1140997 (+1007338 vs baseline) rss=19996672 (+1310720) heapTotal=546816 external=1020661
+A2 after scriptTexts.join (scriptText copy): heapUsed=1742580 (+1608921 vs baseline) rss=20520960 (+1835008) heapTotal=546816 external=1621684
+A3 after haystack template (html + scriptText copy): heapUsed=1742803 (+1609144 vs baseline) rss=20520960 (+1835008) heapTotal=546816 external=1621875
+A4 after lower = haystack.toLowerCase() (third full copy): heapUsed=3742855 (+3609196 vs baseline) rss=22618112 (+3932160) heapTotal=546816 external=3621911
+A5 checks ran, asksConnect = true
+A5 after checks (all derived strings still live): heapUsed=3742855 (+3609196 vs baseline) rss=23011328 (+4325376) heapTotal=546816 external=3621911
+A6 live string chars at peak analysis point: html=399993 + scripts=599988 + join=599989 + haystack=999983 + lower=999983 = 3599936 chars (~7199872 bytes UTF-16, before engine overhead)
+A6 input accepted chars: 1000000; live chars / input chars ratio: 3.60x
+A7 after releasing input refs (derived strings still live: scriptText/haystack/lower): heapUsed=2743413 (+2609754 vs baseline) rss=22241280 (+3555328) heapTotal=563200 external=2622117
+A8 (note): scriptText/haystack/lower are const in this script and stay live until process exit; residual after full release is measured in part B baseline instead.
+--- B. incremental alternative (no join / no combined haystack / no combined lower) ---
+B0 baseline: heapUsed=2743139 rss=22241280 heapTotal=563200
+B1 checks ran, asksConnect = true
+B2 after incremental scan (all segments released): heapUsed=3446201 (+703062 vs baseline) rss=24469504 (+2228224) heapTotal=563200 external=3324089
+B3 peak heapUsed during incremental scan: 3545604 (+802465 vs baseline); peak rss: 24469504 (+2228224 vs baseline)
+B4 comparison: current-pattern peak heap delta (A4-A0) vs incremental peak heap delta (B3-B0) — see numbers above; both measured from a post-GC baseline on the same runtime.
+done

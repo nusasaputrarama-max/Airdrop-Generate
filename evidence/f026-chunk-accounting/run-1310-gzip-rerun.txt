@@ -1,0 +1,23 @@
+decompressed bytes: 500000
+gzip wire bytes: 551
+marker at decompressed offset: 400000
+listening: http://127.0.0.1:41177
+server saw Accept-Encoding: gzip, deflate, br, zstd | path: /gzip
+--- default fetch /gzip ---
+status: 200 | content-encoding hdr: gzip | content-length hdr: 551
+chunks: 2 | first chunk bytes: 16384 | TOTAL bytes read from Response.body: 500000
+marker present in body bytes: true | marker byte offset in read body: 400000
+body bytes == decompressed size? true | == gzip wire size? false
+server saw Accept-Encoding: identity | path: /gzip
+--- explicit identity /gzip ---
+status: 200 | content-encoding hdr: gzip | content-length hdr: 551
+chunks: 2 | first chunk bytes: 16384 | TOTAL bytes read from Response.body: 500000
+marker present in body bytes: true | marker byte offset in read body: 400000
+body bytes == decompressed size? true | == gzip wire size? false
+server saw Accept-Encoding: gzip, deflate, br, zstd | path: /plain
+--- default fetch /plain ---
+status: 200 | content-encoding hdr: null | content-length hdr: 500000
+chunks: 2 | first chunk bytes: 16384 | TOTAL bytes read from Response.body: 500000
+marker present in body bytes: true | marker byte offset in read body: 400000
+body bytes == decompressed size? true | == gzip wire size? false
+done
