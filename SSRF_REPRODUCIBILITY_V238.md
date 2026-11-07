@@ -4,6 +4,10 @@
 **Tanggal:** 2026-11-08 (WIB)
 **Status:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED
 **Menjawab:** F-009 (audit V2) — sejauh yang dapat diverifikasi
+**Rekonsiliasi v2.3.10 (F-009/F-014, audit V3):** lihat bagian
+"Rekonsiliasi v2.3.10" di bawah — hasil v2.3.9 kini dibuktikan dengan
+output mentah (`evidence/v239-repro/`); status keseluruhan tetap
+**NOT REPRODUCIBLE untuk clean external builder**.
 
 ## Ringkasan
 
@@ -16,7 +20,9 @@
 | SDK tarball — identitas/path | ⚠️ tercatat, provenance NOT VERIFIED | Path absolut builder-local; tarball tidak dapat diambil independen |
 | Test suite site | ❌ tidak ada | Tidak ada file test/spec, tidak ada script `test` |
 | CI | ❌ tidak ada | Tidak ada `.github/workflows` |
-| Hasil typecheck/build | ❌ NOT VERIFIED | Tidak dapat dijalankan dari mirror (tanpa `node_modules`; build dilarang house rules) |
+| Hasil typecheck | ✅ terverifikasi di scratch v2.3.10 | `evidence/v239-repro/repro-run1.txt`: client exit 0, server exit 0 (Bun 1.4.4, TS 5.6.3, 2026-11-07T18:49:04Z). BUKAN di bawah Bun 1.3.10 yang dideklarasikan |
+| Hasil build | ❌ NOT VERIFIED | Full build TIDAK dicoba (house rules); tidak ada klaim build |
+| Status keseluruhan | ❌ **NOT REPRODUCIBLE untuk clean external builder** | SDK tarball builder-local + Bun mismatch 1.4.4 vs 1.3.10 (lihat "Rekonsiliasi v2.3.10") |
 
 ## Versi runtime — dicatat apa adanya
 
@@ -109,15 +115,64 @@ DevDependencies:
   `*.yml`/`*.yaml` workflow di kedalaman repo yang diperiksa;
   GitHub combined status checks mengembalikan nol status untuk commit
   mirror dan audit (dicatat V2 §9).
-- **Hasil typecheck/build:** NOT VERIFIED. Menjalankannya butuh
-  `node_modules` (tidak ada di mirror) dan, untuk build, melanggar
+- **Hasil typecheck:** TERBUKTI di salinan scratch v2.3.10
+  (`evidence/v239-repro/repro-run1.txt` — client exit 0, server exit 0,
+  Bun 1.4.4, TS 5.6.3). **Hasil build: tetap NOT VERIFIED.**
+  Menjalankan build butuh `node_modules` dan, untuk build, melanggar
   house rules mirror (`site/AGENTS.md`: build/ship hanya via artifact
-  tools, tidak pernah `bun build`). Hasil build/typecheck yang sah
-  hanya dapat diperoleh lewat artifact workflow — bukan dari VM ini.
+  tools, tidak pernah `bun build`). Hasil build yang sah hanya dapat
+  diperoleh lewat artifact workflow — bukan dari VM ini. Konsistensi di
+  bawah Bun 1.3.10 yang dideklarasikan tetap NOT VERIFIED.
 - **`.gitignore`:** `node_modules/`, `.next/`, `out/`, `dist/`,
   `.env*`, `*.log`, `.DS_Store` — `*.log` adalah penyebab F-007;
   bukti v2.3.6 kini diterbitkan sebagai `.txt` di `evidence/v236/`
   agar ter-track.
+
+## Rekonsiliasi v2.3.10 (F-009/F-014 — audit V3)
+
+Audit V3 (F-014) menemukan manifest ini basi: matriks v2.3.9 melaporkan
+`bun install --frozen-lockfile` + typecheck exit 0 di salinan scratch,
+tetapi manifest ini masih menyatakan typecheck/build NOT VERIFIED dan
+tidak ada output mentah yang di-commit. Rekonsiliasi ini menutup celah
+itu — dengan menjalankan ulang sendiri, bukan dengan menyalin klaim lama.
+
+**Run v2.3.10 (baru, output mentah tersimpan):**
+`evidence/v239-repro/repro-run1.txt` (SHA-256
+`b14f98428fdb23514cc2d470c246cf49197cd2338d0e6348f4c0abc04bf67385`,
+29 baris) + `evidence/v239-repro/MANIFEST.md`. Lingkungan persis:
+host `htch-runtime`, kernel Linux 7.0.0-43-generic x86_64, **Bun 1.4.4**,
+Node v24.22.1, tanggal 2026-11-07T18:49:04Z (= 2026-11-08 01:49:04
+WIB), salinan kerja `/tmp/scratch-site-v239` (salinan `site/` dari repo
+pada commit `b42b02a`, dihapus setelah run — BUKAN repo, BUKAN live).
+
+| Perintah | Exit | Hasil |
+| --- | --- | --- |
+| `bun install --frozen-lockfile` | 0 | 79 paket (6,43 dtk); `bun.lock` TIDAK berubah (SHA-256 `a7e1457e…` sebelum dan sesudah) |
+| `bun run typecheck` (client + server, TS 5.6.3) | 0 | client exit 0, server exit 0 |
+
+Hasil ini **mereproduksi** klaim v2.3.9 (install + typecheck exit 0 di
+bawah Bun 1.4.4) dan kini didukung output mentah. Ini BUKAN run yang
+sama dengan run v2.3.9 — ini run baru yang independen, dijalankan untuk
+rekonsiliasi ini (justifikasi: klaim v2.3.9 tidak punya file bukti).
+
+**Yang tetap NOT VERIFIED (tidak berubah oleh run ini):**
+
+- SDK `@hatch/space-sdk` via `file:/opt/hatch/...` **TIDAK ada di repo**;
+  tarball terverifikasi ADA di builder (0.14.0, 2.051.070 byte, SHA-256
+  `f2cb7b25…`), provenance **NOT VERIFIED**. Builder eksternal tidak
+  dapat mengambilnya.
+- **Bun 1.4.4 vs deklarasi 1.3.10 — mismatch.** Hasil di atas TIDAK
+  membuktikan konsistensi di bawah Bun 1.3.10 yang dideklarasikan
+  `packageManager`.
+- **Full build TIDAK dicoba / TIDAK diklaim PASS** (house rules
+  `site/AGENTS.md`).
+- Tidak ada test suite site; tidak ada CI.
+
+**Status keseluruhan: NOT REPRODUCIBLE untuk clean external builder.**
+Kriteria penerimaan F-014 (clean authorized build environment dapat
+install frozen + typecheck/build dari pinned commit tanpa hidden
+builder-local path) **TIDAK terpenuhi** — path SDK builder-local masih
+menghalangi. Jangan klaim full-build PASS.
 
 ## Cara memverifikasi ulang manifest ini
 

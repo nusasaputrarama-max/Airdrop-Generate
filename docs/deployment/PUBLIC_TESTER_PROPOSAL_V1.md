@@ -7,6 +7,13 @@
 **Author:** Muse (Software Architect, AG-001)
 **Decision state:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED. NO PUBLIC DEPLOYMENT AUTHORIZED. LINK SCANNER MUST REMAIN DISABLED.
 
+> **ON HOLD (perintah pemilik, 2026-11-08 00:28 WIB):** public tester
+> DITAHAN oleh Rama ("Tahan dulu untuk tester publik, jangan terburu²
+> kerjakan dengan benar jobdeskmu dan persempit celah dulu"). Koreksi
+> v2.3.10 di dokumen ini (F-011) adalah koreksi dokumen saja — BUKAN
+> otorisasi deploy, bukan otorisasi implementasi fixture/API, dan bukan
+> pencabutan hold. Tidak ada tindak lanjut deployment dari revisi ini.
+
 > This document proposes architecture only. It deploys nothing, changes no
 > application code, touches no database or catalog, does not activate Link
 > Scanner, and does not create any production build or live service. Every
@@ -318,8 +325,77 @@ after T-01 is answered. The evidence supports only these two honest shapes:
 
 1. **Free, now, no code changes: static-frontend-only tester** on
    Cloudflare Pages, Vercel, or Netlify (free subdomain, $0), with **all
-   seven server actions disabled at the edge** (see §3). It tests the UI,
-   copy, and catalog presentation — not the checker, not writes.
+   seven server actions disabled at the edge** (see §3). It is a **visual
+   preview only** — it shows the UI, copy, and layout — **not a functional
+   tester**: it cannot browse the live catalog, show check history, or
+   answer Gibran questions, because all three need the `./actions`
+   endpoint that a static host does not serve (see §2.5 and the corrected
+   matrix §3.5). Any catalog-like content shown in this shape must be
+   clearly labelled as static sample content, never presented as live
+   catalog data.
+
+### 2.5 Client/API request map and the no-backend smoke test (koreksi v2.3.10 — F-011)
+
+**Correction (V3 §5, F-011):** v1 of this proposal (§2.4/§3.5) described
+a static frontend with all seven server actions absent while its feature
+matrix marked catalog browsing, Gibran Q&A, and `listChecks` as publicly
+available. That is incompatible with the current client and is corrected
+here. The release in shape 1 is a **visual preview, not a functional
+tester**.
+
+**Client/API request map** (verified from the mirror, commit `c68c727`;
+no code changed):
+
+| Client call site (`site/client/src/App.tsx`) | Action | Transport | Server effect (`site/server/src/actions.ts`) | Works with no backend? |
+| --- | --- | --- | --- | --- |
+| Page load, line ~1681 (`projectsQuery`, `queryFn: () => api.listProjects({})`) | `listProjects` | `POST ./actions` `{action, args}` via `createActionClient` (`site/client/src/api.ts`) | Lists catalog; **seeds the catalog from the in-code `CATALOG` constant when the table is empty** (lines 1242–1255) — a write on first call, not strictly read-only | **No** — no response; the projects query fails/empties and the catalog renders empty |
+| Page load, line ~1685 (`history`, `queryFn: () => api.listChecks({ limit: 100 })`) | `listChecks` | `POST ./actions` | Lists past checks, newest first | **No** — history renders empty |
+| Bookmark/task toggle, line ~1690 (`stateMut`) | `setProjectState` | `POST ./actions` | Upsert into `saved_projects` (write) | **No** — mutation fails |
+| Checker submit, line ~1695 (`checkMut`) | `checkLink` | `POST ./actions` | Server-side fetch + scoring + `checks` insert (write) — the SSRF surface (F-001) | **No** — and must stay disabled |
+| History delete, line ~1704 (`deleteMut`) | `deleteCheck` | `POST ./actions` | Deletes one check row (destructive write) | **No** — and must stay disabled |
+| Gibran chat, line ~1471 (`askMut`, `api.askGibran(payload)`) | `askGibran` | `POST ./actions` | Rebuilds grounding from live DB (all `projects` + last 10 `checks`) + `ctx.inference.complete` | **No** — no grounding data and no inference gateway without the server |
+| (No client caller in the mirror) | `addProject` | `POST ./actions` (intended caller: scheduled auto-discovery job) | Catalog insert (write); auth unclear (F-005) | **No** — and must stay disabled |
+
+Every one of the seven actions travels over the same transport
+(`createActionClient` POSTs `{action, args}` to `./actions`; there is
+no REST/GET fallback and no static-data mode in the reviewed client).
+Removing the server therefore removes **all** data-backed features, not
+just the writes. A static page can display static guide/about sections
+and layout, but it cannot display live catalog data, history, or Gibran
+answers.
+
+**No-backend smoke-test specification (for shape 1, static visual
+preview — specification only, not implemented):**
+
+1. Serve the built static bundle from the candidate host with no
+   `./actions` endpoint configured. Load the page in a clean browser.
+2. **Assert zero `POST` requests to `./actions`** in the network log
+   (the client will still attempt them on page load — see the map above;
+   the test records those attempts and requires that the UI does not
+   present their failure as live data).
+3. **Assert no empty/broken state is presented as live catalog data:**
+   the catalog section must either be absent or carry an explicit label
+   such as "Pratinjau visual — data katalog tidak dimuat pada pratinjau
+   ini"; it must not render an empty grid/cards as if the catalog were
+   empty, and must not render fixture rows as if they were verified
+   projects.
+4. **Assert disabled features are labelled:** checker submit, Gibran
+   chat, bookmarks/task toggles, and history delete must be visibly
+   disabled or absent, with a short note that they need the server.
+5. **Assert no secrets / wallet fragments / incident narrative** in the
+   served bundle (same rescan discipline as F-006).
+6. **Assert the version banner** shows the commit SHA + tag of the
+   static build (§5.3).
+7. **PASS** only if all six assertions hold. Any assertion failing =
+   the preview is not publishable as labelled.
+
+**Fixture-backed alternative (NOT specified as buildable here, NOT
+authorized):** a static frontend with an explicitly designed, versioned
+build-time fixture or a separate safe read-only API would be a different
+product (a functional tester) and is implementation work: it needs a
+fixture schema + source commit + freshness timestamp + a ban on
+personal/check-history data, plus its own owner approval. No fixture is
+designed, built, or shipped in this revision.
 2. **Full tester: a port + paid/self-managed hosting.** Cheapest honest
    shapes: Fly.io ~$2–5/mo, Railway $5/mo floor, Render $7/mo + disk, or
    OCI $0 with full ops burden — each **after** a port (SDK adapter +
@@ -355,10 +431,13 @@ of v2.3.8) and must never copy the live artifact's `DATA-PLAN.md`, any
 
 ### 3.3 Test data and reset
 
-- **Test data:** 3–5 synthetic catalog rows, clearly marked `TEST —`
+- **Test data (full-tester shape ONLY — koreksi v2.3.10, F-011):** 3–5 synthetic catalog rows, clearly marked `TEST —`
   in the name, with fictional contracts and `verified_note: "Synthetic
   tester seed — not a real project"`. Plus 2–3 synthetic check rows so
-  `listChecks` and Gibran have something to read. Synthetic data is
+  `listChecks` and Gibran have something to read. **None of this applies
+  to the static-only shape (§2.4 shape 1): a static preview has no
+  database, so it has no synthetic rows to read — its catalog/history/
+  Gibran are disabled (§3.5), not fed by synthetic data.** Synthetic data is
   created by a seed script that lives in the repo (to be written as
   implementation, not in this proposal) — never by hand-editing the tester
   database.
@@ -413,10 +492,10 @@ the full tester (shape 2) would re-derive it after the port.
 
 | Feature | Public | Authenticated | Allowlisted | Disabled (tester) |
 | --- | --- | --- | --- | --- |
-| Catalog browsing (read-only) | **Yes** | — | — | — |
+| Catalog browsing (read-only) | No | — | — | **DISABLED in the static-only shape — needs `listProjects` over `./actions` (§2.5); a static page has no catalog data to browse. (Koreksi v2.3.10 — F-011: v1 wrongly marked this "Yes".)** |
 | Guide / About / safety content | **Yes** | — | — | — |
-| Gibran Q&A (reads tester catalog + tester check history only) | **Yes** | — | — | — |
-| `listChecks` (tester synthetic rows) | **Yes** | — | — | — |
+| Gibran Q&A (reads tester catalog + tester check history only) | No | — | — | **DISABLED in the static-only shape — needs `askGibran` over `./actions` plus live DB grounding (§2.5). (Koreksi v2.3.10 — F-011: v1 wrongly marked this "Yes".)** |
+| `listChecks` (tester synthetic rows) | No | — | — | **DISABLED in the static-only shape — needs `listChecks` over `./actions` (§2.5); synthetic rows exist only in the full-tester shape (§3.3). (Koreksi v2.3.10 — F-011: v1 wrongly marked this "Yes".)** |
 | `checkLink` (Link Scanner) | No | No | No | **DISABLED — until F-001 is fixed and independently verified (§4). Non-negotiable.** |
 | `addProject` | No | No | No | **DISABLED — unauthenticated write (F-004/F-005); catalog is seed-only on the tester** |
 | `deleteCheck` | No | No | No | **DISABLED — unauthenticated destructive write** |
@@ -466,19 +545,19 @@ additions are new.
 | F-003 | No total deadline (High) | **NOT VERIFIED — blocked** | Implementation + harness H-RES-04..06 in staging |
 | F-004 | `addProject` duplicate race (Medium) | **NOT VERIFIED — blocked** | Unique-constraint migration + harness H-CAT-01..03 in staging |
 | F-005 | `addProject` authorization unclear (Medium) | **NOT VERIFIED — blocked** | Owner decision on the authorization mechanism + implementation + harness H-AUTH-01..03 |
-| F-006 | Personal narrative in public mirror (Medium) | **PASS (mirror)** | Redaction + rescan done in v2.3.8. Tester gate: seed the tester ONLY from the redacted mirror; never copy the live artifact's `DATA-PLAN.md` (follow-up still open) |
+| F-006 | Personal narrative in public mirror (Medium) | **Partially addressed — mirror only** | Mirror `site/DATA-PLAN.md` redacted + rescanned (v2.3.8). Source-code narrative (`actions.ts:51`, `GIBRAN_SITE_KNOWLEDGE` ~line 1089) OPEN; live artifact DATA-PLAN cleanup done 2026-11-08 ~00:59 WIB but **reported by Muse, not independently verified**. Split: F-006a/b/c in `SSRF_RESPONSE_MATRIX_V2310.md`. Tester gate: seed the tester ONLY from the redacted mirror; never copy the live artifact's pre-redaction `DATA-PLAN.md` |
 | F-007 | v2.3.6 raw logs absent from repo (Medium) | **Partially addressed** | Bundle `evidence/v236/` published (21 files + manifest, SHA-256 verified). Caveat: `su-run4` is a 2-line tail only; the initial failed SU-T5 run and the third OPS-T7 run are NOT PROVIDED (not recoverable). Tester gate: all tester evidence follows the same manifest discipline |
 | F-008 | SU-T5 explanation in v2.3.7 inaccurate (Medium) | **PASS** | Correction verified against committed code (`SSRF_RESPONSE_MATRIX_V238.md` §2.8) |
 | F-009 | Mirror not reproducible (Medium) | **Partially addressed** | `site/bun.lock` mirrored (SHA verified) + reproducibility manifest. Still NOT VERIFIED: SDK tarball provenance, site test suite / CI, build & typecheck results. Tester gate: a reproducible build from a pinned commit must exist before any tester deploy — **currently NOT VERIFIED for any third-party host** |
 | U-46 | Numeric-kill fallback divergence | **OPEN — owner decision pending** | Written owner decision, option (a) or (b), + the acceptance criteria in `SSRF_RESPONSE_MATRIX_V238.md` §3. Blocks worker-signaling implementation, not the tester itself — but any tester that includes the remediation must carry the decision |
 | T-G1 | Tester `checkLink` probe | **NOT PROVIDED** | A `POST` probe to the tester `./actions` for `checkLink` returns a rejection and creates no `checks` row (see §3.5) |
-| T-G2 | Tester has no production data | **NOT PROVIDED** | Catalog/check counts equal the synthetic seed counts; zero production rows (see §3.3) |
+| T-G2 | Tester has no production data | **NOT PROVIDED** | Catalog/check counts equal the synthetic seed counts; zero production rows (see §3.3). **Applies to the full-tester shape only** — the static-only shape has no database at all (§2.5) |
 | T-G3 | Reproducible tester build | **NOT VERIFIED** | Build from a pinned commit + `bun.lock` succeeds in CI; artifact tagged by commit SHA (see §5) |
 
 **Consequence:** the only tester shape that can pass its gates today is the
-read-only static-frontend tester (§2.4 shape 1): F-001..F-005 stay closed
-by disabling the features, F-006/F-008 pass, F-007/F-009 are documented
-caveats, and T-G1..T-G3 are provable without any implementation. A full
+static visual preview (§2.4 shape 1, §2.5): F-001..F-005 stay closed
+by disabling the features, F-006/F-008 pass at mirror level, F-007/F-009 are documented
+caveats, and T-G1/T-G3 are provable without any implementation. A full
 tester cannot pass T-G1/T-G3 — let alone F-001 — until the port exists and
 the remediation is implemented, staged, and independently audited.
 
@@ -742,7 +821,7 @@ re-check before committing — free tiers change):**
   answer to T-01 and the decisions in §8.
 - It does not claim any security gate PASS that the evidence does not
   support. F-001..F-005 remain NOT VERIFIED / blocked; the only tester
-  shape that can go public today is the read-only static-frontend tester
-  with every server action disabled.
+  shape that can go public today is the static visual preview
+  (§2.4 shape 1, §2.5) with every server action disabled.
 - It does not ask ChatGPT to audit from this message. The next audit, if
   any, reads this committed document from the repo — per the protocol.

@@ -38,13 +38,20 @@ di sini: semua run PASS dan `su-supp-run1.txt` byte-identik dengan
 
 ## Daftar run
 
-| Test ID | Run | Timestamp UTC (mulai) | Command | Exit | Hasil | SHA-256 |
-|---|---|---|---|---|---|---|
-| SU-T1..SU-T9 | supp-1 | 2026-11-07T17:29:40Z | `node su-v232/run-tests.cjs 1` | 0 | 9/9 PASS | `a8bbf1bbc724cfe248712717888b6e6957b7c23dae591aabe29ef24cb15ca036` |
-| SU-T1..SU-T9 | supp-2 | 2026-11-07T17:29:49Z | `node su-v232/run-tests.cjs 2` | 0 | 9/9 PASS | `b1249e85c8c9bf338be536641ad686b49db32999646a93bde66a13a9449756e3` |
-| SU-T1..SU-T9 | supp-3 | 2026-11-07T17:29:57Z | `node su-v232/run-tests.cjs 3` | 0 | 9/9 PASS | `11a77ea6a1a3d04a486414f87839d81493e3aaac528b30e83a84b63f11613309` |
-| SU-T1..SU-T9 | supp-4 | 2026-11-07T17:30:06Z | `node su-v232/run-tests.cjs 4` | 0 | 9/9 PASS | `c87f538268dcfc030b428eb585b0cd6cfeccda23028f859e4375889a9f45cf07` |
-| OPS-T7 | supp-3 | 2026-11-07T17:30:15Z | `node ops-recovery.cjs` | 0 | PASS | `59b48de0b1d32d35e612f7a62b75b87adb4e59826d5d156f063d5cd5aa0dfe04` |
+| File | Test ID | Run | Timestamp UTC (mulai) | Command | Exit | Hasil | SHA-256 |
+|---|---|---|---|---|---|---|---|
+| `su-supp-run1.txt` | SU-T1..SU-T9 | supp-1 | 2026-11-07T17:29:40Z | `node su-v232/run-tests.cjs 1` | 0 | 9/9 PASS | `a8bbf1bbc724cfe248712717888b6e6957b7c23dae591aabe29ef24cb15ca036` |
+| `su-supp-run2.txt` | SU-T1..SU-T9 | supp-2 | 2026-11-07T17:29:49Z | `node su-v232/run-tests.cjs 2` | 0 | 9/9 PASS | `b1249e85c8c9bf338be536641ad686b49db32999646a93bde66a13a9449756e3` |
+| `su-supp-run3.txt` | SU-T1..SU-T9 | supp-3 | 2026-11-07T17:29:57Z | `node su-v232/run-tests.cjs 3` | 0 | 9/9 PASS | `11a77ea6a1a3d04a486414f87839d81493e3aaac528b30e83a84b63f11613309` |
+| `su-supp-run4.txt` | SU-T1..SU-T9 | supp-4 | 2026-11-07T17:30:06Z | `node su-v232/run-tests.cjs 4` | 0 | 9/9 PASS | `c87f538268dcfc030b428eb585b0cd6cfeccda23028f859e4375889a9f45cf07` |
+| `ops-t7-supp-run3.txt` | OPS-T7 | supp-3 | 2026-11-07T17:30:15Z | `node ops-recovery.cjs` | 0 | PASS | `59b48de0b1d32d35e612f7a62b75b87adb4e59826d5d156f063d5cd5aa0dfe04` |
+
+**Koreksi v2.3.10 (F-010):** kolom `File` ditambahkan ke tabel di atas
+(tabel v2.3.9 tidak mencantumkan nama file) agar checker
+`scripts/verify-evidence-manifest.mjs` dapat memverifikasi tiap baris
+terhadap file yang sebenarnya. Nilai lain tidak diubah. Verifikasi
+checker v2.3.10: `evidence/v236-supplement-20261108/VERIFY-20261108.txt`
+(exit 0 — 0 failure).
 
 Perintah dijalankan dari `spike-harness-v236/`; output diarahkan langsung
 ke file `.txt` di direktori ini (tanpa penyuntingan). Semua file `.txt`

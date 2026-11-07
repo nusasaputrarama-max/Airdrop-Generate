@@ -1,0 +1,80 @@
+manifest: evidence/v236/MANIFEST.md
+entries : 21
+
+ok    su-run1.txt (claimed run 1, SU-T1..SU-T9): SHA-256 matches manifest
+ok    su-run1.txt (claimed run 1, SU-T1..SU-T9): size 904 B matches manifest
+ok    su-run1.txt (claimed run 1, SU-T1..SU-T9): header RUN=1 matches manifest run
+ok    su-run1.txt (claimed run 1, SU-T1..SU-T9): summary RUN=1 matches manifest run
+ok    su-run1.txt (claimed run 1, SU-T1..SU-T9): header RUN matches filename run 1
+ok    su-run2.txt (claimed run 2, SU-T1..SU-T9): SHA-256 matches manifest
+ok    su-run2.txt (claimed run 2, SU-T1..SU-T9): size 904 B matches manifest
+FAIL  su-run2.txt (claimed run 2, SU-T1..SU-T9): header RUN=1 but manifest claims run 2
+FAIL  su-run2.txt (claimed run 2, SU-T1..SU-T9): summary RUN=1 but manifest claims run 2
+FAIL  su-run2.txt (claimed run 2, SU-T1..SU-T9): header RUN=1 but filename implies run 2
+ok    su-run3.txt (claimed run 3, SU-T1..SU-T9): SHA-256 matches manifest
+ok    su-run3.txt (claimed run 3, SU-T1..SU-T9): size 904 B matches manifest
+FAIL  su-run3.txt (claimed run 3, SU-T1..SU-T9): header RUN=1 but manifest claims run 3
+FAIL  su-run3.txt (claimed run 3, SU-T1..SU-T9): summary RUN=1 but manifest claims run 3
+FAIL  su-run3.txt (claimed run 3, SU-T1..SU-T9): header RUN=1 but filename implies run 3
+ok    su-run4.txt (claimed run 4, SU-T9 + ringkasan): SHA-256 matches manifest
+ok    su-run4.txt (claimed run 4, SU-T9 + ringkasan): size 194 B matches manifest
+FAIL  su-run4.txt (claimed run 4, SU-T9 + ringkasan): no RUN header in content but manifest claims run 4
+FAIL  su-run4.txt (claimed run 4, SU-T9 + ringkasan): summary RUN=1 but manifest claims run 4
+FAIL  su-run4.txt (claimed run 4, SU-T9 + ringkasan): only 2 line(s) — partial log, not a complete run output
+ok    pidfd-run1.txt (claimed run 1, PIDFD-T1..T7): SHA-256 matches manifest
+ok    pidfd-run1.txt (claimed run 1, PIDFD-T1..T7): size 939 B matches manifest
+WARN  pidfd-run1.txt (claimed run 1, PIDFD-T1..T7): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-run2.txt (claimed run 2, PIDFD-T1..T7): SHA-256 matches manifest
+ok    pidfd-run2.txt (claimed run 2, PIDFD-T1..T7): size 943 B matches manifest
+WARN  pidfd-run2.txt (claimed run 2, PIDFD-T1..T7): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-bun-run1.txt (claimed run 1, PIDFD-T8a/T8b): SHA-256 matches manifest
+ok    pidfd-bun-run1.txt (claimed run 1, PIDFD-T8a/T8b): size 254 B matches manifest
+WARN  pidfd-bun-run1.txt (claimed run 1, PIDFD-T8a/T8b): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-bun-run2.txt (claimed run 2, PIDFD-T8a/T8b): SHA-256 matches manifest
+ok    pidfd-bun-run2.txt (claimed run 2, PIDFD-T8a/T8b): size 255 B matches manifest
+WARN  pidfd-bun-run2.txt (claimed run 2, PIDFD-T8a/T8b): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-t11-run1.txt (claimed run 1, PIDFD-T11a..e): SHA-256 matches manifest
+ok    pidfd-t11-run1.txt (claimed run 1, PIDFD-T11a..e): size 635 B matches manifest
+WARN  pidfd-t11-run1.txt (claimed run 1, PIDFD-T11a..e): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-t11-run2.txt (claimed run 2, PIDFD-T11a..e): SHA-256 matches manifest
+ok    pidfd-t11-run2.txt (claimed run 2, PIDFD-T11a..e): size 637 B matches manifest
+WARN  pidfd-t11-run2.txt (claimed run 2, PIDFD-T11a..e): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-t11-run3.txt (claimed run 3, PIDFD-T11a..e): SHA-256 matches manifest
+ok    pidfd-t11-run3.txt (claimed run 3, PIDFD-T11a..e): size 635 B matches manifest
+WARN  pidfd-t11-run3.txt (claimed run 3, PIDFD-T11a..e): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-t12-run1.txt (claimed run 1, PIDFD-T12a..d): SHA-256 matches manifest
+ok    pidfd-t12-run1.txt (claimed run 1, PIDFD-T12a..d): size 624 B matches manifest
+WARN  pidfd-t12-run1.txt (claimed run 1, PIDFD-T12a..d): no RUN header/summary in content — run number not independently provable from this file
+ok    pidfd-t12-run2.txt (claimed run 2, PIDFD-T12a..d): SHA-256 matches manifest
+ok    pidfd-t12-run2.txt (claimed run 2, PIDFD-T12a..d): size 624 B matches manifest
+WARN  pidfd-t12-run2.txt (claimed run 2, PIDFD-T12a..d): no RUN header/summary in content — run number not independently provable from this file
+ok    dirfd-run1.txt (claimed run 1, PIDFD-T10a/b): SHA-256 matches manifest
+ok    dirfd-run1.txt (claimed run 1, PIDFD-T10a/b): size 474 B matches manifest
+WARN  dirfd-run1.txt (claimed run 1, PIDFD-T10a/b): no RUN header/summary in content — run number not independently provable from this file
+ok    dirfd-run2.txt (claimed run 2, PIDFD-T10a/b): SHA-256 matches manifest
+ok    dirfd-run2.txt (claimed run 2, PIDFD-T10a/b): size 472 B matches manifest
+WARN  dirfd-run2.txt (claimed run 2, PIDFD-T10a/b): no RUN header/summary in content — run number not independently provable from this file
+ok    window-run1.txt (claimed run 1, WINDOW-P99): SHA-256 matches manifest
+ok    window-run1.txt (claimed run 1, WINDOW-P99): size 444 B matches manifest
+WARN  window-run1.txt (claimed run 1, WINDOW-P99): no RUN header/summary in content — run number not independently provable from this file
+ok    window-run2.txt (claimed run 2, WINDOW-P99): SHA-256 matches manifest
+ok    window-run2.txt (claimed run 2, WINDOW-P99): size 444 B matches manifest
+WARN  window-run2.txt (claimed run 2, WINDOW-P99): no RUN header/summary in content — run number not independently provable from this file
+ok    ops-run1.txt (claimed run 1, OPS-T1..T6): SHA-256 matches manifest
+ok    ops-run1.txt (claimed run 1, OPS-T1..T6): size 1423 B matches manifest
+WARN  ops-run1.txt (claimed run 1, OPS-T1..T6): no RUN header/summary in content — run number not independently provable from this file
+ok    ops-run2.txt (claimed run 2, OPS-T1..T6): SHA-256 matches manifest
+ok    ops-run2.txt (claimed run 2, OPS-T1..T6): size 1423 B matches manifest
+WARN  ops-run2.txt (claimed run 2, OPS-T1..T6): no RUN header/summary in content — run number not independently provable from this file
+ok    opsrec-run1.txt (claimed run 1, OPS-T7a/b/c): SHA-256 matches manifest
+ok    opsrec-run1.txt (claimed run 1, OPS-T7a/b/c): size 300 B matches manifest
+WARN  opsrec-run1.txt (claimed run 1, OPS-T7a/b/c): no RUN header/summary in content — run number not independently provable from this file
+ok    opsrec-run2.txt (claimed run 2, OPS-T7a/b/c): SHA-256 matches manifest
+ok    opsrec-run2.txt (claimed run 2, OPS-T7a/b/c): size 297 B matches manifest
+WARN  opsrec-run2.txt (claimed run 2, OPS-T7a/b/c): no RUN header/summary in content — run number not independently provable from this file
+
+--- uniqueness (distinct claimed runs must have distinct hashes) ---
+FAIL  duplicate SHA-256 a8bbf1bbc724cfe2… shared by su-run1.txt (run 1), su-run2.txt (run 2), su-run3.txt (run 3) — NOT independent evidence for distinct runs
+FAIL  duplicate SHA-256 c534b54173951736… shared by ops-run1.txt (run 1), ops-run2.txt (run 2) — NOT independent evidence for distinct runs
+
+RESULT: 11 failure(s), 17 warning(s), 21 manifest entries checked

@@ -1,0 +1,30 @@
+manifest: evidence/v236-supplement-20261108/MANIFEST.md
+entries : 5
+
+ok    su-supp-run1.txt (claimed run 1, SU-T1..SU-T9): SHA-256 matches manifest
+info  su-supp-run1.txt (claimed run 1, SU-T1..SU-T9): size 904 B (no size column in this manifest)
+ok    su-supp-run1.txt (claimed run 1, SU-T1..SU-T9): header RUN=1 matches manifest run
+ok    su-supp-run1.txt (claimed run 1, SU-T1..SU-T9): summary RUN=1 matches manifest run
+ok    su-supp-run1.txt (claimed run 1, SU-T1..SU-T9): header RUN matches filename run 1
+ok    su-supp-run2.txt (claimed run 2, SU-T1..SU-T9): SHA-256 matches manifest
+info  su-supp-run2.txt (claimed run 2, SU-T1..SU-T9): size 904 B (no size column in this manifest)
+ok    su-supp-run2.txt (claimed run 2, SU-T1..SU-T9): header RUN=2 matches manifest run
+ok    su-supp-run2.txt (claimed run 2, SU-T1..SU-T9): summary RUN=2 matches manifest run
+ok    su-supp-run2.txt (claimed run 2, SU-T1..SU-T9): header RUN matches filename run 2
+ok    su-supp-run3.txt (claimed run 3, SU-T1..SU-T9): SHA-256 matches manifest
+info  su-supp-run3.txt (claimed run 3, SU-T1..SU-T9): size 904 B (no size column in this manifest)
+ok    su-supp-run3.txt (claimed run 3, SU-T1..SU-T9): header RUN=3 matches manifest run
+ok    su-supp-run3.txt (claimed run 3, SU-T1..SU-T9): summary RUN=3 matches manifest run
+ok    su-supp-run3.txt (claimed run 3, SU-T1..SU-T9): header RUN matches filename run 3
+ok    su-supp-run4.txt (claimed run 4, SU-T1..SU-T9): SHA-256 matches manifest
+info  su-supp-run4.txt (claimed run 4, SU-T1..SU-T9): size 904 B (no size column in this manifest)
+ok    su-supp-run4.txt (claimed run 4, SU-T1..SU-T9): header RUN=4 matches manifest run
+ok    su-supp-run4.txt (claimed run 4, SU-T1..SU-T9): summary RUN=4 matches manifest run
+ok    su-supp-run4.txt (claimed run 4, SU-T1..SU-T9): header RUN matches filename run 4
+ok    ops-t7-supp-run3.txt (claimed run 3, OPS-T7): SHA-256 matches manifest
+info  ops-t7-supp-run3.txt (claimed run 3, OPS-T7): size 300 B (no size column in this manifest)
+WARN  ops-t7-supp-run3.txt (claimed run 3, OPS-T7): no RUN header/summary in content — run number not independently provable from this file
+
+--- uniqueness (distinct claimed runs must have distinct hashes) ---
+
+RESULT: 0 failure(s), 1 warning(s), 5 manifest entries checked

@@ -5,6 +5,72 @@
 **Status:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED
 **Menjawab:** F-007 (audit V2 — log mentah v2.3.6 yang dikutip tidak ada di repo)
 
+## Koreksi v2.3.10 (F-010) — baca dulu, mengikat seluruh manifest ini
+
+Audit V3 (`SSRF_INDEPENDENT_AUDIT_V3.md` §4.1/§5, F-010) menemukan cacat
+integritas pada bundle ini, dan Muse memverifikasi sendiri dengan
+`sha256sum` pada 2026-11-08 ~01:49 WIB (sebelum menulis koreksi ini):
+
+- `su-run1.txt`, `su-run2.txt`, `su-run3.txt` **byte-identik**:
+  SHA-256 ketiganya `a8bbf1bbc724cfe248712717888b6e6957b7c23dae591aabe29ef24cb15ca036`,
+  masing-masing 904 byte / 11 baris, header `=== SUITE v2.3.2 (RUN=1) ===`
+  dan ringkasan `=== HASIL RUN=1: 9/9 PASS ===`.
+- `su-run4.txt` hanya 194 byte / 2 baris (baris PASS SU-T9 + ringkasan
+  `RUN=1`) — ekor, bukan log lengkap; mtime 14:10:42 UTC, lebih awal dari
+  su-run1..3.
+
+**Konsekuensi:** bundle ini TIDAK berisi tiga log SU lengkap yang berbeda.
+Yang dapat dibuktikan dari artefak hanyalah **SATU output SU lengkap
+(RUN=1) yang tersimpan tiga kali**, plus satu ekor. Klaim v2.3.6/v2.3.7
+"SU-T1..SU-T9 9/9 × 4" tetap merupakan hitungan run yang dijalankan
+menurut `SSRF_SPIKE_V236.md` §0.1, tetapi **jumlah run itu TIDAK DAPAT
+diverifikasi dari repo** — status yang benar untuk klaim asli adalah
+"reported PASS in VM documentation" dengan 1 log lengkap yang
+terverifikasi, bukan "4 log lengkap" dan bukan "3 log lengkap".
+
+**File TIDAK dihapus.** Menghapus `su-run2.txt`/`su-run3.txt` akan
+menghancurkan jejak audit (bagaimana cacat ini terjadi dan apa yang
+dulu diklaim). Ketiganya dipertahankan apa adanya dan ditandai di bawah
+sebagai duplikat — label, bukan penghapusan.
+
+**Status bukti yang dikoreksi (menggantikan interpretasi tabel
+Inventaris di bawah — kolom Run/SHA tabel tetap mencatat klaim ASLI
+v2.3.8 agar sejarah klaim tidak ditulis ulang):**
+
+| File | Status bukti v2.3.10 |
+| --- | --- |
+| `su-run1.txt` | INDEPENDEN — satu-satunya output SU lengkap yang terverifikasi dari bundle asli (RUN=1, 9/9 PASS). |
+| `su-run2.txt` | **DUPLIKAT — NOT PRESERVED sebagai log independen.** Byte-identik dengan su-run1.txt; header/ringkasan RUN=1, bukan RUN=2. Jangan dikutip sebagai run ke-2. |
+| `su-run3.txt` | **DUPLIKAT — NOT PRESERVED sebagai log independen.** Byte-identik dengan su-run1.txt; header/ringkasan RUN=1, bukan RUN=3. Jangan dikutip sebagai run ke-3. |
+| `su-run4.txt` | **SEBAGIAN — ekor 2 baris, NOT PRESERVED sebagai log lengkap.** Ringkasan RUN=1; tidak membuktikan run ke-4 yang lengkap. |
+| `ops-run1.txt` / `ops-run2.txt` | **NOT-INDEPENDENT (temuan sejenis, baru dicatat v2.3.10).** Keduanya byte-identik (SHA-256 `c534b541…`, 1.423 byte) dan isinya tidak mengandung diskriminator nomor run apa pun (tidak ada header/ringkasan RUN) — artefak tidak dapat membedakan dua run yang diklaim. Audit V3 tidak menyinggung pasangan ini; checker v2.3.10 menemukannya dengan aturan yang sama. Klaim "OPS-T1..T6 6/6 PASS × 2" dari bundle asli berstatus NOT VERIFIED sebagai dua run independen. |
+| File lain (`pidfd-*`, `pidfd-bun-*`, `pidfd-t11-*`, `pidfd-t12-*`, `dirfd-*`, `window-*`, `opsrec-*`) | Tidak berubah — tiap file punya SHA-256 berbeda dan lolos pemeriksaan hash/ukuran checker; catatan: sebagian besar tidak mengandung diskriminator RUN di dalam isi (checker memberi WARN), tetapi hash-nya berbeda sehingga tidak ada klaim duplikat atas mereka. |
+
+**Klaim v2.3.6 asli vs suplemen v2.3.9 — dipisahkan secara eksplisit:**
+klaim "9/9 × 4" v2.3.6 bersandar pada bundle ini (status terkoreksi di
+atas). Empat run suplemen v2.3.9 (`evidence/v236-supplement-20261108/`,
+supp-1..supp-4, masing-masing 11 baris lengkap, header/ringkasan RUN=1..4
+yang cocok, SHA-256 berbeda kecuali supp-1 yang memang byte-identik
+dengan su-run1.txt karena mereproduksinya) adalah **kumpulan bukti VM
+yang terpisah, tertanggal terpisah (2026-11-07T17:29:40Z–17:30:06Z)** —
+bukan log asli yang hilang dan bukan pengganti bundle ini. Suplemen itu
+yang kini menjadi bukti 4-run SU yang dapat diverifikasi dari repo.
+
+**Verifikasi mesin (checker):** `scripts/verify-evidence-manifest.mjs`
+memverifikasi SHA-256, ukuran byte, header run, nomor run ringkasan, dan
+keunikan hash di mana eksekusi berbeda diklaim. Dijalankan 2026-11-08
+~01:50 WIB; output lengkap tersimpan di `evidence/v236/VERIFY-20261108.txt`
+(**exit 1 — 11 failure**: 6 ketidakcocokan RUN su-run2/3, 3 kegagalan
+su-run4, 2 kegagalan duplikat hash — kegagalan ini ADALAH hasil yang
+diharapkan untuk bundle asli yang terkoreksi, bukan kesalahan checker).
+Suplemen lolos: `evidence/v236-supplement-20261108/VERIFY-20261108.txt`
+(exit 0 — 0 failure). Perintah:
+
+```sh
+node scripts/verify-evidence-manifest.mjs evidence/v236
+node scripts/verify-evidence-manifest.mjs evidence/v236-supplement-20261108
+```
+
 ## Mengapa file-file ini berbentuk .txt
 
 Log mentah v2.3.6 ADA secara lokal di `spike-harness-v236/*.log` sejak
@@ -98,6 +164,14 @@ Total: 21 file, 13.729 byte.
 ## Peringatan bukti — baca sebelum mengutip angka
 
 ### 1. `su-run4.txt` hanya sebagian (material)
+
+> **Koreksi v2.3.10 (F-010):** paragraf ini juga sudah kedaluwarsa dalam
+> satu hal — bundle ini ternyata hanya berisi **1 log lengkap** (su-run1),
+> bukan 3 log lengkap seperti tertulis di bawah ("3 log lengkap + 1 log
+> ekor"). Yang benar: **1 log lengkap + 2 duplikat + 1 ekor** — lihat
+> "Koreksi v2.3.10 (F-010)" di kepala manifest ini. Isi paragraf di bawah
+> dipertahankan sebagai catatan sejarah klaim v2.3.8, bukan sebagai status
+> saat ini.
 
 `su-run4.txt` hanya 194 byte / 2 baris: baris PASS SU-T9 dan baris
 `=== HASIL RUN=1: 9/9 PASS ===`. Mtime-nya 14:10:42 UTC — LEBIH AWAL
