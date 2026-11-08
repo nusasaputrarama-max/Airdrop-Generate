@@ -6,7 +6,7 @@
 // map, not invocable from the client) against a disposable DB built by
 // applying the REAL migrations 0001-0007 (see harness-helpers.ts).
 // Fixture: 2 legacy rows (owner_user_id NULL) + 1 row owned by
-// local:principal-A.
+// local:u-principal-A.
 //
 // Gate §5 (policy L-A default): only the SPACE OWNER —
 // ctx.viewer.isOwner === true, an identity the runtime verifies — may
@@ -50,7 +50,7 @@ function eq<T>(actual: T, expected: T, msg: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture: 2 legacy NULL rows + 1 row owned by local:principal-A.
+// Fixture: 2 legacy NULL rows + 1 row owned by local:u-principal-A.
 // ---------------------------------------------------------------------------
 const tdb = makeMigratedDb();
 seedChecks(tdb.dbPath, [
@@ -73,7 +73,7 @@ seedChecks(tdb.dbPath, [
     domain: "a-1.test",
     verdict: "waspada",
     score: 60,
-    ownerUserId: "local:principal-A",
+    ownerUserId: "local:u-principal-A",
   },
 ]);
 

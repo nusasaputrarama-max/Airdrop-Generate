@@ -108,7 +108,7 @@ test("H-AUTH-04", "local owner -> succeeds, provenance = local principal", async
   const res = await addProject.handler(ctx, validArgs("Uji Owner Lokal", "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"));
   eq(res.added, true, `owner must succeed (got reason: ${res.reason})`);
   eq(countRows(tdb.dbPath, "projects"), before + 1, "exactly one row created");
-  eq(provenanceOf(tdb.dbPath, "Uji Owner Lokal"), "local:owner-1", "provenance must be the owner principal");
+  eq(provenanceOf(tdb.dbPath, "Uji Owner Lokal"), "local:u-owner-1", "provenance must be the owner principal");
 });
 
 test("H-AUTH-05", "Cloudflare owner -> succeeds, provenance = cloudflare-owner principal", async () => {

@@ -120,6 +120,29 @@ export function localViewer(ownerUserId: string, isOwner: boolean): any {
   };
 }
 
+/**
+ * A local viewer with EXPLICIT userId (F-058, v2.3.25): userId and
+ * ownerUserId are independent SDK fields — never derive one from the
+ * other. Use this whenever a test needs two callers under one owner,
+ * an owner/non-owner pair with the same userId, or a delegate.
+ */
+export function localViewerAs(opts: {
+  userId: string;
+  ownerUserId: string;
+  isOwner: boolean;
+  delegate?: "agent" | "schedule";
+}): any {
+  return {
+    source: "local",
+    authenticated: true,
+    spaceSlug: "test",
+    userId: opts.userId,
+    ownerUserId: opts.ownerUserId,
+    isOwner: opts.isOwner,
+    ...(opts.delegate ? { delegate: opts.delegate } : {}),
+  };
+}
+
 /** A cloudflare viewer object (identity is the share, not a user id). */
 export function cloudflareViewer(shareId: string, isOwner: boolean): any {
   return {

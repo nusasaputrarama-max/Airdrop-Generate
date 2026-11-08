@@ -55,7 +55,7 @@ const tdb = makeMigratedDb();
 // terbaca oleh viewer share mana pun. Baris NULL = legacy (L-A).
 seedChecks(tdb.dbPath, [
   { url: "https://share-a.test/claim", domain: "share-a.test", verdict: "waspada", score: 55, ownerUserId: "cloudflare:share-1" },
-  { url: "https://pemilik-rahasia.test/x", domain: "pemilik-rahasia.test", verdict: "bahaya", score: 90, ownerUserId: "local:owner-1" },
+  { url: "https://pemilik-rahasia.test/x", domain: "pemilik-rahasia.test", verdict: "bahaya", score: 90, ownerUserId: "local:u-owner-1" },
   { url: "https://legacy.test/x", domain: "legacy.test", verdict: "lebih_aman", score: 5, ownerUserId: null },
 ]);
 

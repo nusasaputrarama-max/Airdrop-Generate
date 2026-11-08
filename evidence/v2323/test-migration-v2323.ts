@@ -925,8 +925,8 @@ const baseTableInfo = (() => {
   const p = freshCopy(mig01bPath, "mig08d"); // mig01b: termigrasi + fixture legacy
   const db = new Database(p);
   const nowMs = Date.now();
-  db.exec(`INSERT INTO saved_projects (principal_id, project_id, bookmarked, task_status, updated_at) VALUES ('local:principal-A', 1, 1, 'completed', ${nowMs})`);
-  db.exec(`INSERT INTO checks (url, domain, verdict, score, signals, contracts, created_at, owner_user_id) VALUES ('https://a.test/x','a.test','waspada',60,'[]','[]',${nowMs},'local:principal-A')`);
+  db.exec(`INSERT INTO saved_projects (principal_id, project_id, bookmarked, task_status, updated_at) VALUES ('local:u-principal-A', 1, 1, 'completed', ${nowMs})`);
+  db.exec(`INSERT INTO checks (url, domain, verdict, score, signals, contracts, created_at, owner_user_id) VALUES ('https://a.test/x','a.test','waspada',60,'[]','[]',${nowMs},'local:u-principal-A')`);
   db.close();
   const dbR = new Database(p, { readonly: true });
   const vd1: any[] = dbR.query("SELECT `principal_id`, `project_id` FROM `saved_projects` WHERE `principal_id` <> '<LEGACY>'").all();
@@ -1238,7 +1238,7 @@ console.log("--- H-CAT-13 (JS ASLI == DB canonical) ---");
 // H-TEN-11..15 — F-046/F-040 via handler Actions ASLI (actions.ts)
 // dengan mock ctx + drizzle libsql NYATA atas DB disposable termigrasi.
 // Principal: viewer local ownerUserId "principal-A"/"principal-B"
-// -> resolvePrincipal() = "local:principal-A" / "local:principal-B".
+// -> resolvePrincipal() = "local:u-principal-A" / "local:u-principal-B".
 // inference.complete dimock dan prompt-nya ditangkap (askGibran).
 // ==================================================================
 console.log("--- H-TEN-11..15 (Actions ASLI + mock ctx + libsql nyata) ---");
@@ -1249,9 +1249,9 @@ console.log("--- H-TEN-11..15 (Actions ASLI + mock ctx + libsql nyata) ---");
     const raw = new Database(p);
     raw.exec(
       `INSERT INTO checks (url, domain, verdict, score, signals, contracts, created_at, owner_user_id) VALUES
-       ('https://a-1.test/x','a-1.test','waspada',60,'[]','[]',${nowMs},'local:principal-A'),
-       ('https://a-2.test/x','a-2.test','bahaya',90,'[]','[]',${nowMs},'local:principal-A'),
-       ('https://b-1.test/x','b-1.test','lebih_aman',10,'[]','[]',${nowMs},'local:principal-B')`,
+       ('https://a-1.test/x','a-1.test','waspada',60,'[]','[]',${nowMs},'local:u-principal-A'),
+       ('https://a-2.test/x','a-2.test','bahaya',90,'[]','[]',${nowMs},'local:u-principal-A'),
+       ('https://b-1.test/x','b-1.test','lebih_aman',10,'[]','[]',${nowMs},'local:u-principal-B')`,
     );
     raw.close();
   }
@@ -1303,7 +1303,7 @@ console.log("--- H-TEN-11..15 (Actions ASLI + mock ctx + libsql nyata) ---");
       `A ids=${JSON.stringify([...aIds])} B ids=${JSON.stringify([...bIds])} (legacy ids 1,2)`,
     );
     // Kontras predikat lama (SQL langsung, bukan handler): OR owner IS NULL membocorkan.
-    const oldPred: any[] = await client.execute("SELECT id, domain, owner_user_id FROM checks WHERE owner_user_id = 'local:principal-B' OR owner_user_id IS NULL ORDER BY id");
+    const oldPred: any[] = await client.execute("SELECT id, domain, owner_user_id FROM checks WHERE owner_user_id = 'local:u-principal-B' OR owner_user_id IS NULL ORDER BY id");
     check(
       "H-TEN-11e KONTRAS: predikat lama v2.3.20 (OR owner IS NULL) MEMBOCORKAN 2 baris legacy ke B — alasan F-046",
       oldPred.rows.length === 3 && oldPred.rows.filter((r: any) => r.owner_user_id === null).length === 2,
@@ -1382,15 +1382,15 @@ console.log("--- H-TEN-11..15 (Actions ASLI + mock ctx + libsql nyata) ---");
     );
     const savedRows: any = await client.execute("SELECT principal_id, project_id, bookmarked, task_status FROM saved_projects ORDER BY principal_id, project_id");
     const legacySaved = savedRows.rows.filter((r: any) => r.principal_id === "<LEGACY>");
-    const aSaved = savedRows.rows.filter((r: any) => r.principal_id === "local:principal-A" && r.project_id === 1);
-    const bSaved = savedRows.rows.filter((r: any) => r.principal_id === "local:principal-B");
+    const aSaved = savedRows.rows.filter((r: any) => r.principal_id === "local:u-principal-A" && r.project_id === 1);
+    const bSaved = savedRows.rows.filter((r: any) => r.principal_id === "local:u-principal-B");
     check("H-TEN-15c baris '<LEGACY>' tetap 2 (tidak tertimpa state per-principal)", legacySaved.length === 2, `n=${legacySaved.length}`);
-    check("H-TEN-15d state A tersimpan sebagai baris (local:principal-A, 1)", aSaved.length === 1 && aSaved[0].task_status === "completed" && aSaved[0].bookmarked === 0, JSON.stringify(aSaved));
+    check("H-TEN-15d state A tersimpan sebagai baris (local:u-principal-A, 1)", aSaved.length === 1 && aSaved[0].task_status === "completed" && aSaved[0].bookmarked === 0, JSON.stringify(aSaved));
     check("H-TEN-15e TIDAK ADA baris saved untuk B (B belum pernah set state)", bSaved.length === 0, `n=${bSaved.length}`);
     let dupRejected = false;
     let dupErr = "";
     try {
-      await client.execute({ sql: "INSERT INTO saved_projects (principal_id, project_id, bookmarked, task_status, updated_at) VALUES ('local:principal-A', 1, 1, 'completed', ?)", args: [nowMs] });
+      await client.execute({ sql: "INSERT INTO saved_projects (principal_id, project_id, bookmarked, task_status, updated_at) VALUES ('local:u-principal-A', 1, 1, 'completed', ?)", args: [nowMs] });
     } catch (e: any) {
       dupErr = String(e?.message ?? e);
       dupRejected = /UNIQUE/i.test(dupErr);

@@ -145,14 +145,33 @@ function normalizeUrl(raw: string): URL {
 //   - Cloudflare OWNER viewers (isOwner === true, runtime-verified)
 //     get `cloudflare-owner:{shareId}` — the owner is one person, so
 //     this is a genuine single-user principal, distinct from any viewer.
-//   - Local viewers keep `local:{ownerUserId}` (verified by the daemon).
-//   - Anonymous (no viewer at all) keeps the '<LEGACY>' saved-state
-//     sentinel (DL-23-03: single-user local deployment, UI state on the
-//     PUBLIC catalog — bookmark/task flags, no private content). Checks
-//     are treated STRICTLY differently: anonymous never reads legacy
-//     check rows (L-A, F-046) because check history contains
-//     user-submitted URLs. K-10 may tighten this later; the two policies
-//     are intentionally different and both are explicit.
+//   - Local viewers resolve to `local:{userId}` (F-058, v2.3.25):
+//     `userId` is the caller identity (SDK 0.14.0 server-contract.d.ts:
+//     LocalViewer { userId, ownerUserId, isOwner, delegate? }); the old
+//     `local:{ownerUserId}` mapping collapsed every caller under one
+//     owner into a single principal. `ownerUserId` names the SPACE
+//     OWNER (used only to interpret `isOwner`), it is NOT the caller.
+//     A delegated invocation (`delegate: "agent" | "schedule"`) is a
+//     DISTINCT actor: `local:delegate:{delegate}:{userId}` — it never
+//     silently shares the direct caller's history or saved state.
+//     `isOwner` is authorization, not identity: two viewers with the
+//     same userId share one principal and are told apart only by the
+//     per-invocation isOwner gate (addProject, exportLegacyChecks).
+//     Runtime population of these fields is NOT VERIFIED (STAGE-P02);
+//     no provider statement about population semantics was found in
+//     the repo — see SSRF_RESPONSE_MATRIX_V2325.md §2 F-058.
+//   - Anonymous (no viewer at all) NO LONGER gets the '<LEGACY>'
+//     saved-state sentinel by default (F-057, v2.3.25): a missing
+//     viewer is fail-closed for saved state (read defaults, write
+//     no-op), the same treatment Cloudflare non-owner viewers already
+//     had (F-051). '<LEGACY>' rows are readable/writable ONLY in
+//     explicit local single-owner mode (LOCAL_SINGLE_OWNER_MODE,
+//     default OFF — a module flag like CHECKLINK_ENABLED; no env vars
+//     exist in this runtime). DL-23-03's single-user-local rationale
+//     survives ONLY behind that explicit opt-in, which must be provable
+//     at runtime (STAGE-P02 extension) before any deployment enables
+//     it. Checks are unchanged: anonymous never reads legacy check rows
+//     (L-A, F-046). K-10 may tighten this later.
 // ---------------------------------------------------------------------------
 
 /** Sentinel principal for pre-migration saved_projects rows (D-01). */
@@ -170,11 +189,37 @@ const DISABLED_SAVED_PRINCIPAL = "<DISABLED-SHARE-VIEWER>";
  * per-user identity is available. A Cloudflare NON-OWNER viewer has no
  * per-user identity (the shareId names the LINK, not the visitor) and
  * therefore resolves to null — never to `cloudflare:{shareId}` (F-051).
+ *
+ * F-058 (v2.3.25): for a LOCAL viewer the caller identity is `userId`,
+ * NOT `ownerUserId`. The SDK 0.14.0 type
+ * (`server-contract.d.ts`, tarball SHA-256
+ * f2cb7b25d35a7ade70a59ddbc5a3b7aefc727306d570d2356eaeb91d120ad49e)
+ * declares LocalViewer { userId, ownerUserId, isOwner, delegate? } with
+ * the doc comment "User identity verified by the local daemon, without
+ * a share token" and delegate documented as "Native Muse delegation,
+ * distinct from the owner's browser". The field NAME `userId` is the
+ * per-caller identity; `ownerUserId` names the space owner. The old
+ * `local:{ownerUserId}` mapping therefore collapsed distinct callers
+ * under one owner into one principal. A delegated invocation is a
+ * distinct actor (`local:delegate:{delegate}:{userId}`) and never shares
+ * the direct caller's principal. An empty userId resolves to null
+ * (fail-closed). What the TYPE does NOT prove — and no provider
+ * statement in the repo proves — is how the runtime POPULATES these
+ * fields (STAGE-P02): whether two local viewers can share one
+ * ownerUserId with different userIds, or what userId a delegate
+ * invocation carries. The mapping above is the most defensive reading
+ * of the declared type; the runtime semantics stay NOT VERIFIED.
  */
 function resolvePrincipal(ctx: Ctx): string | null {
   const viewer = ctx.viewer;
   if (!viewer) return null;
-  if (viewer.source === "local") return `local:${viewer.ownerUserId}`;
+  if (viewer.source === "local") {
+    if (!viewer.userId) return null;
+    if (viewer.delegate === "agent" || viewer.delegate === "schedule") {
+      return `local:delegate:${viewer.delegate}:${viewer.userId}`;
+    }
+    return `local:${viewer.userId}`;
+  }
   if (viewer.source === "cloudflare") {
     if (viewer.isOwner === true) return `cloudflare-owner:${viewer.shareId}`;
     return null; // shared-link viewer: no per-user identity (F-051)
@@ -182,17 +227,49 @@ function resolvePrincipal(ctx: Ctx): string | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Explicit local single-owner mode (F-057, v2.3.25).
+// ---------------------------------------------------------------------------
+// Default OFF: a missing viewer is fail-closed for saved state (see
+// savedPrincipal below). The flag is module state on purpose — the same
+// pattern as CHECKLINK_ENABLED (no env vars exist in this runtime, no
+// settings table exists yet): enabling legacy saved state requires a
+// code change + review, not a silent toggle. `setLocalSingleOwnerMode`
+// is test-only; production code never calls it. A deployment may enable
+// it ONLY when it can prove at runtime that it is a local single-owner
+// deployment (STAGE-P02 extension) — until then legacy rows stay
+// unreachable through the handlers, exactly as legacy CHECK rows stay
+// unreachable through listChecks (L-A, F-046).
+let LOCAL_SINGLE_OWNER_MODE = false;
+
+/** Test-only setter for the local single-owner legacy mode (harness H-AN). */
+export function setLocalSingleOwnerMode(enabled: boolean): void {
+  LOCAL_SINGLE_OWNER_MODE = enabled;
+}
+
+/** Current local single-owner legacy mode (read-only for diagnostics/tests). */
+export function isLocalSingleOwnerMode(): boolean {
+  return LOCAL_SINGLE_OWNER_MODE;
+}
+
 /**
  * Principal used for saved_projects rows. Known principal -> its own id;
- * anonymous (no viewer) -> the '<LEGACY>' sentinel (DL-23-03, see above);
  * Cloudflare shared-link viewer -> null, meaning saved state is DISABLED
  * for that viewer (F-051): callers must not read or write saved state
- * for them. Returns null ONLY for that case — never for anonymous.
+ * for them. Anonymous (no viewer) -> null as well (F-057, v2.3.25):
+ * saved state is fail-closed (read defaults, write no-op) UNLESS the
+ * deployment explicitly opted into local single-owner mode, in which
+ * case — and only then — the '<LEGACY>' sentinel (DL-23-03) is used so
+ * pre-migration rows stay reachable on a proven single-owner box.
+ * Returns null for every disabled case — callers must treat null as
+ * "no saved state", never fall back to a shared sentinel themselves.
  */
 function savedPrincipal(ctx: Ctx): string | null {
   const viewer = ctx.viewer;
   if (viewer?.source === "cloudflare" && viewer.isOwner !== true) return null;
-  return resolvePrincipal(ctx) ?? LEGACY_PRINCIPAL;
+  const principal = resolvePrincipal(ctx);
+  if (principal !== null) return principal;
+  return LOCAL_SINGLE_OWNER_MODE ? LEGACY_PRINCIPAL : null;
 }
 
 interface FetchResult {
@@ -1992,12 +2069,15 @@ export const Actions = {
       }
       // Satu query LEFT JOIN (bukan dua SELECT penuh + join di JS).
       // Join di-scope ke principal pemanggil (F-040): state tiap
-      // principal independen; anonymous membaca baris '<LEGACY>' —
-      // lihat savedPrincipal() (DL-23-03). F-051: untuk viewer share
-      // Cloudflare non-owner, savedPrincipal() null — saved state
-      // DINONAKTIFKAN: join memakai sentinel yang tidak pernah cocok,
-      // jadi semua proyek kembali dengan state default (tidak dibaca
-      // state viewer lain, tidak ada state yang bocor antar viewer).
+      // principal independen; F-057 (v2.3.25): tanpa viewer, saved state
+      // DINONAKTIFKAN (savedPrincipal() null -> sentinel yang tidak
+      // pernah cocok) — anonymous TIDAK lagi membaca baris '<LEGACY>'
+      // kecuali mode local single-owner eksplisit aktif. F-051: untuk
+      // viewer share Cloudflare non-owner, savedPrincipal() null — saved
+      // state DINONAKTIFKAN: join memakai sentinel yang tidak pernah
+      // cocok, jadi semua proyek kembali dengan state default (tidak
+      // dibaca state viewer lain, tidak ada state yang bocor antar
+      // viewer).
       const principal = savedPrincipal(ctx) ?? DISABLED_SAVED_PRINCIPAL;
       const rows = await db
         .select({
@@ -2040,8 +2120,9 @@ export const Actions = {
       // OWNER-SCOPED (F-040): baca/tulis HANYA baris (principal, project)
       // pemanggil — tanpa filter principal, satu principal dapat menimpa
       // state principal lain (bug cross-principal write pada kode lama
-      // yang hanya memfilter projectId). Anonymous memakai '<LEGACY>' —
-      // lihat savedPrincipal() (DL-23-03).
+      // yang hanya memfilter projectId). F-057 (v2.3.25): tanpa viewer,
+      // saved state DINONAKTIFKAN (no-op) kecuali mode local single-owner
+      // eksplisit aktif — anonymous TIDAK lagi menulis '<LEGACY>'.
       // F-051: viewer share Cloudflare non-owner TIDAK punya principal —
       // saved state dinonaktifkan untuk mereka: no-op (ok generik, tanpa
       // write) supaya dua viewer satu share tidak saling menimpa/membaca
