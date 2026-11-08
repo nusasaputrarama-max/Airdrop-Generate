@@ -20,8 +20,9 @@ Dokumen ini adalah buku bukti (evidence ledger) untuk paket readiness closed bet
 
 ## 2. Commit paket
 
-- Commit pertama paket readiness: `ce2ceae412c810a8ccaf10dcc1d0a4beb6834e47` — `docs(beta): closed-beta readiness package — decision BLOCKED, free-tier deployment plan` (5 file, +465, branch `beta-readiness`, 2026-11-08 WIB). Commit ini dibuat sebelum SHA dicatat di dokumen; SHA dicatat lewat amend tanpa mengubah isi lain.
-- Perintah verifikasi: `git log --oneline beta-readiness -3` dan `git show --stat ce2ceae`
+- Commit paket readiness (isi): `850592a9e60f2dc8641e389849eb67e18bf5af04` — `docs(beta): closed-beta readiness package — decision BLOCKED, free-tier deployment plan` (5 file, +465, branch `beta-readiness`, 2026-11-08 WIB).
+- Riwayat SHA: commit pertama dibuat sebagai `ce2ceae412c810a8ccaf10dcc1d0a4beb6834e47`, lalu di-amend untuk mengisi SHA ke §2 dokumen ini sehingga menjadi `850592a...`; commit ini (yang mencatat SHA paket) hanya mengubah §2 `RELEASE_EVIDENCE.md`, tidak ada perubahan isi lain. SHA commit pencatatan ini sendiri tercatat di `git log beta-readiness`, bukan di dalam dokumen (dokumen tidak dapat memuat hash commit-nya sendiri).
+- Perintah verifikasi: `git log --oneline beta-readiness -3` dan `git show --stat 850592a`
 
 ## 3. Build
 
