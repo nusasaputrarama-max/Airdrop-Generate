@@ -11,8 +11,9 @@
 // and saves the result as one row in `checks` (the user's history).
 
 import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk";
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import * as schema from "./schema";
+import { canonicalizeContractAddress } from "./catalog";
 
 const signalSchema = z.object({
   id: z.string(),
@@ -84,6 +85,59 @@ function normalizeUrl(raw: string): URL {
 }
 
 const UA = "Mozilla/5.0 (compatible; CekLinkAirdrop/1.0)";
+
+// ---------------------------------------------------------------------------
+// Principal (F-005/F-018/F-046 — v2.3.23, D-01/D-04).
+// ---------------------------------------------------------------------------
+// The SDK DOES expose a verifiable per-invocation identity: `ctx.viewer`
+// (@hatch/space-sdk 0.14.0, server-contract.d.ts — PortableCtx.viewer?).
+//   - local runtime: LocalViewer { source: "local", authenticated: true,
+//     userId, ownerUserId, isOwner, delegate? } — "User identity verified
+//     by the local daemon, without a share token."
+//   - cloudflare runtime: CloudflareViewer { source: "cloudflare",
+//     authenticated: true, shareId, spaceSlug, isOwner, tokenExpiresAt,
+//     tokenId } — identity is the SHARE, not a stable user id.
+// That closes the F-005 "no principal" gap at the TYPE level. What is
+// still NOT VERIFIED: whether the live worker actually POPULATES
+// ctx.viewer on every invocation path (staging gate STAGE-P02 —
+// the type existing does not prove the runtime fills it). Until that
+// is proven, every consumer below treats a missing viewer as
+// "anonymous" and fails closed (see L-A).
+//
+// Principal string: namespaced by source so a local owner id can never
+// collide with a cloudflare share id. Local uses ownerUserId (the stable
+// owner identity — userId distinguishes the agent delegate from the
+// owner's browser, it is NOT the owner key). Cloudflare uses shareId:
+// all viewers of one share share one principal (documented limitation —
+// a share link is not a user identity; isOwner is available but is NOT
+// used as the principal key).
+// ---------------------------------------------------------------------------
+
+/** Sentinel principal for pre-migration saved_projects rows (D-01). */
+const LEGACY_PRINCIPAL = "<LEGACY>";
+
+/** Derive the calling principal from the SDK viewer, or null when anonymous. */
+function resolvePrincipal(ctx: Ctx): string | null {
+  const viewer = ctx.viewer;
+  if (!viewer) return null;
+  if (viewer.source === "local") return `local:${viewer.ownerUserId}`;
+  if (viewer.source === "cloudflare") return `cloudflare:${viewer.shareId}`;
+  return null;
+}
+
+/**
+ * Principal used for saved_projects rows. Known principal -> its own id;
+ * anonymous -> the '<LEGACY>' sentinel (DL-23-03: saved state is UI state
+ * on the PUBLIC catalog — bookmark/task flags, no private content — so the
+ * anonymous single-user deployment keeps reading/writing the legacy rows
+ * exactly as before migration. Checks are treated STRICTLY differently:
+ * anonymous never reads legacy check rows (L-A, F-046) because check
+ * history contains user-submitted URLs. K-10 may tighten this later;
+ * the two policies are intentionally different and both are explicit.)
+ */
+function savedPrincipal(ctx: Ctx): string {
+  return resolvePrincipal(ctx) ?? LEGACY_PRINCIPAL;
+}
 
 interface FetchResult {
   text: string;
@@ -778,6 +832,10 @@ async function runCheck(ctx: Ctx, rawUrl: string): Promise<Check> {
       registeredAt: result.registeredAt,
       registrar: result.registrar,
       domainAgeDays: result.domainAgeDays,
+      // Owner of this check (F-046): the calling principal when known,
+      // NULL when anonymous. NULL means "no recorded owner" — under
+      // policy L-A the row is write-only until a principal exists (K-4).
+      ownerUserId: resolvePrincipal(ctx),
     })
     .returning();
   const row = inserted[0];
@@ -1077,13 +1135,6 @@ const addProjectResultSchema = z.object({
 
 type AddProjectResult = z.infer<typeof addProjectResultSchema>;
 
-function isValidContractAddress(address: string): boolean {
-  // EVM: 0x + 40 hex chars (reject the all-zero placeholder).
-  if (/^0x[a-fA-F0-9]{40}$/.test(address)) return !/^0x0{40}$/.test(address);
-  // Solana: base58 public key, 32–44 chars.
-  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
-}
-
 function deriveExplorerUrl(chain: string, contractAddress: string | null): string | null {
   if (!contractAddress) return null;
   const c = chain.toLowerCase();
@@ -1146,13 +1197,25 @@ async function addProject(
   }
 
   // Contract address: required for contract-based projects, and any address
-  // supplied must be a valid EVM or Solana address.
+  // supplied must be valid FOR ITS CHAIN (F-045): canonicalize throws on
+  // an unknown chain or a malformed address — the same rule the DB CHECK
+  // enforces (catalog.ts; H-CAT-13). The pre-checks below give friendly
+  // rejections; the unique indexes are the race-proof backstop (see the
+  // try/catch around the insert).
   const contractAddress = args.contractAddress?.trim() || null;
   if (args.contractBased && !contractAddress) {
     return reject("Proyek berbasis kontrak wajib menyertakan alamat kontrak.");
   }
-  if (contractAddress && !isValidContractAddress(contractAddress)) {
-    return reject("Alamat kontrak tidak sesuai format address yang valid (EVM 0x… 40 hex atau Solana base58).");
+  if (contractAddress) {
+    try {
+      canonicalizeContractAddress(args.chain.trim(), contractAddress);
+    } catch (err) {
+      return reject(
+        err instanceof Error
+          ? err.message
+          : "Alamat kontrak tidak sesuai format address yang valid (EVM 0x… 40 hex atau Solana base58).",
+      );
+    }
   }
 
   // Verification date must be a real YYYY-MM-DD date.
@@ -1177,11 +1240,21 @@ async function addProject(
     return reject(`Proyek bernama "${name}" sudah ada di katalog.`);
   }
   if (contractAddress) {
-    const addrKey = contractAddress.toLowerCase();
+    // Compare CANONICAL addresses (F-043): lower() mentah salah untuk
+    // Solana (dua alamat beda huruf adalah alamat BERBEDA) dan untuk
+    // EVM tanpa prefix/0X. Kolom generated contract_address_canonical
+    // menyimpan bentuk kanonik tiap baris; bandingkan dengan itu.
+    const canonical = canonicalizeContractAddress(args.chain.trim(), contractAddress);
+    if (canonical === null) return reject("Alamat kontrak tidak boleh kosong."); // unreachable: contractAddress non-null di sini
     const addrDup = await db
       .select({ id: schema.projects.id })
       .from(schema.projects)
-      .where(sql`lower(${schema.projects.contract_address}) = ${addrKey}`)
+      .where(
+        and(
+          eq(schema.projects.chain, args.chain.trim()),
+          eq(schema.projects.contractAddressCanonical, canonical),
+        ),
+      )
       .limit(1);
     if (addrDup.length > 0) return reject("Alamat kontrak itu sudah ada di katalog.");
   }
@@ -1199,27 +1272,59 @@ async function addProject(
     : null;
   const rewardNote = args.rewardNote?.trim() || null;
 
-  const inserted = await db
-    .insert(schema.projects)
-    .values({
-      name,
-      ticker,
-      chain: args.chain.trim(),
-      category: args.category,
-      segment: args.segment,
-      status_label: args.statusLabel.trim(),
-      description: args.description.trim(),
-      difficulty: args.difficulty,
-      reward_note: rewardNote,
-      contract_address: contractAddress,
-      explorer_url: deriveExplorerUrl(args.chain, contractAddress),
-      official_url: parsedOfficial.toString(),
-      x_handle: xHandle,
-      verified_at: args.verifiedAt,
-      verified_note: args.verifiedNote.trim(),
-      sort: nextSort,
-    })
-    .returning();
+  // F-004: the unique indexes (projects_name_normalized_unique,
+  // projects_contract_normalized_unique) are the transactional backstop
+  // for the pre-checks above — two concurrent addProject calls can both
+  // pass the SELECT checks, but only one INSERT can win; the loser gets a
+  // constraint error, mapped here to the same friendly rejection instead
+  // of a 500. (The SDK SpaceDb surface exposes no `transaction` API —
+  // D1 rejects Drizzle's BEGIN/SAVEPOINT implementation — so the index,
+  // not an app transaction, is the atomicity mechanism. The `sort` value
+  // is still computed by max()+1 and is NOT unique: a tie only affects
+  // display order, broken by id.)
+  let inserted;
+  try {
+    inserted = await db
+      .insert(schema.projects)
+      .values({
+        name,
+        ticker,
+        chain: args.chain.trim(),
+        category: args.category,
+        segment: args.segment,
+        status_label: args.statusLabel.trim(),
+        description: args.description.trim(),
+        difficulty: args.difficulty,
+        reward_note: rewardNote,
+        contract_address: contractAddress,
+        explorer_url: deriveExplorerUrl(args.chain, contractAddress),
+        official_url: parsedOfficial.toString(),
+        x_handle: xHandle,
+        verified_at: args.verifiedAt,
+        verified_note: args.verifiedNote.trim(),
+        sort: nextSort,
+        // Provenance is filled by the SERVER, never from caller args:
+        // source = the verified official URL; submitted_by = the calling
+        // principal (or "anonymous"); verified_by stays NULL — no separate
+        // verifier identity exists yet (K-4 related).
+        provenanceSourceUrl: parsedOfficial.toString(),
+        provenanceSubmittedBy: resolvePrincipal(ctx) ?? "anonymous",
+        provenanceVerifiedBy: null,
+      })
+      .returning();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      /projects_name_normalized_unique|projects_contract_normalized_unique|UNIQUE constraint failed/i.test(
+        msg,
+      )
+    ) {
+      return reject(
+        "Proyek atau alamat kontrak itu sudah ada di katalog (duplikat terdeteksi di database).",
+      );
+    }
+    throw err;
+  }
   const row = inserted[0];
   if (!row) return reject("Proyek gagal disimpan.");
   ctx.invalidateQueries();
@@ -1270,12 +1375,24 @@ async function askGibran(
   },
 ): Promise<{ reply: string }> {
   const db = ctx.db<typeof schema>();
+  // Catalog is GLOBAL (F-040) — every principal reads the same catalog.
+  // Check history is OWNER-SCOPED (F-046, L-A): only this principal's own
+  // rows enter the prompt; legacy NULL rows NEVER enter it. Anonymous
+  // callers get no history at all (empty, not "all rows").
+  const principal = resolvePrincipal(ctx);
   const [projectRows, checkRows] = await Promise.all([
     db
       .select()
       .from(schema.projects)
       .orderBy(asc(schema.projects.sort), asc(schema.projects.id)),
-    db.select().from(schema.checks).orderBy(desc(schema.checks.id)).limit(10),
+    principal === null
+      ? Promise.resolve([])
+      : db
+          .select()
+          .from(schema.checks)
+          .where(eq(schema.checks.ownerUserId, principal))
+          .orderBy(desc(schema.checks.id))
+          .limit(10),
   ]);
 
   // Ringkasan katalog (S5): hanya fakta kunci per proyek — description,
@@ -1378,9 +1495,16 @@ export const Actions = {
     response: z.object({ checks: z.array(checkSchema) }),
     async handler(ctx, args) {
       const db = ctx.db<typeof schema>();
+      // OWNER-SCOPED (F-046, L-A fail-closed): only this principal's own
+      // rows. Legacy NULL rows never match `=` — they are invisible by
+      // construction of the predicate, not by a filter. Anonymous callers
+      // get an EMPTY list (not all rows, not legacy rows).
+      const principal = resolvePrincipal(ctx);
+      if (principal === null) return { checks: [] };
       const rows = await db
         .select()
         .from(schema.checks)
+        .where(eq(schema.checks.ownerUserId, principal))
         .orderBy(desc(schema.checks.id))
         .limit(args.limit);
       return { checks: rows.map(rowToCheck) };
@@ -1393,7 +1517,21 @@ export const Actions = {
     response: z.object({ ok: z.literal(true) }),
     async handler(ctx, args): Promise<{ ok: true }> {
       const db = ctx.db<typeof schema>();
-      await db.delete(schema.checks).where(eq(schema.checks.id, args.id));
+      // OWNER-SCOPED (F-046): delete only when id AND owner match.
+      // 0 affected rows (someone else's row, a legacy row, or a missing
+      // id) returns the same generic ok — the response never reveals
+      // whether the row exists or belongs to someone else.
+      const principal = resolvePrincipal(ctx);
+      if (principal !== null) {
+        await db
+          .delete(schema.checks)
+          .where(
+            and(
+              eq(schema.checks.id, args.id),
+              eq(schema.checks.ownerUserId, principal),
+            ),
+          );
+      }
       ctx.invalidateQueries();
       return { ok: true };
     },
@@ -1414,6 +1552,10 @@ export const Actions = {
         await db.insert(schema.projects).values(CATALOG);
       }
       // Satu query LEFT JOIN (bukan dua SELECT penuh + join di JS).
+      // Join di-scope ke principal pemanggil (F-040): state tiap
+      // principal independen; anonymous membaca baris '<LEGACY>' —
+      // lihat savedPrincipal() (DL-23-03).
+      const principal = savedPrincipal(ctx);
       const rows = await db
         .select({
           project: schema.projects,
@@ -1423,7 +1565,10 @@ export const Actions = {
         .from(schema.projects)
         .leftJoin(
           schema.savedProjects,
-          eq(schema.savedProjects.projectId, schema.projects.id),
+          and(
+            eq(schema.savedProjects.projectId, schema.projects.id),
+            eq(schema.savedProjects.principalId, principal),
+          ),
         )
         .orderBy(asc(schema.projects.sort), asc(schema.projects.id));
       return {
@@ -1449,10 +1594,21 @@ export const Actions = {
     response: z.object({ ok: z.literal(true) }),
     async handler(ctx, args): Promise<{ ok: true }> {
       const db = ctx.db<typeof schema>();
+      // OWNER-SCOPED (F-040): baca/tulis HANYA baris (principal, project)
+      // pemanggil — tanpa filter principal, satu principal dapat menimpa
+      // state principal lain (bug cross-principal write pada kode lama
+      // yang hanya memfilter projectId). Anonymous memakai '<LEGACY>' —
+      // lihat savedPrincipal() (DL-23-03).
+      const principal = savedPrincipal(ctx);
       const existing = await db
         .select()
         .from(schema.savedProjects)
-        .where(eq(schema.savedProjects.projectId, args.projectId));
+        .where(
+          and(
+            eq(schema.savedProjects.projectId, args.projectId),
+            eq(schema.savedProjects.principalId, principal),
+          ),
+        );
       const current = existing[0];
       const bookmarked =
         args.bookmarked !== undefined
@@ -1470,9 +1626,15 @@ export const Actions = {
             taskStatus,
             updatedAt: new Date(),
           })
-          .where(eq(schema.savedProjects.projectId, args.projectId));
+          .where(
+            and(
+              eq(schema.savedProjects.projectId, args.projectId),
+              eq(schema.savedProjects.principalId, principal),
+            ),
+          );
       } else {
         await db.insert(schema.savedProjects).values({
+          principalId: principal,
           projectId: args.projectId,
           bookmarked: bookmarked ? 1 : 0,
           taskStatus,
