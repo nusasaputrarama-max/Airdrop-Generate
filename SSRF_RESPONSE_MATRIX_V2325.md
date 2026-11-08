@@ -193,7 +193,7 @@ D-06 clean-clone TIDAK diulang (tidak ada perubahan material).
 | `37a23a2` | merge(main): sync V19 audit (cfb55a6) into development |
 | `2eb5a2a` | fix(security): F-057 anon fail-closed + F-058 local principal userId (H-AN/H-PL) |
 | `d864fd0` | test(dev): harness baru F-057/F-058 (H-AN 5/5, H-PL 7/7) |
-| `…` (menyusul) | test(dev): regresi penuh v2.3.25 — 375/375 PASS + matriks respons V19 + BACKLOG D-13 |
+| `7b77a91` | test(dev): regresi penuh v2.3.25 — 375/375 PASS + matriks respons V19 + BACKLOG D-13 |
 
 Semua commit di-push segera setelah selesai; 0 push gagal.
 Verifikasi akhir `git ls-remote origin development` (lihat laporan).
