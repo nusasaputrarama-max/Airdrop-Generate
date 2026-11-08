@@ -160,22 +160,20 @@ function normalizeUrl(raw: string): URL {
 //     Runtime population of these fields is NOT VERIFIED (STAGE-P02);
 //     no provider statement about population semantics was found in
 //     the repo — see SSRF_RESPONSE_MATRIX_V2325.md §2 F-058.
-//   - Anonymous (no viewer at all) NO LONGER gets the '<LEGACY>'
-//     saved-state sentinel by default (F-057, v2.3.25): a missing
+//   - Anonymous (no viewer at all) NEVER gets the '<LEGACY>'
+//     saved-state sentinel (F-057, v2.3.25; F-059, v2.3.26): a missing
 //     viewer is fail-closed for saved state (read defaults, write
 //     no-op), the same treatment Cloudflare non-owner viewers already
-//     had (F-051). '<LEGACY>' rows are readable/writable ONLY in
-//     explicit local single-owner mode (LOCAL_SINGLE_OWNER_MODE,
-//     default OFF — a module flag like CHECKLINK_ENABLED; no env vars
-//     exist in this runtime). DL-23-03's single-user-local rationale
-//     survives ONLY behind that explicit opt-in, which must be provable
-//     at runtime (STAGE-P02 extension) before any deployment enables
-//     it. Checks are unchanged: anonymous never reads legacy check rows
-//     (L-A, F-046). K-10 may tighten this later.
+//     had (F-051). The explicit local single-owner mode that v2.3.25
+//     kept behind LOCAL_SINGLE_OWNER_MODE was REMOVED in v2.3.26
+//     (F-059): a module flag cannot prove a deployment is local-only,
+//     so it could re-open shared '<LEGACY>' state on any invocation
+//     without a viewer. Pre-migration '<LEGACY>' rows are now reachable
+//     ONLY through the offline principal-key archive/migration tool
+//     (evidence/v2326/principal-key-migration.ts), never through the
+//     handlers. Checks are unchanged: anonymous never reads legacy
+//     check rows (L-A, F-046). K-10 may tighten this later.
 // ---------------------------------------------------------------------------
-
-/** Sentinel principal for pre-migration saved_projects rows (D-01). */
-const LEGACY_PRINCIPAL = "<LEGACY>";
 
 /**
  * Sentinel principal used ONLY as a never-matching key when saved state
@@ -228,48 +226,47 @@ function resolvePrincipal(ctx: Ctx): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Explicit local single-owner mode (F-057, v2.3.25).
+// Local single-owner legacy mode — REMOVED (F-059, v2.3.26).
 // ---------------------------------------------------------------------------
-// Default OFF: a missing viewer is fail-closed for saved state (see
-// savedPrincipal below). The flag is module state on purpose — the same
-// pattern as CHECKLINK_ENABLED (no env vars exist in this runtime, no
-// settings table exists yet): enabling legacy saved state requires a
-// code change + review, not a silent toggle. `setLocalSingleOwnerMode`
-// is test-only; production code never calls it. A deployment may enable
-// it ONLY when it can prove at runtime that it is a local single-owner
-// deployment (STAGE-P02 extension) — until then legacy rows stay
-// unreachable through the handlers, exactly as legacy CHECK rows stay
-// unreachable through listChecks (L-A, F-046).
-let LOCAL_SINGLE_OWNER_MODE = false;
-
-/** Test-only setter for the local single-owner legacy mode (harness H-AN). */
-export function setLocalSingleOwnerMode(enabled: boolean): void {
-  LOCAL_SINGLE_OWNER_MODE = enabled;
-}
-
-/** Current local single-owner legacy mode (read-only for diagnostics/tests). */
-export function isLocalSingleOwnerMode(): boolean {
-  return LOCAL_SINGLE_OWNER_MODE;
-}
+// v2.3.25 kept an explicit opt-in (`LOCAL_SINGLE_OWNER_MODE`, default
+// OFF, test-only setter) that let a viewer-less context read/write the
+// '<LEGACY>' saved-state sentinel. V20 (F-059) showed the flaw: a
+// module flag is request-independent but ALSO deployment-unproven —
+// nothing in the flag proves the runtime is local-only, so enabling it
+// on any artifact that also serves public/shared invocations without a
+// viewer re-opens cross-visitor saved state. No runtime attestation
+// mechanism exists in this runtime to prove "local-only" (U-115), so
+// the mode is REMOVED, not merely defaulted OFF: there is no setter,
+// no getter, and no code path that can return '<LEGACY>' from a
+// handler. If legacy saved state must ever be recovered, it is done
+// OFFLINE by the principal-key archive/migration tool
+// (evidence/v2326/principal-key-migration.ts) with an explicit,
+// operator-supplied owner mapping — never by a handler, never by
+// guessing. U-115 is therefore CLOSED as "mode removed; attestation no
+// longer required" — the residual risk moves to the offline tool, which
+// is fail-closed without a mapping (see F-060 / U-114).
+//
+// NOTE for reviewers: `git log -S LOCAL_SINGLE_OWNER_MODE` shows the
+// removal; the old H-AN harness (evidence/v2325) asserted mode-ON
+// legacy access (H-AN-03) and is SUPERSEDED by H-AN2
+// (evidence/v2326/test-anon-saved-v2326.ts), which asserts the mode
+// API no longer exists.
 
 /**
  * Principal used for saved_projects rows. Known principal -> its own id;
  * Cloudflare shared-link viewer -> null, meaning saved state is DISABLED
  * for that viewer (F-051): callers must not read or write saved state
- * for them. Anonymous (no viewer) -> null as well (F-057, v2.3.25):
- * saved state is fail-closed (read defaults, write no-op) UNLESS the
- * deployment explicitly opted into local single-owner mode, in which
- * case — and only then — the '<LEGACY>' sentinel (DL-23-03) is used so
- * pre-migration rows stay reachable on a proven single-owner box.
+ * for them. Anonymous (no viewer) -> null as well (F-057, v2.3.25;
+ * F-059, v2.3.26): saved state is fail-closed (read defaults, write
+ * no-op) with NO opt-in and NO sentinel fallback. A missing or unknown
+ * viewer is never evidence of single-ownership.
  * Returns null for every disabled case — callers must treat null as
  * "no saved state", never fall back to a shared sentinel themselves.
  */
 function savedPrincipal(ctx: Ctx): string | null {
   const viewer = ctx.viewer;
   if (viewer?.source === "cloudflare" && viewer.isOwner !== true) return null;
-  const principal = resolvePrincipal(ctx);
-  if (principal !== null) return principal;
-  return LOCAL_SINGLE_OWNER_MODE ? LEGACY_PRINCIPAL : null;
+  return resolvePrincipal(ctx);
 }
 
 interface FetchResult {
@@ -2069,11 +2066,12 @@ export const Actions = {
       }
       // Satu query LEFT JOIN (bukan dua SELECT penuh + join di JS).
       // Join di-scope ke principal pemanggil (F-040): state tiap
-      // principal independen; F-057 (v2.3.25): tanpa viewer, saved state
-      // DINONAKTIFKAN (savedPrincipal() null -> sentinel yang tidak
-      // pernah cocok) — anonymous TIDAK lagi membaca baris '<LEGACY>'
-      // kecuali mode local single-owner eksplisit aktif. F-051: untuk
-      // viewer share Cloudflare non-owner, savedPrincipal() null — saved
+      // principal independen; F-057 (v2.3.25) + F-059 (v2.3.26): tanpa
+      // viewer, saved state DINONAKTIFKAN (savedPrincipal() null ->
+      // sentinel yang tidak pernah cocok) — anonymous TIDAK PERNAH
+      // membaca baris '<LEGACY>'; mode single-owner yang dulu
+      // mengizinkannya sudah DIHAPUS (tidak ada opt-in lagi). F-051:
+      // untuk viewer share Cloudflare non-owner, savedPrincipal() null — saved
       // state DINONAKTIFKAN: join memakai sentinel yang tidak pernah
       // cocok, jadi semua proyek kembali dengan state default (tidak
       // dibaca state viewer lain, tidak ada state yang bocor antar
@@ -2120,9 +2118,10 @@ export const Actions = {
       // OWNER-SCOPED (F-040): baca/tulis HANYA baris (principal, project)
       // pemanggil — tanpa filter principal, satu principal dapat menimpa
       // state principal lain (bug cross-principal write pada kode lama
-      // yang hanya memfilter projectId). F-057 (v2.3.25): tanpa viewer,
-      // saved state DINONAKTIFKAN (no-op) kecuali mode local single-owner
-      // eksplisit aktif — anonymous TIDAK lagi menulis '<LEGACY>'.
+      // yang hanya memfilter projectId). F-057 (v2.3.25) + F-059
+      // (v2.3.26): tanpa viewer, saved state DINONAKTIFKAN (no-op) —
+      // anonymous TIDAK PERNAH menulis '<LEGACY>'; mode single-owner
+      // yang dulu mengizinkannya sudah DIHAPUS.
       // F-051: viewer share Cloudflare non-owner TIDAK punya principal —
       // saved state dinonaktifkan untuk mereka: no-op (ok generik, tanpa
       // write) supaya dua viewer satu share tidak saling menimpa/membaca
