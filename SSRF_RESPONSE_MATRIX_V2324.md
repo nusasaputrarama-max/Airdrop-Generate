@@ -74,7 +74,7 @@ SHA-256 lengkap per log: file `.txt.sha256` di samping tiap log.
 | `1863c1f2698f34e928428ba50d11893a26597096` | fix(ssrf): F-049 IANA corpus + F-052 deadline ke DNS (H-IP 8/8, H-SSRF 32/32) |
 | `56d4a6622bf428add874c7f615f9c178562160cf` | fix(security): F-050/F-051/F-052/F-053/F-054/F-056 (H-AUTH 6/6, H-PRIN 6/6, H-DL 6/6, H-TO 1/1, H-CB 4/4, H-SO 5/5) |
 | `8344055edbc9751607dc023096b91d9213711739` | feat(db): F-055 migrasi 0008 — CHECK Solana base58 penuh (H-B58 5/5) |
-| (menyusul) | test: regresi penuh v2.3.24 353/353 + matriks respons + BACKLOG D-12 |
+| `811561bc2b9e0393e5a4d3313b99cf2b41b2a8f6` | test(dev): regresi penuh v2.3.24 — 353/353 PASS + matriks respons V18 + BACKLOG D-12 |
 
 Semua commit di-push segera setelah selesai; 0 push gagal.
 Verifikasi akhir `git ls-remote origin development` (lihat laporan).
