@@ -1,0 +1,12 @@
+PASS H-MIGR-09 chain A→B + B→C refused exit 2, DB unchanged, no backup
+PASS H-MIGR-10 cycle A↔B refused exit 2, DB unchanged
+PASS H-MIGR-11 same chain in reversed order refused exit 2 (reject is order-independent)
+PASS H-MIGR-12 archive-special exports <LEGACY> sentinel saved row; DB NOT modified
+PASS H-MIGR-13 archive-special exports NULL-owner check; DB NOT modified
+PASS H-MIGR-14 rollback with a row deleted post-rename -> nonzero exit, DB unchanged
+PASS H-MIGR-15 rollback with a principal changed post-rename -> nonzero exit, DB unchanged
+PASS H-MIGR-16 rollback with a saved_projects restore conflict -> nonzero exit, DB unchanged
+PASS H-MIGR-17 symlink to app.db and via runtime dir refused; valid disposable copy works
+PASS H-MIGR-18 sanity: valid non-chain rename + normal rollback still succeed
+
+H-MIGR: 10 PASS / 0 FAIL (total 10)
