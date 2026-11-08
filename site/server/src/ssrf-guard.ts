@@ -148,6 +148,10 @@ function classifyIPv4Bytes(b: number[]): IpVerdict {
   if (b0 === 198 && (b1 & 0xfe) === 0x12) return deny("ipv4-benchmarking-198.18/15");
   if (b0 === 198 && b1 === 51 && b2 === 100) return deny("ipv4-documentation-198.51.100/24");
   if (b0 === 203 && b1 === 0 && b2 === 113) return deny("ipv4-documentation-203.0.113/24");
+  // Multicast 224.0.0.0/4 (IANA: Globally Reachable False) — found by
+  // harness H-SSRF-02 (v2.3.23): the 240/4 check below does NOT cover
+  // 224–239, so multicast was wrongly allowed before this fix.
+  if ((b0 & 0xf0) === 0xe0) return deny("ipv4-multicast-224/4");
   if ((b0 & 0xf0) === 0xf0) return deny("ipv4-reserved-240/4");
   if (b0 === 255 && b1 === 255 && b2 === 255 && b3 === 255)
     return deny("ipv4-limited-broadcast");
@@ -284,6 +288,11 @@ export function canonicalizeHost(rawUrl: string): CanonicalHost {
     } else {
       host = authority;
     }
+    if (host === "") throw new GuardReject("empty-host", "Host kosong.");
+    // A single trailing dot is the DNS root (RFC 1034 §3.1: "example.com."
+    // names the same host as "example.com") — strip it before validation
+    // (H-SSRF-12b, v2.3.23). Two or more trailing dots still fail below.
+    if (host.endsWith(".")) host = host.slice(0, -1);
     if (host === "") throw new GuardReject("empty-host", "Host kosong.");
     if (/^[0-9a-fA-FxX.]+$/.test(host) && /[0-9]/.test(host)) {
       // IPv4-looking: ONLY a canonical dotted quad is accepted here.
@@ -662,11 +671,31 @@ export async function validateUrlForFetch(
   const isLiteral =
     parseIPv4(host.hostname) !== null || parseIPv6(host.hostname) !== null;
   let ips: string[];
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     // IP literals need no DNS — the literal itself is the destination.
-    ips = isLiteral ? [host.hostname] : await (opts.resolver ?? resolveAll)(host.hostname);
+    // The 5 s race applies to the INJECTED resolver too (H-SSRF-18,
+    // v2.3.23): without it a never-settling injected resolver hangs the
+    // check and the 20 s total deadline is never enforced on this path.
+    // (The real resolveAll has its own identical race inside; wrapping
+    // it again is harmless.) The timer is cleared in `finally` so a
+    // late rejection can never surface as unhandled.
+    const resolve = opts.resolver ?? resolveAll;
+    ips = isLiteral
+      ? [host.hostname]
+      : await Promise.race([
+          resolve(host.hostname),
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(
+              () => reject(new DnsError("timeout", "DNS timeout (5 detik).")),
+              DNS_TIMEOUT_MS,
+            );
+          }),
+        ]);
   } catch (err) {
     return { ok: false, reason: err instanceof DnsError ? err.code : "dns-error" };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
   const verdict = validateDestination(host.hostname, ips);
   if (!verdict.ok) return { ok: false, reason: verdict.reason };
