@@ -497,8 +497,10 @@ material — DL-24-08).
 | Branch `development` — `811561b` + `ecd6f06` | Regresi penuh v2.3.24 (evidence/v2324/ 16 log + 8 harness baru + matriks dev + BACKLOG D-12) |
 
 Verifikasi `git ls-remote origin development` = `ecd6f069d95ffa7fcfb98110cd542a3cc7faf266`
-(cocok HEAD lokal development); `origin/main` = `16997061e00ff6809798c94634675ed5547a57d9`
-(sebelum commit revisi ini; SHA main baru dicatat setelah push §9).
+(cocok HEAD lokal development); `origin/main` sebelum commit revisi
+ini = `16997061e00ff6809798c94634675ed5547a57d9`; HEAD `main` setelah
+commit revisi ini = `21e7dcecddb0482a2ee5b20afd36576772ae404e`
+(terverifikasi via `git ls-remote origin main`).
 
 ## §10. Unresolved Blockers
 
