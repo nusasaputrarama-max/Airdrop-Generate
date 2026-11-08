@@ -1,0 +1,24 @@
+=== test-f043-canonical-v2320 ===
+date: 08/11/2026, 12:54:45 WIB
+bun: 1.4.4
+uid: 0
+env: VM lokal (bun:sqlite in-memory) — BUKAN staging, BUKAN produksi
+PASS F-043 EVM mixed-case -> lowercase + 0x dipertahankan — 0xcbe2dbbff4264dc67bf557c64e29997b82439354
+PASS F-043 EVM tanpa prefix 0x -> hasil sama
+PASS F-043 EVM whitespace di-trim
+PASS F-043 EVM lowercase murni (seed Ptah) tetap sama
+PASS F-043 EVM panjang salah -> reject
+PASS F-043 EVM non-hex -> reject
+PASS F-043 Solana huruf dipertahankan (case-sensitive) — 41WpXn15fxQXEGhiKnkqHcoJn14tNXXgmymLKE57pump
+69 |     const hex = a.startsWith("0x") || a.startsWith("0X") ? a.slice(2) : a;
+70 |     if (!/^[0-9a-fA-F]{40}$/.test(hex)) throw new Error("invalid-evm-address");
+71 |     return "0x" + hex.toLowerCase();
+72 |   }
+73 |   if (SOLANA_CHAINS.has(chain)) {
+74 |     if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a)) throw new Error("invalid-solana-address");
+                                                                 ^
+error: invalid-solana-address
+      at canonicalizeContractAddress (/home/hatch/workspace/airdrop-generate-foundation/evidence/v2320/test-f043-canonical-v2320.ts:74:61)
+      at /home/hatch/workspace/airdrop-generate-foundation/evidence/v2320/test-f043-canonical-v2320.ts:168:5
+
+Bun v1.4.4 (Linux x64)

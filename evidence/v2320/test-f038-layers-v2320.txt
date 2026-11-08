@@ -1,0 +1,19 @@
+=== test-f038-layers-v2320 ===
+date: 08/11/2026, 12:54:41 WIB
+bun: 1.4.4
+uid: 0
+env: VM lokal — BUKAN staging, BUKAN produksi
+fixture: decoded=500000 byte, gzip wire=520 byte, rasio=961.5x
+PASS fixture wire jauh lebih kecil dari decoded — wire=520
+(a) Bun fetch default: total chunk bytes=500000, chunks=2, max chunk=483616
+PASS A: chunk Response.body berjumlah decoded (500.000) — total=500000
+PASS A: chunk Response.body BUKAN wire (jauh > wire) — total=500000 vs wire=520
+PASS A: penghitung naif 'wire = chunk.length' SALAH (overstate ~962x) — klaim=500000 vs wire sebenarnya=520
+(b) raw http: chunks=1
+(b) raw http total bytes=520
+PASS B: transport mentah mengukur wire sebenarnya — raw=520 vs wire=520
+PASS B: L0 (wire) dan L1 (decoded) berasal dari layer berbeda — L0=520 L1=500000
+(c) fetch identity: total bytes=500000, gzip magic=false
+PASS C: Bun fetch tetap mendekompresi walau diminta identity (raw TIDAK tersedia via fetch) — total=500000, gzipMagic=false
+PASS catatan: ukuran chunk runtime bervariasi dan tidak dijamin kecil — maxChunk=483616
+=== RESULT: 8 PASS, 0 FAIL ===

@@ -1,0 +1,53 @@
+=== test-f042-guard-v2320 ===
+date: 08/11/2026, 12:54:41 WIB
+bun: 1.4.4
+uid: 0
+env: VM lokal — BUKAN staging, BUKAN produksi
+PASS F-042 empty set -> deny — {"ok":false,"reason":"empty-dns-result"}
+PASS F-042 null answer -> deny — {"ok":false,"reason":"resolver-no-answer"}
+PASS F-042 undefined answer -> deny — {"ok":false,"reason":"resolver-no-answer"}
+PASS F-042 NODATA (empty) -> deny
+PASS F-042 resolver error (NXDOMAIN) -> deny
+PASS F-042 single public -> ok — {"ok":true,"ip":"93.184.216.34"}
+PASS F-042 mixed public+private -> deny — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 mixed v6 public + loopback -> deny — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny loopback (127.0.0.1) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny rfc1918 (10.0.0.5) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny rfc1918 (172.16.0.9) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny rfc1918 (192.168.1.1) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny metadata (169.254.169.254) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny unspecified (0.0.0.0) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny cgnat (100.64.0.1) — {"ok":false,"reason":"blocked-ipv4"}
+PASS F-042 deny v6 loopback (::1) — {"ok":false,"reason":"blocked-ipv6-loopback-unspecified"}
+PASS F-042 deny v6 link-local (fe80::1) — {"ok":false,"reason":"blocked-ipv6-link-local"}
+PASS F-042 deny v6 ula (fc00::1) — {"ok":false,"reason":"blocked-ipv6-ula"}
+PASS F-042 deny mapped loopback (::ffff:127.0.0.1) — {"ok":false,"reason":"mapped-blocked-ipv4"}
+PASS F-042 deny malformed (not-an-ip) — {"ok":false,"reason":"malformed-chars"}
+PASS F-042 deny malformed octet (999.1.1.1) — {"ok":false,"reason":"malformed-not-ip"}
+PASS F-042 deny empty entry () — {"ok":false,"reason":"malformed-empty-entry"}
+PASS F-042 deny decimal form (2130706433) — {"ok":false,"reason":"non-canonical-form"}
+PASS F-042 deny hex form (0x7f.0.0.1) — {"ok":false,"reason":"malformed-chars"}
+PASS F-042 deny octal form (0177.0.0.1) — {"ok":false,"reason":"non-canonical-form"}
+PASS F-042 deny short form (127.1) — {"ok":false,"reason":"malformed-not-ip"}
+PASS F-042 deny zone identifier (fe80::1%eth0) — {"ok":false,"reason":"zone-identifier"}
+PASS F-042 mapped public -> ok, ip=IPv4 hasil ekstraksi — {"ok":true,"ip":"93.184.216.34"}
+PASS F-042 port ok http://example.com/ — {"ok":true,"ip":"port-ok"}
+PASS F-042 port ok http://example.com:80/x — {"ok":true,"ip":"port-ok"}
+PASS F-042 port ok https://example.com/ — {"ok":true,"ip":"port-ok"}
+PASS F-042 port ok https://example.com:443/x — {"ok":true,"ip":"port-ok"}
+PASS F-042 port deny port 81 (http://example.com:81/) — {"ok":false,"reason":"non-standard-port:81"}
+PASS F-042 port deny port 8080 (http://example.com:8080/) — {"ok":false,"reason":"non-standard-port:8080"}
+PASS F-042 port deny port 8443 (https://example.com:8443/) — {"ok":false,"reason":"non-standard-port:8443"}
+PASS F-042 port deny port 22 (http://example.com:22/) — {"ok":false,"reason":"non-standard-port:22"}
+PASS F-042 port deny 443 di skema http (http://example.com:443/) — {"ok":false,"reason":"non-standard-port:443"}
+PASS F-042 port deny 80 di skema https (https://example.com:80/) — {"ok":false,"reason":"non-standard-port:80"}
+PASS F-042 port deny skema ftp (ftp://example.com/) — {"ok":false,"reason":"scheme-not-allowed:ftp:"}
+PASS F-042 port deny userinfo (http://user@example.com/) — {"ok":false,"reason":"userinfo"}
+PASS F-042 resolver lambat -> deny timeout — {"ok":false,"reason":"dns-timeout"}
+PASS F-042 timeout terjadi cepat (< 300 ms) — dt=100ms
+PASS F-042 late result ditandai diabaikan
+PASS F-042 late result tiba tetapi tidak dipakai
+PASS F-042 guard deny -> connect TIDAK dipanggil
+PASS F-042 guard deny loopback -> connect TIDAK dipanggil
+PASS F-042 guard ok -> connect dipanggil tepat 1x ke IP ter-pin — ["93.184.216.34"]
+=== RESULT: 47 PASS, 0 FAIL ===

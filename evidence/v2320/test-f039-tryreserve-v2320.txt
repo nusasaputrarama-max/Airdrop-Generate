@@ -1,0 +1,39 @@
+=== test-f039-tryreserve-v2320 ===
+date: 08/11/2026, 12:58:21 WIB
+bun: 1.4.4
+uid: 0
+env: VM lokal — BUKAN staging, BUKAN produksi
+--- bagian 1: lockstep deterministik (tanpa jaringan) ---
+PASS tryReserve: reserve tepat sisa -> true
+PASS tryReserve: reserve 1 byte lagi -> false + aborted
+PASS tryReserve: setelah abort selalu false
+PASS tryReserve: reserve 0 di awal -> true
+logika baru (tryReserve): A1=989824, ronde=4
+PASS baru: A1 TIDAK PERNAH melewati cap — A1=989824 cap=1000000
+PASS baru: A1 tepat 989.824 (deterministik lockstep) — A1=989824
+PASS baru: berhenti pada ronde ke-4 (chunk ke-10 ditolak) — ronde=4
+logika lama (append-dulu): A1=1186432
+PASS lama: A1 MELEWATI cap (cacat v2.3.19 terbukti) — A1=1186432 cap=1000000
+PASS lama: overshoot tepat 3 chunk ronde-4 (A1=1.186.432) — A1=1186432
+PASS lama: overshoot > satu chunk (klaim 'cap + satu chunk' SALAH) — overshoot=186432 vs satu chunk=65536
+logika baru SERIAL: A1=1000000
+PASS serial: A1 TIDAK PERNAH melewati cap — A1=1000000
+PASS serial: A1 tepat 1.000.000 (batas inklusif tercapai) — A1=1000000
+--- bagian 2: jaringan lokal (Bun fetch) ---
+paralel: page=400000, scripts=196608,196608,196608, A1=989824, peakPending(A2 teramati)=65536, appendsAfterAbort=0, wall=22ms
+PASS paralel live: A1 (budget) TIDAK melewati cap — A1=989824
+PASS paralel live: A1 == jumlah byte diterima semua reader — budget=989824 sum=989824
+PASS paralel live: abort terjadi (cap terlampaui)
+PASS paralel live: tidak ada append setelah abort — appendsAfterAbort=0
+PASS paralel live: minimal satu script terpotong — [196608,196608,196608]
+PASS paralel live: peak pending > 0 (A2 teramati, bukan nol) — peakPending=65536
+paralel live: batas A2 rumus = 3 x C_max teramati; C_max teramati di run ini <= 65536 (peak pending) — batas eksak butuh C_max runtime
+serial: page=400000, scripts=300000,300000,0, A1=1000000, peakPending=65536, appendsAfterAbort=0, wall=28ms
+PASS serial live: A1 TIDAK melewati cap — A1=1000000
+PASS serial live: abort terjadi
+PASS serial live: tidak ada append setelah abort
+PASS serial live: hasil parsial dibuang (tidak ada verdict dari parsial) — A1=1000000 < total=1300000
+latensi: paralel=22ms serial=28ms (serial lebih lambat 6ms pada fixture ini; keduanya jauh di bawah deadline 20 detik — trade-off terukur, lihat proposal §2.3)
+fetchAborted (fetch reject AbortError karena shared abort, ditangani): 0
+PASS live: TIDAK ADA unhandled rejection (AbortError fetch ditangkap) — unhandledRejections=0
+=== RESULT: 23 PASS, 0 FAIL ===

@@ -1,0 +1,33 @@
+=== test-f043-canonical-v2320 ===
+date: 08/11/2026, 12:57:35 WIB
+bun: 1.4.4
+uid: 0
+env: VM lokal (bun:sqlite in-memory) — BUKAN staging, BUKAN produksi
+PASS F-043 EVM mixed-case -> lowercase + 0x dipertahankan — 0xcbe2dbbff4264dc67bf557c64e29997b82439354
+PASS F-043 EVM tanpa prefix 0x -> hasil sama
+PASS F-043 EVM whitespace di-trim
+PASS F-043 EVM lowercase murni (seed Ptah) tetap sama
+PASS F-043 EVM panjang salah -> reject
+PASS F-043 EVM non-hex -> reject
+PASS F-043 Solana huruf dipertahankan (case-sensitive) — 41WpXn15fxQXEGhiKnkqHcoJn14tNXXgmymLKE57pump
+PASS F-043 Solana satu huruf beda case = alamat BERBEDA — 41wpXn15fxQXEGhiKnkqHcoJn14tNXXgmymLKE57pump != 41WpXn15fxQXEGhiKnkqHcoJn14tNXXgmymLKE57pump
+PASS F-043 Solana full-lowercase -> REJECT (huruf 'l' bukan base58)
+PASS F-043 Solana whitespace di-trim, huruf tetap
+PASS F-043 Solana karakter base58 ilegal (0/O/I/l) -> reject
+PASS F-043 chain tak dikenal -> reject aplikasi
+PASS F-043 chain tak dikenal -> insert gagal — unknown-chain:FooChain
+PASS F-043 insert EVM pertama OK — {"ok":true,"id":1}
+PASS F-043 insert EVM varian lowercase chain sama -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS F-043 insert EVM tanpa 0x uppercase chain sama -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS F-043 alamat sama di chain BERBEDA -> OK (scope per chain) — {"ok":true,"id":2}
+PASS F-043 insert EVM whitespace chain sama -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS F-043 insert Solana pertama OK — {"ok":true,"id":3}
+PASS F-043 insert Solana satu huruf beda case -> OK (alamat BERBEDA, case-sensitive) — {"ok":true,"id":4}
+PASS F-043 insert Solana sama persis -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS F-043 insert Solana 'PUMP' -> OK (alamat berbeda) — {"ok":true,"id":5}
+PASS F-043 dua baris NULL contract_address -> OK — [{"ok":true,"id":6},{"ok":true,"id":7}]
+PASS F-043 fungsi JS == generated column DB untuk SEMUA baris — 7 baris diperiksa
+PASS F-043 kolom DB EVM = lowercase tanpa kehilangan 0x — 0xcbe2dbbff4264dc67bf557c64e29997b82439354
+PASS F-043 v2.3.19 lower() saja: dua alamat Solana berbeda jadi 'sama' (BUG yang diperbaiki) — lower() mengaburkan case Solana
+PASS F-043 v2.3.19 lower() saja: prefix 0x TIDAK dihapus (komentar bohong) — lower('0xABC') = '0xabc', prefix tetap ada
+=== RESULT: 27 PASS, 0 FAIL ===
