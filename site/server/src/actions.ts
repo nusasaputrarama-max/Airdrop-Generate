@@ -82,7 +82,9 @@ const TWO_LEVEL_SUFFIXES = new Set([
   "com.pe", "com.ng", "co.ke",
 ]);
 
-function registrableDomain(hostname: string): string {
+// Exported for harness verification only (NOT an action — the Actions map
+// is the only invocable surface). H-RD tests import it directly.
+export function registrableDomain(hostname: string): string {
   const labels = hostname.toLowerCase().split(".").filter(Boolean);
   if (labels.length <= 2) return labels.join(".");
   const lastTwo = labels.slice(-2).join(".");

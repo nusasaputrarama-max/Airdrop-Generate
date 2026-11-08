@@ -64,6 +64,8 @@ di isolated branch + visible backlog) dan `MUSE_IMPLEMENTATION_FIRST_DIRECTIVE.m
 
 | D-10 | Keputusan owner yang tertunda: K-1..K-5, K-7..K-10 (termasuk K-10 kebijakan legacy L-A/L-B/L-C) + penunjukan 6 peran staging (STAGING_READINESS_V2322.md baris 1–6). | P0 (keputusan) | Rama (owner) | — | BLOCKED — menunggu owner | NONE | Tidak ada keputusan tertulis | Owner memutuskan; catat keputusan + tanggal di matriks revisi berikutnya |
 
+| D-11 | Defek di luar scope (ditemukan saat testing round 2): `registrableDomain()` merusak host IP-literal — `127.0.0.1` disimpan sebagai domain `"0.1"` (dua label terakhir), sehingga RDAP meng-query domain omong kosong (`rdap.org/domain/0.1`). Fungsi dipakai di jalur scan (`analyze` :584, redirect-chain :699/:715, `runCheck` :1035). | P0 | Muse | `development` / — | IN PROGRESS — harness H-RD membuktikan bug di kode lama (7 PASS / 3 FAIL, exit 1); fix belum diterapkan | Harness `evidence/v2323/test-registrable-domain-v2323.ts` (SHA 206015b8…); log fail `evidence/v2323/test-registrable-domain-v2323-old-code-fail.txt` (SHA cf75a4db…) | Perbaikan yang salah bisa melemahkan guard — urutan wajib harness dulu, baru fix | Terapkan fix → harness PASS penuh → regresi 312/312 |
+
 ## Aturan pemeliharaan backlog
 
 - Setiap commit kode di `development` memperbarui baris backlog-nya (branch/commit,
