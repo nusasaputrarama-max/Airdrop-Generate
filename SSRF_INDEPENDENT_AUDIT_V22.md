@@ -48,7 +48,7 @@ Commit penting:
 - `54811393eb6a1592818a25fd1721e2fd5d8e849c` — dokumen matriks v2.3.27, desain, dan staging readiness di `main`.
 - `1b532e947f8e363404de38795b00a20c8112ac5b` — pencatatan SHA main ke matriks.
 
-Dua commit `main` setelah merge V21 ke `development` adalah dokumentasi v2.3.27. Compare saat audit menunjukkan `development` tertinggal dua commit tersebut. Sinkronkan branch pengembangan dengan HEAD `1b532e9` sebelum implementasi berikutnya; jangan merge source aplikasi ke `main`.
+Dua commit `main` setelah merge V21 ke `development` adalah dokumentasi v2.3.27. Compare pada snapshot audit menunjukkan `development` tertinggal dua commit dokumentasi tersebut. Setelah laporan V22 ini di-commit ke `main`, HEAD `main` maju ke `fb38b655e1fd55843995b7a7a09f75bbdc40f067` dan compare terbaru menunjukkan `development` 50 ahead / 3 behind. Muse harus menyinkronkan branch pengembangan ke HEAD `fb38b65` sebelum implementasi berikutnya; jangan merge source aplikasi ke `main`.
 
 Tidak ada pull request terbuka. GitHub Actions API mengembalikan `total_count: 0` workflow runs. Combined status untuk HEAD main tidak memiliki status checks. Branch `main` dan `development` sama-sama `protected: false`; repository rulesets mengembalikan array kosong. Ini adalah governance gap yang masih terbuka (U-116).
 
@@ -188,7 +188,7 @@ Muse boleh melanjutkan implementasi pada branch `development` sesuai direktif ow
 4. **F-068 — tutup hard-link guard gap.** Tambahkan pemeriksaan file identity terhadap lokasi runtime yang diketahui dan workflow copy/snapshot terverifikasi. Dokumentasikan residual TOCTOU; jangan menyebut realpath sebagai bukti bahwa file pasti salinan.  
    **Acceptance criteria:** hard link fixture ke runtime DB ditolak; salinan byte terpisah diterima; symlink tests tetap PASS.
 
-5. **Sinkronisasi branch.** Merge/sinkronkan dua commit dokumentasi terbaru dari `main` (HEAD `1b532e947f8e363404de38795b00a20c8112ac5b`) ke `development` sebelum implementasi berikutnya.  
+5. **Sinkronisasi branch.** Merge/sinkronkan seluruh commit `main` yang belum ada di `development`, termasuk V21 response docs dan Audit V22; current main HEAD setelah audit adalah `fb38b655e1fd55843995b7a7a09f75bbdc40f067`.  
    **Acceptance criteria:** compare `main...development` menunjukkan behind=0; source aplikasi tetap hanya di development; catat merge base, commit SHA, dan diff.
 
 6. **Project link provenance.** Berikan artifact ID/slug, source commit yang benar-benar dipakai saat build, build/publish log, dan health-check eksternal. Jangan mengklaim landing source sudah live tanpa provenance.  
@@ -213,5 +213,7 @@ Untuk setiap butir, sertakan exact path/function, commit SHA, command, runtime/v
 Tidak ada deployment, staging, produksi, atau live artifact yang diubah. Tidak ada wallet/signing/transaction. Link Scanner tidak di-invoke.
 
 ---
+**Post-audit update:** Audit V22 committed to `main` as `fb38b655e1fd55843995b7a7a09f75bbdc40f067`. A fresh compare confirms `development` is now 50 ahead / 3 behind `main`; this includes the V22 handoff and must be synchronized before the next implementation commit.  
+
 **End of Audit V22.**  
 **Next review trigger:** respons Muse terhadap F-065..F-068 dengan perubahan source dan evidence baru, staging/provider evidence, atau bukti artifact-to-source project link yang dapat diverifikasi independen.
