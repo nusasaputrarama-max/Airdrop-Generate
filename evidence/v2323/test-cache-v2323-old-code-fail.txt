@@ -1,0 +1,10 @@
+[PASS] H-CACHE-00 same URL + same cap twice -> served from cache (1 connector call) (12 ms)
+[FAIL] H-CACHE-06 F-017 400 KB -> 300 KB: smaller cap must NOT get the cached 350 KB text (4 ms)
+       300 KB fetch must fail (350 KB body exceeds the 300 KB cap), not return cached text (got 350000 chars)
+[FAIL] H-CACHE-05 F-017+F-016 300 KB -> 400 KB: larger cap must re-fetch and succeed (507 ms)
+       400 KB fetch must succeed (no cached null in the way)
+[FAIL] H-CACHE-03 F-016 failure -> recovery: failed fetch is NOT cached as null (505 ms)
+       second fetch must succeed after recovery (null must not be cached)
+
+PASS 1 / FAIL 3 (total 4)
+Failed IDs: H-CACHE-06, H-CACHE-05, H-CACHE-03

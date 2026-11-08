@@ -32,6 +32,8 @@ import {
   fetchGuardedOnce,
   readCappedStream,
   validateUrlForFetch,
+  type Connector,
+  type Resolver,
   type ScanBudget,
 } from "./ssrf-guard";
 
@@ -180,7 +182,7 @@ interface CacheEntry<T> {
   value: T;
   expiresAt: number;
 }
-const FETCH_CACHE = new Map<string, CacheEntry<FetchResult | null>>();
+const FETCH_CACHE = new Map<string, CacheEntry<FetchResult>>();
 const RDAP_CACHE = new Map<string, CacheEntry<RdapInfo>>();
 const FETCH_CACHE_TTL_MS = 10 * 60_000;
 const RDAP_CACHE_TTL_MS = 60 * 60_000;
@@ -225,29 +227,61 @@ function cacheSet<T>(
  * ulang URL-nya (bukan rantai redirect yang tersimpan — rantai itu sudah
  * divalidasi saat di-fetch).
  */
-async function fetchText(
+/**
+ * Cache key for page/script fetches (F-017): the key MUST include the
+ * caller's byte cap — page (400_000) and script (300_000) callers share
+ * URLs, and a URL-only key returned the wrong caller's capped text
+ * (400 KB text to a 300 KB caller = cap bypass; 300 KB text to a 400 KB
+ * caller = silent truncation). Key format: `${url}|${cap}`.
+ */
+function fetchCacheKey(url: string, cap: number): string {
+  return `${url}|${cap}`;
+}
+
+/** Test-only injection for the fetch path (harness H-CACHE). */
+interface FetchTestHooks {
+  resolver?: Resolver;
+  connector?: Connector;
+}
+
+/**
+ * Fetches a URL as text with SSRF guard + streamed caps (see fetchTextOnce).
+ * Only SUCCESSFUL results are cached (F-016 partial): a failure (`null`)
+ * is never cached, so a re-check retries the network instead of replaying
+ * a stale "unreachable" for the TTL — same policy as lookupRdap.
+ *
+ * Exported for harness verification (H-CACHE) — it is NOT an action; the
+ * Actions map is the only invocable surface. `testHooks` is a test-only
+ * injection point for a stub resolver/connector; production callers omit
+ * it and the real guard path is used.
+ */
+export async function fetchText(
   url: string,
   cap: number,
   deadline?: AbortSignal,
   budget?: ScanBudget,
+  testHooks?: FetchTestHooks,
 ): Promise<FetchResult | null> {
-  const preflight = await validateUrlForFetch(url);
+  const preflight = await validateUrlForFetch(
+    url,
+    testHooks?.resolver ? { resolver: testHooks.resolver } : undefined,
+  );
   if (!preflight.ok) return null;
-  const cached = cacheGet(FETCH_CACHE, url);
+  const key = fetchCacheKey(url, cap);
+  const cached = cacheGet(FETCH_CACHE, key);
   if (cached !== undefined) return cached;
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       if (deadline?.aborted) return null;
     }
-    const result = await fetchTextOnce(url, cap, deadline, budget);
+    const result = await fetchTextOnce(url, cap, deadline, budget, testHooks);
     if (result !== null) {
-      cacheSet(FETCH_CACHE, url, result, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
+      cacheSet(FETCH_CACHE, key, result, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
       return result;
     }
     if (deadline?.aborted) return null;
   }
-  cacheSet(FETCH_CACHE, url, null, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
   return null;
 }
 
@@ -280,6 +314,7 @@ async function fetchTextOnce(
   cap: number,
   deadline?: AbortSignal,
   budget?: ScanBudget,
+  testHooks?: FetchTestHooks,
 ): Promise<FetchResult | null> {
   const chain: string[] = [];
   let current = url;
@@ -289,7 +324,11 @@ async function fetchTextOnce(
       chain.push(new URL(current).hostname.toLowerCase());
       // F-001: every hop is re-validated in full (canonicalize + port +
       // resolve ALL + validate ALL + pinned connect) by fetchGuardedOnce.
-      const guarded = await fetchGuardedOnce(current, { deadline });
+      const guarded = await fetchGuardedOnce(current, {
+        deadline,
+        resolver: testHooks?.resolver,
+        connector: testHooks?.connector,
+      });
       if (guarded === null) return null;
       if ([301, 302, 303, 307, 308].includes(guarded.status)) {
         const loc = guarded.headers.get("location");
