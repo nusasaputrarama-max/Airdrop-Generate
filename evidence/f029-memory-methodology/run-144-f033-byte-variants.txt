@@ -1,0 +1,107 @@
+2026-11-08T02:53:20Z
+bun=1.4.4
+--- pattern=A fixture=ascii bytes=999999
+child pid=3521 bun=1.4.4 pattern=A fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+RESULT {"pid":3521,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":999999,"utf8Bytes":999999,"byteTarget":999999,"segmentBytes":{"page":399999,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":3600002,"baseline":{"rss":18259968,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18718720},"final":{"rss":22978560,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":23126016},"vmHwmDelta":4407296,"rssDelta":4718592,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=ascii bytes=1000000
+child pid=3527 bun=1.4.4 pattern=A fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+RESULT {"pid":3527,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":18546688,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":19001344},"final":{"rss":23265280,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":23408640},"vmHwmDelta":4407296,"rssDelta":4718592,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=ascii bytes=1000001
+child pid=3533 bun=1.4.4 pattern=A fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+RESULT {"pid":3533,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000001,"utf8Bytes":1000001,"byteTarget":1000001,"segmentBytes":{"page":400001,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":3600008,"baseline":{"rss":18497536,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18948096},"final":{"rss":23216128,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":23359488},"vmHwmDelta":4411392,"rssDelta":4718592,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=nonascii-bytes bytes=999999
+child pid=3539 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+RESULT {"pid":3539,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500031,"utf8Bytes":999999,"byteTarget":999999,"segmentBytes":{"page":399999,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":1800113,"baseline":{"rss":18575360,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":19038208},"final":{"rss":21471232,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":21716992},"vmHwmDelta":2678784,"rssDelta":2895872,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=nonascii-bytes bytes=1000000
+child pid=3545 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+RESULT {"pid":3545,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":1800116,"baseline":{"rss":18374656,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18894848},"final":{"rss":21401600,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":21577728},"vmHwmDelta":2682880,"rssDelta":3026944,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=nonascii-bytes bytes=1000001
+child pid=3551 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+RESULT {"pid":3551,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000001,"byteTarget":1000001,"segmentBytes":{"page":400001,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":1800116,"baseline":{"rss":18063360,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18845696},"final":{"rss":21090304,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":21524480},"vmHwmDelta":2678784,"rssDelta":3026944,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=ascii bytes=999999
+child pid=3557 bun=1.4.4 pattern=B fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 399999 (expected 399999)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+RESULT {"pid":3557,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":999999,"utf8Bytes":999999,"byteTarget":999999,"segmentBytes":{"page":399999,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18354176,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18878464},"final":{"rss":22417408,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":22708224},"vmHwmDelta":3829760,"rssDelta":4063232,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=ascii bytes=1000000
+child pid=3563 bun=1.4.4 pattern=B fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 400000 (expected 400000)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+RESULT {"pid":3563,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18538496,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":19062784},"final":{"rss":22601728,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":22892544},"vmHwmDelta":3829760,"rssDelta":4063232,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=ascii bytes=1000001
+child pid=3569 bun=1.4.4 pattern=B fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 400001 (expected 400001)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+RESULT {"pid":3569,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000001,"utf8Bytes":1000001,"byteTarget":1000001,"segmentBytes":{"page":400001,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18317312,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18776064},"final":{"rss":22380544,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":22605824},"vmHwmDelta":3829760,"rssDelta":4063232,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=nonascii-bytes bytes=999999
+child pid=3575 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 399999 (expected 399999)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+RESULT {"pid":3575,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500031,"utf8Bytes":999999,"byteTarget":999999,"segmentBytes":{"page":399999,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18509824,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18964480},"final":{"rss":21143552,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":21360640},"vmHwmDelta":2396160,"rssDelta":2633728,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=nonascii-bytes bytes=1000000
+child pid=3581 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 400000 (expected 400000)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+RESULT {"pid":3581,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18452480,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18976768},"final":{"rss":21217280,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":21368832},"vmHwmDelta":2392064,"rssDelta":2764800,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=nonascii-bytes bytes=1000001
+child pid=3587 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 400001 (expected 400001)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+RESULT {"pid":3587,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000001,"byteTarget":1000001,"segmentBytes":{"page":400001,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18317312,"heapUsed":969728,"heapTotal":969728,"external":0,"vmHwm":18771968},"final":{"rss":20951040,"heapUsed":1004544,"heapTotal":1004544,"external":0,"vmHwm":21164032},"vmHwmDelta":2392064,"rssDelta":2633728,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=A fixture=nonascii (default)
+child pid=3593 bun=1.4.4 pattern=A fixture=nonascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+RESULT {"pid":3593,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":18153472,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18952192},"final":{"rss":23146496,"heapUsed":971776,"heapTotal":971776,"external":0,"vmHwm":23572480},"vmHwmDelta":4620288,"rssDelta":4993024,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0
+--- pattern=B fixture=nonascii (default)
+child pid=3599 bun=1.4.4 pattern=B fixture=nonascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+bytes: segment 0 = 799967 (expected 799967)
+bytes: segment 1 = 599985 (expected 599985)
+bytes: segment 2 = 599987 (expected 599987)
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+RESULT {"pid":3599,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":null,"baseline":{"rss":18034688,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18767872},"final":{"rss":22372352,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":22745088},"vmHwmDelta":3977216,"rssDelta":4337664,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+exit=0

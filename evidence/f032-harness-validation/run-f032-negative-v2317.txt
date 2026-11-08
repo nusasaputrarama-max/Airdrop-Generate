@@ -1,0 +1,307 @@
+2026-11-08T02:55:21Z
+bun=1.4.4
+=== bun run-f029.ts --runs 0
+run-f029: ERROR: --runs out of approved range 1..10, got 0
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts --runs abc
+run-f029: ERROR: --runs must be a positive integer, got "abc"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts --runs -1
+run-f029: ERROR: --runs must be a positive integer, got "-1"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts --runs
+run-f029: ERROR: --runs requires a value
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts 
+run-f029: ERROR: --runs is required (no default — a missing argument must not silently run)
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts --runs 11
+run-f029: ERROR: --runs out of approved range 1..10, got 11
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== bun run-f029.ts --runs 1.5
+run-f029: ERROR: --runs must be a positive integer, got "1.5"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+=== control: bun run-f029.ts --runs 1 (full output)
+parent pid=4149 bun=1.4.4 execPath=/opt/hatch-image/bin/bun
+matrix: patterns=A,B fixtures=ascii,nonascii,nonascii-bytes gc=forced,natural runs=1 per combination
+total child runs: 12
+child: script=exp-pattern.ts timeoutMs=120000
+--- preflight-fixture.ts ---
+preflight PASS: marker[0] byte length — measured 33, hardcoded 33 ("window.solana connect your wallet")
+preflight PASS: marker[0] is pure ASCII — chars 33 == bytes 33
+preflight PASS: marker[1] byte length — measured 15, hardcoded 15 ("window.ethereum")
+preflight PASS: marker[1] is pure ASCII — chars 15 == bytes 15
+preflight PASS: marker[2] byte length — measured 13, hardcoded 13 ("walletconnect")
+preflight PASS: marker[2] is pure ASCII — chars 13 == bytes 13
+preflight PASS: filler 'A' width — 1 byte
+preflight PASS: filler U+00E9 width — 2 bytes
+preflight PASS: ascii target=999999 segment 0 — TextEncoder-measured 399999, arithmetic expected 399999
+preflight PASS: ascii target=999999 segment 0 arithmetic — arithmetic 399999 == expected 399999
+preflight PASS: ascii target=999999 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=999999 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=999999 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=999999 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=999999 total — measured total 999999 == target 999999
+preflight PASS: ascii target=999999 total vs expectedTotal() — measured 999999 == expectedTotal 999999
+preflight PASS: ascii target=1000000 segment 0 — TextEncoder-measured 400000, arithmetic expected 400000
+preflight PASS: ascii target=1000000 segment 0 arithmetic — arithmetic 400000 == expected 400000
+preflight PASS: ascii target=1000000 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000000 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000000 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000000 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000000 total — measured total 1000000 == target 1000000
+preflight PASS: ascii target=1000000 total vs expectedTotal() — measured 1000000 == expectedTotal 1000000
+preflight PASS: ascii target=1000001 segment 0 — TextEncoder-measured 400001, arithmetic expected 400001
+preflight PASS: ascii target=1000001 segment 0 arithmetic — arithmetic 400001 == expected 400001
+preflight PASS: ascii target=1000001 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000001 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000001 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000001 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000001 total — measured total 1000001 == target 1000001
+preflight PASS: ascii target=1000001 total vs expectedTotal() — measured 1000001 == expectedTotal 1000001
+preflight PASS: nonascii-bytes target=999999 segment 0 — TextEncoder-measured 399999, arithmetic expected 399999
+preflight PASS: nonascii-bytes target=999999 segment 0 arithmetic — arithmetic 399999 == expected 399999
+preflight PASS: nonascii-bytes target=999999 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=999999 total — measured total 999999 == target 999999
+preflight PASS: nonascii-bytes target=999999 total vs expectedTotal() — measured 999999 == expectedTotal 999999
+preflight PASS: nonascii-bytes target=1000000 segment 0 — TextEncoder-measured 400000, arithmetic expected 400000
+preflight PASS: nonascii-bytes target=1000000 segment 0 arithmetic — arithmetic 400000 == expected 400000
+preflight PASS: nonascii-bytes target=1000000 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000000 total — measured total 1000000 == target 1000000
+preflight PASS: nonascii-bytes target=1000000 total vs expectedTotal() — measured 1000000 == expectedTotal 1000000
+preflight PASS: nonascii-bytes target=1000001 segment 0 — TextEncoder-measured 400001, arithmetic expected 400001
+preflight PASS: nonascii-bytes target=1000001 segment 0 arithmetic — arithmetic 400001 == expected 400001
+preflight PASS: nonascii-bytes target=1000001 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000001 total — measured total 1000001 == target 1000001
+preflight PASS: nonascii-bytes target=1000001 total vs expectedTotal() — measured 1000001 == expectedTotal 1000001
+preflight PASS: nonascii segment 0 — TextEncoder-measured 799967, arithmetic expected 799967
+preflight PASS: nonascii segment 1 — TextEncoder-measured 599985, arithmetic expected 599985
+preflight PASS: nonascii segment 2 — TextEncoder-measured 599987, arithmetic expected 599987
+preflight PASS: nonascii total — measured total 1999939 == 1,999,939
+preflight PASS: nonascii total vs expectedTotal() — measured 1999939 == expectedTotal 1999939
+preflight done: 61 checks, 0 failure(s), bun=1.4.4
+preflight: all fixture byte counts verified exact (TextEncoder, separate process)
+--- preflight ok, starting measured children ---
+--- child run pattern=A fixture=ascii gc=forced run=1 pid=4162 exit=0 ---
+child pid=4162 bun=1.4.4 pattern=A fixture=ascii gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19726336 heapUsed=344623 heapTotal=904192 external=75903 vmHwm=20054016
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+A1 after html + scriptTexts: rss=21561344 (+1835008) heapUsed=1365331 (+1020708) external=1084643 vmHwm=21794816
+A2 after join: rss=22085632 (+2359296) heapUsed=1966199 (+1621576) external=1685447 vmHwm=22396928
+A3 after haystack: rss=22216704 (+2490368) heapUsed=1966295 (+1621672) external=1685447 vmHwm=22421504
+A4 after lower: rss=24313856 (+4587520) heapUsed=3966530 (+3621907) external=3685602 vmHwm=24436736
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+final: rss=22106112 (+2379776) heapUsed=1765001 (+1420378) heapTotal=922624 external=1484169 (+1408266) vmHwm=24313856 (+4259840 vs baseline vmHwm)
+RESULT {"pid":4162,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":19726336,"heapUsed":344623,"heapTotal":904192,"external":75903,"vmHwm":20054016},"final":{"rss":22106112,"heapUsed":1765001,"heapTotal":922624,"external":1484169,"vmHwm":24313856},"vmHwmDelta":4259840,"rssDelta":2379776,"heapUsedDelta":1420378,"externalDelta":1408266,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=A fixture=ascii gc=natural run=1 pid=4171 exit=0 ---
+child pid=4171 bun=1.4.4 pattern=A fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=18116608 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18915328
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+A1 after html + scriptTexts: rss=20344832 (+2228224) heapUsed=955392 (+2048) external=0 vmHwm=20758528
+A2 after join: rss=21000192 (+2883584) heapUsed=955392 (+2048) external=0 vmHwm=21364736
+A3 after haystack: rss=21000192 (+2883584) heapUsed=955392 (+2048) external=0 vmHwm=21364736
+A4 after lower: rss=22966272 (+4849664) heapUsed=955392 (+2048) external=0 vmHwm=23375872
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+final: rss=22966272 (+4849664) heapUsed=971776 (+18432) heapTotal=971776 external=0 (+0) vmHwm=23457792 (+4542464 vs baseline vmHwm)
+RESULT {"pid":4171,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":18116608,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18915328},"final":{"rss":22966272,"heapUsed":971776,"heapTotal":971776,"external":0,"vmHwm":23457792},"vmHwmDelta":4542464,"rssDelta":4849664,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=1 pid=4176 exit=0 ---
+child pid=4176 bun=1.4.4 pattern=A fixture=nonascii gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19582976 heapUsed=345186 heapTotal=904192 external=75906 vmHwm=19914752
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+A1 after html + scriptTexts: rss=21286912 (+1703936) heapUsed=1364432 (+1019246) external=1084272 vmHwm=21577728
+A2 after join: rss=21811200 (+2228224) heapUsed=1965203 (+1620017) external=1685059 vmHwm=22196224
+A3 after haystack: rss=21811200 (+2228224) heapUsed=1965299 (+1620113) external=1685059 vmHwm=22216704
+A4 after lower: rss=24051712 (+4468736) heapUsed=3965532 (+3620346) external=3685212 vmHwm=24309760
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+final: rss=21979136 (+2396160) heapUsed=1764007 (+1418821) heapTotal=922624 external=1483783 (+1407877) vmHwm=24182784 (+4268032 vs baseline vmHwm)
+RESULT {"pid":4176,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":19582976,"heapUsed":345186,"heapTotal":904192,"external":75906,"vmHwm":19914752},"final":{"rss":21979136,"heapUsed":1764007,"heapTotal":922624,"external":1483783,"vmHwm":24182784},"vmHwmDelta":4268032,"rssDelta":2396160,"heapUsedDelta":1418821,"externalDelta":1407877,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=1 pid=4185 exit=0 ---
+child pid=4185 bun=1.4.4 pattern=A fixture=nonascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=18055168 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18722816
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+A1 after html + scriptTexts: rss=20152320 (+2097152) heapUsed=955392 (+2048) external=0 vmHwm=20500480
+A2 after join: rss=20676608 (+2621440) heapUsed=955392 (+2048) external=0 vmHwm=21106688
+A3 after haystack: rss=20676608 (+2621440) heapUsed=955392 (+2048) external=0 vmHwm=21106688
+A4 after lower: rss=22917120 (+4861952) heapUsed=955392 (+2048) external=0 vmHwm=23195648
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+final: rss=23048192 (+4993024) heapUsed=971776 (+18432) heapTotal=971776 external=0 (+0) vmHwm=23343104 (+4620288 vs baseline vmHwm)
+RESULT {"pid":4185,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":3600005,"baseline":{"rss":18055168,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18722816},"final":{"rss":23048192,"heapUsed":971776,"heapTotal":971776,"external":0,"vmHwm":23343104},"vmHwmDelta":4620288,"rssDelta":4993024,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=1 pid=4190 exit=0 ---
+child pid=4190 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19476480 heapUsed=345192 heapTotal=904192 external=75912 vmHwm=19836928
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+A1 after html + scriptTexts: rss=20787200 (+1310720) heapUsed=865533 (+520341) external=584685 vmHwm=21233664
+A2 after join: rss=21180416 (+1703936) heapUsed=1166341 (+821149) external=885493 vmHwm=21540864
+A3 after haystack: rss=21180416 (+1703936) heapUsed=1166438 (+821246) external=885494 vmHwm=21540864
+A4 after lower: rss=22372352 (+2895872) heapUsed=2166735 (+1821543) external=1885711 vmHwm=22642688
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1800116 (input 500032; ratio 3.60x)
+final: rss=22056960 (+2580480) heapUsed=1065086 (+719894) heapTotal=922624 external=784222 (+708310) vmHwm=22413312 (+2576384 vs baseline vmHwm)
+RESULT {"pid":4190,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":1800116,"baseline":{"rss":19476480,"heapUsed":345192,"heapTotal":904192,"external":75912,"vmHwm":19836928},"final":{"rss":22056960,"heapUsed":1065086,"heapTotal":922624,"external":784222,"vmHwm":22413312},"vmHwmDelta":2576384,"rssDelta":2580480,"heapUsedDelta":719894,"externalDelta":708310,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=1 pid=4199 exit=0 ---
+child pid=4199 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=18444288 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18976768
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+A1 after html + scriptTexts: rss=20148224 (+1703936) heapUsed=955392 (+2048) external=0 vmHwm=20316160
+A2 after join: rss=20410368 (+1966080) heapUsed=955392 (+2048) external=0 vmHwm=20623360
+A3 after haystack: rss=20410368 (+1966080) heapUsed=955392 (+2048) external=0 vmHwm=20623360
+A4 after lower: rss=21458944 (+3014656) heapUsed=955392 (+2048) external=0 vmHwm=21716992
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1800116 (input 500032; ratio 3.60x)
+final: rss=21602304 (+3158016) heapUsed=971776 (+18432) heapTotal=971776 external=0 (+0) vmHwm=21794816 (+2818048 vs baseline vmHwm)
+RESULT {"pid":4199,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":1800116,"baseline":{"rss":18444288,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18976768},"final":{"rss":21602304,"heapUsed":971776,"heapTotal":971776,"external":0,"vmHwm":21794816},"vmHwmDelta":2818048,"rssDelta":3158016,"heapUsedDelta":18432,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=ascii gc=forced run=1 pid=4204 exit=0 ---
+child pid=4204 bun=1.4.4 pattern=B fixture=ascii gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19419136 heapUsed=345183 heapTotal=904192 external=75903 vmHwm=19836928
+bytes: segment 0 = 400000 (expected 400000)
+B gc after segment 0: seg refs out of scope (helper returned), gc=forced, rss=20262912 vmHwm=21385216
+bytes: segment 1 = 300000 (expected 300000)
+B gc after segment 1: seg refs out of scope (helper returned), gc=forced, rss=20267008 vmHwm=21385216
+bytes: segment 2 = 300000 (expected 300000)
+B gc after segment 2: seg refs out of scope (helper returned), gc=forced, rss=20267008 vmHwm=21385216
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21385216 (+1966080 vs baseline); peak heapUsed: 369816 (+24633 vs baseline)
+final: rss=20267008 (+847872) heapUsed=370599 (+25416) heapTotal=922624 external=88983 (+13080) vmHwm=21385216 (+1548288 vs baseline vmHwm)
+RESULT {"pid":4204,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":19419136,"heapUsed":345183,"heapTotal":904192,"external":75903,"vmHwm":19836928},"final":{"rss":20267008,"heapUsed":370599,"heapTotal":922624,"external":88983,"vmHwm":21385216},"vmHwmDelta":1548288,"rssDelta":847872,"heapUsedDelta":25416,"externalDelta":13080,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=ascii gc=natural run=1 pid=4212 exit=0 ---
+child pid=4212 bun=1.4.4 pattern=B fixture=ascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=18128896 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18665472
+bytes: segment 0 = 400000 (expected 400000)
+B gc after segment 0: seg refs out of scope (helper returned), gc=natural, rss=20619264 vmHwm=20721664
+bytes: segment 1 = 300000 (expected 300000)
+B gc after segment 1: seg refs out of scope (helper returned), gc=natural, rss=21536768 vmHwm=21712896
+bytes: segment 2 = 300000 (expected 300000)
+B gc after segment 2: seg refs out of scope (helper returned), gc=natural, rss=22454272 vmHwm=22622208
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 22454272 (+4325376 vs baseline); peak heapUsed: 988160 (+34816 vs baseline)
+final: rss=22454272 (+4325376) heapUsed=988160 (+34816) heapTotal=988160 external=0 (+0) vmHwm=22630400 (+3964928 vs baseline vmHwm)
+RESULT {"pid":4212,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":18128896,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18665472},"final":{"rss":22454272,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":22630400},"vmHwmDelta":3964928,"rssDelta":4325376,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=1 pid=4217 exit=0 ---
+child pid=4217 bun=1.4.4 pattern=B fixture=nonascii gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19374080 heapUsed=344626 heapTotal=904192 external=75906 vmHwm=19873792
+bytes: segment 0 = 799967 (expected 799967)
+B gc after segment 0: seg refs out of scope (helper returned), gc=forced, rss=20365312 vmHwm=21614592
+bytes: segment 1 = 599985 (expected 599985)
+B gc after segment 1: seg refs out of scope (helper returned), gc=forced, rss=20369408 vmHwm=21614592
+bytes: segment 2 = 599987 (expected 599987)
+B gc after segment 2: seg refs out of scope (helper returned), gc=forced, rss=20369408 vmHwm=21614592
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21352448 (+1978368 vs baseline); peak heapUsed: 368261 (+23635 vs baseline)
+final: rss=20369408 (+995328) heapUsed=369142 (+24516) heapTotal=922624 external=88614 (+12708) vmHwm=21614592 (+1740800 vs baseline vmHwm)
+RESULT {"pid":4217,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":null,"baseline":{"rss":19374080,"heapUsed":344626,"heapTotal":904192,"external":75906,"vmHwm":19873792},"final":{"rss":20369408,"heapUsed":369142,"heapTotal":922624,"external":88614,"vmHwm":21614592},"vmHwmDelta":1740800,"rssDelta":995328,"heapUsedDelta":24516,"externalDelta":12708,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=1 pid=4225 exit=0 ---
+child pid=4225 bun=1.4.4 pattern=B fixture=nonascii gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=18010112 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18804736
+bytes: segment 0 = 799967 (expected 799967)
+B gc after segment 0: seg refs out of scope (helper returned), gc=natural, rss=20512768 vmHwm=20873216
+bytes: segment 1 = 599985 (expected 599985)
+B gc after segment 1: seg refs out of scope (helper returned), gc=natural, rss=21430272 vmHwm=21860352
+bytes: segment 2 = 599987 (expected 599987)
+B gc after segment 2: seg refs out of scope (helper returned), gc=natural, rss=22347776 vmHwm=22773760
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 22347776 (+4337664 vs baseline); peak heapUsed: 988160 (+34816 vs baseline)
+final: rss=22347776 (+4337664) heapUsed=988160 (+34816) heapTotal=988160 external=0 (+0) vmHwm=22781952 (+3977216 vs baseline vmHwm)
+RESULT {"pid":4225,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8Bytes":1999939,"byteTarget":null,"segmentBytes":{"page":799967,"script1":599985,"script2":599987},"asksConnect":true,"liveChars":null,"baseline":{"rss":18010112,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18804736},"final":{"rss":22347776,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":22781952},"vmHwmDelta":3977216,"rssDelta":4337664,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=1 pid=4231 exit=0 ---
+child pid=4231 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=19623936 heapUsed=345192 heapTotal=904192 external=75912 vmHwm=20078592
+bytes: segment 0 = 400000 (expected 400000)
+B gc after segment 0: seg refs out of scope (helper returned), gc=forced, rss=20471808 vmHwm=21065728
+bytes: segment 1 = 300000 (expected 300000)
+B gc after segment 1: seg refs out of scope (helper returned), gc=forced, rss=20865024 vmHwm=21377024
+bytes: segment 2 = 300000 (expected 300000)
+B gc after segment 2: seg refs out of scope (helper returned), gc=forced, rss=20865024 vmHwm=21377024
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20934656 (+1310720 vs baseline); peak heapUsed: 369594 (+24402 vs baseline)
+final: rss=20865024 (+1241088) heapUsed=370475 (+25283) heapTotal=922624 external=89003 (+13091) vmHwm=21389312 (+1310720 vs baseline vmHwm)
+RESULT {"pid":4231,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":19623936,"heapUsed":345192,"heapTotal":904192,"external":75912,"vmHwm":20078592},"final":{"rss":20865024,"heapUsed":370475,"heapTotal":922624,"external":89003,"vmHwm":21389312},"vmHwmDelta":1310720,"rssDelta":1241088,"heapUsedDelta":25283,"externalDelta":13091,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=1 pid=4239 exit=0 ---
+child pid=4239 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural encoderInMeasuredPhase=false byteProof=preflight+arithmetic
+baseline: rss=17977344 heapUsed=953344 heapTotal=953344 external=0 vmHwm=18767872
+bytes: segment 0 = 400000 (expected 400000)
+B gc after segment 0: seg refs out of scope (helper returned), gc=natural, rss=19955712 vmHwm=20369408
+bytes: segment 1 = 300000 (expected 300000)
+B gc after segment 1: seg refs out of scope (helper returned), gc=natural, rss=20348928 vmHwm=20901888
+bytes: segment 2 = 300000 (expected 300000)
+B gc after segment 2: seg refs out of scope (helper returned), gc=natural, rss=20873216 vmHwm=21356544
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20873216 (+2895872 vs baseline); peak heapUsed: 988160 (+34816 vs baseline)
+final: rss=20873216 (+2895872) heapUsed=988160 (+34816) heapTotal=988160 external=0 (+0) vmHwm=21364736 (+2596864 vs baseline vmHwm)
+RESULT {"pid":4239,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500032,"utf8Bytes":1000000,"byteTarget":1000000,"segmentBytes":{"page":400000,"script1":300000,"script2":300000},"asksConnect":true,"liveChars":null,"baseline":{"rss":17977344,"heapUsed":953344,"heapTotal":953344,"external":0,"vmHwm":18767872},"final":{"rss":20873216,"heapUsed":988160,"heapTotal":988160,"external":0,"vmHwm":21364736},"vmHwmDelta":2596864,"rssDelta":2895872,"heapUsedDelta":34816,"externalDelta":0,"encoderInMeasuredPhase":false,"byteProof":"preflight+arithmetic"}
+done
+
+SUMMARY bun=1.4.4 runs-per-combination=1 child-failures=0 distinct-child-pids=12 of 12
+metric = delta vs that child's own clean baseline (bytes). vmHwm = OS high-water RSS from /proc/self/status.
+pattern | fixture | gc | n | vmHwmDelta median [min..max] | rssDelta median [min..max] | heapUsedDelta median [min..max] | externalDelta median [min..max] | asksConnect
+A | ascii | forced | 1 | vmHwm 4,259,840 [4,259,840..4,259,840] | rss 2,379,776 [2,379,776..2,379,776] | heapUsed 1,420,378 [1,420,378..1,420,378] | external 1,408,266 [1,408,266..1,408,266] | true (all runs)
+A | ascii | natural | 1 | vmHwm 4,542,464 [4,542,464..4,542,464] | rss 4,849,664 [4,849,664..4,849,664] | heapUsed 18,432 [18,432..18,432] | external 0 [0..0] | true (all runs)
+A | nonascii | forced | 1 | vmHwm 4,268,032 [4,268,032..4,268,032] | rss 2,396,160 [2,396,160..2,396,160] | heapUsed 1,418,821 [1,418,821..1,418,821] | external 1,407,877 [1,407,877..1,407,877] | true (all runs)
+A | nonascii | natural | 1 | vmHwm 4,620,288 [4,620,288..4,620,288] | rss 4,993,024 [4,993,024..4,993,024] | heapUsed 18,432 [18,432..18,432] | external 0 [0..0] | true (all runs)
+A | nonascii-bytes | forced | 1 | vmHwm 2,576,384 [2,576,384..2,576,384] | rss 2,580,480 [2,580,480..2,580,480] | heapUsed 719,894 [719,894..719,894] | external 708,310 [708,310..708,310] | true (all runs)
+A | nonascii-bytes | natural | 1 | vmHwm 2,818,048 [2,818,048..2,818,048] | rss 3,158,016 [3,158,016..3,158,016] | heapUsed 18,432 [18,432..18,432] | external 0 [0..0] | true (all runs)
+B | ascii | forced | 1 | vmHwm 1,548,288 [1,548,288..1,548,288] | rss 847,872 [847,872..847,872] | heapUsed 25,416 [25,416..25,416] | external 13,080 [13,080..13,080] | true (all runs)
+B | ascii | natural | 1 | vmHwm 3,964,928 [3,964,928..3,964,928] | rss 4,325,376 [4,325,376..4,325,376] | heapUsed 34,816 [34,816..34,816] | external 0 [0..0] | true (all runs)
+B | nonascii | forced | 1 | vmHwm 1,740,800 [1,740,800..1,740,800] | rss 995,328 [995,328..995,328] | heapUsed 24,516 [24,516..24,516] | external 12,708 [12,708..12,708] | true (all runs)
+B | nonascii | natural | 1 | vmHwm 3,977,216 [3,977,216..3,977,216] | rss 4,337,664 [4,337,664..4,337,664] | heapUsed 34,816 [34,816..34,816] | external 0 [0..0] | true (all runs)
+B | nonascii-bytes | forced | 1 | vmHwm 1,310,720 [1,310,720..1,310,720] | rss 1,241,088 [1,241,088..1,241,088] | heapUsed 25,283 [25,283..25,283] | external 13,091 [13,091..13,091] | true (all runs)
+B | nonascii-bytes | natural | 1 | vmHwm 2,596,864 [2,596,864..2,596,864] | rss 2,895,872 [2,895,872..2,895,872] | heapUsed 34,816 [34,816..34,816] | external 0 [0..0] | true (all runs)
+
+RATIO A/B (median vmHwmDelta, same fixture+gc; >1 means pattern A peaked higher than B):
+ascii | forced | A median vmHwm 4,259,840 / B median vmHwm 1,548,288 = 2.75x (A range 4,259,840..4,259,840; B range 1,548,288..1,548,288)
+ascii | natural | A median vmHwm 4,542,464 / B median vmHwm 3,964,928 = 1.15x (A range 4,542,464..4,542,464; B range 3,964,928..3,964,928)
+nonascii | forced | A median vmHwm 4,268,032 / B median vmHwm 1,740,800 = 2.45x (A range 4,268,032..4,268,032; B range 1,740,800..1,740,800)
+nonascii | natural | A median vmHwm 4,620,288 / B median vmHwm 3,977,216 = 1.16x (A range 4,620,288..4,620,288; B range 3,977,216..3,977,216)
+nonascii-bytes | forced | A median vmHwm 2,576,384 / B median vmHwm 1,310,720 = 1.97x (A range 2,576,384..2,576,384; B range 1,310,720..1,310,720)
+nonascii-bytes | natural | A median vmHwm 2,818,048 / B median vmHwm 2,596,864 = 1.09x (A range 2,818,048..2,818,048; B range 2,596,864..2,596,864)
+
+parent done: all child runs ok
+exit=0

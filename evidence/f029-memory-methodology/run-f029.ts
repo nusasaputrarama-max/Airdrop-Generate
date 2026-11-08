@@ -1,6 +1,7 @@
-// F-029 parent harness (v2.3.16, F-032 fix): runs pattern A and pattern
-// B as SEPARATE PROCESSES (one child per run, new PID, clean baseline
-// each time) and aggregates the OS high-water mark (VmHWM) deltas.
+// F-029 parent harness (v2.3.17, F-033 fix + F-032 timeout E2E seam):
+// runs pattern A and pattern B as SEPARATE PROCESSES (one child per
+// run, new PID, clean baseline each time) and aggregates the OS
+// high-water mark (VmHWM) deltas.
 //
 // Spawning uses node:child_process.spawnSync with process.execPath
 // (the SAME Bun binary as the parent) — NOT Bun.spawnSync. Run from
@@ -19,7 +20,28 @@
 //   success. Each child has a 120 s timeout; a child that times out or
 //   dies by signal counts as a failure.
 //
-// Output: full raw log on stdout (redirect to run-<version>-f031-f032.txt)
+// v2.3.17 (F-033): BEFORE spawning any measured child, the parent
+// runs preflight-fixture.ts in its own process (same Bun binary).
+// The preflight is the independent byte proof: it measures every
+// fixture segment with TextEncoder and asserts exact per-segment /
+// total bytes (cap-1/cap/cap+1). If the preflight fails, the parent
+// aborts with exit 1 and NO child is spawned — a measured run can
+// never proceed on an unverified fixture. The parent also asserts
+// every RESULT carries encoderInMeasuredPhase === false, proving no
+// measured child allocated a full-segment encoder buffer.
+//
+// TEST-ONLY SEAM (F-032 timeout E2E, see
+// evidence/f032-harness-validation/run-f032-timeout-e2e.txt):
+//   F029_CHILD_SCRIPT=<path>        — spawn this script instead of
+//     exp-pattern.ts (the E2E test points it at hang-child.ts).
+//   F029_CHILD_TIMEOUT_MS=<ms>      — child timeout override, integer
+//     100..120000 (default 120000). The E2E test uses 3000.
+// Both are validated (bad value → exit 2) and, when set, the parent
+// prints an explicit "test-seam:" line in the log so an overridden
+// run can never be mistaken for a production run. Production runs
+// NEVER set these variables.
+//
+// Output: full raw log on stdout (redirect to run-<version>-f033.txt)
 // + a summary table with median + range per combination. Forced-GC and
 // natural-GC runs are reported separately and never mixed.
 //
@@ -33,7 +55,23 @@
 import { spawnSync } from "node:child_process";
 
 const MAX_RUNS = 10; // approved range for --runs: 1..10
-const CHILD_TIMEOUT_MS = 120_000;
+const DEFAULT_CHILD_TIMEOUT_MS = 120_000;
+
+// TEST-ONLY SEAM (F-032 E2E): validated env overrides. Production
+// runs never set these; when set, the parent logs them explicitly.
+const CHILD_SCRIPT = process.env.F029_CHILD_SCRIPT ?? "exp-pattern.ts";
+let CHILD_TIMEOUT_MS = DEFAULT_CHILD_TIMEOUT_MS;
+if (process.env.F029_CHILD_TIMEOUT_MS !== undefined) {
+  const raw = process.env.F029_CHILD_TIMEOUT_MS;
+  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw) < 100 || Number(raw) > DEFAULT_CHILD_TIMEOUT_MS) {
+    console.error(`run-f029: ERROR: F029_CHILD_TIMEOUT_MS must be an integer 100..${DEFAULT_CHILD_TIMEOUT_MS}, got ${JSON.stringify(raw)}`);
+    process.exit(2);
+  }
+  CHILD_TIMEOUT_MS = Number(raw);
+}
+const TEST_SEAM_ACTIVE =
+  process.env.F029_CHILD_SCRIPT !== undefined ||
+  process.env.F029_CHILD_TIMEOUT_MS !== undefined;
 
 function usageFail(msg: string): never {
   console.error(`run-f029: ERROR: ${msg}`);
@@ -92,6 +130,25 @@ function fmt(n: number): string {
 console.log(`parent pid=${process.pid} bun=${Bun.version} execPath=${process.execPath}`);
 console.log(`matrix: patterns=${PATTERNS.join(",")} fixtures=${FIXTURES.join(",")} gc=${GCS.join(",")} runs=${RUNS} per combination`);
 console.log(`total child runs: ${EXPECTED_RUNS}`);
+console.log(`child: script=${CHILD_SCRIPT} timeoutMs=${CHILD_TIMEOUT_MS}`);
+if (TEST_SEAM_ACTIVE) {
+  console.log(`test-seam: F029_CHILD_SCRIPT/F029_CHILD_TIMEOUT_MS override ACTIVE (test-only; this is NOT a production run)`);
+}
+
+// v2.3.17 (F-033): run the independent byte preflight FIRST, in its
+// own process. If it fails, abort before any measured child spawns.
+{
+  const pre = spawnSync(process.execPath, ["preflight-fixture.ts"], { encoding: "utf8", timeout: 120_000 });
+  console.log("--- preflight-fixture.ts ---");
+  console.log(((pre.stdout ?? "") as string).trimEnd());
+  if ((pre.stderr ?? "") !== "") console.log((pre.stderr as string).trimEnd());
+  if ((pre as any).error || pre.status !== 0) {
+    console.log(`PREFLIGHT FAILED — aborting, no measured child runs started (error=${(pre as any).error?.code ?? "none"} status=${pre.status})`);
+    console.log("parent done: FAILED — preflight fixture not verified");
+    process.exit(1);
+  }
+  console.log("--- preflight ok, starting measured children ---");
+}
 
 type Rec = { pattern: string; fixture: string; gc: string; run: number; pid: number; result: any };
 const records: Rec[] = [];
@@ -102,7 +159,7 @@ for (const pattern of PATTERNS) {
   for (const fixture of FIXTURES) {
     for (const gc of GCS) {
       for (let run = 1; run <= RUNS; run++) {
-        const args = ["exp-pattern.ts", "--pattern", pattern, "--fixture", fixture, "--gc", gc];
+        const args = [CHILD_SCRIPT, "--pattern", pattern, "--fixture", fixture, "--gc", gc];
         const child = spawnSync(process.execPath, args, { encoding: "utf8", timeout: CHILD_TIMEOUT_MS });
         const out = (child.stdout ?? "") as string;
         const err = (child.stderr ?? "") as string;
@@ -146,6 +203,14 @@ for (const pattern of PATTERNS) {
         }
         if (typeof result.vmHwmDelta !== "number" || result.vmHwmDelta < 0) {
           mismatch.push(`vmHwmDelta ${result.vmHwmDelta} is not a non-negative number`);
+        }
+        // F-033: the measured child must prove it allocated no
+        // full-segment encoder buffer in the measured phase.
+        if (result.encoderInMeasuredPhase !== false) {
+          mismatch.push(`encoderInMeasuredPhase ${result.encoderInMeasuredPhase} != false (F-033)`);
+        }
+        if (result.byteProof !== "preflight+arithmetic") {
+          mismatch.push(`byteProof ${JSON.stringify(result.byteProof)} != "preflight+arithmetic" (F-033)`);
         }
         if (mismatch.length > 0) {
           failures++;

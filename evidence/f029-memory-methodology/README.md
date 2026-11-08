@@ -1,12 +1,147 @@
 # Bukti F-029 — Metodologi perbandingan memori pola incremental yang dikoreksi
 
-**Revisi:** v2.3.16 — jawaban atas audit independen V9 (F-031, F-032)
+**Revisi:** v2.3.17 — jawaban atas audit independen V10 (F-033, F-032 E2E)
 **Tanggal:** 2026-11-08 (WIB)
 **Lingkungan bukti: VM LOKAL SAJA — BUKAN staging, BUKAN produksi.**
 Tidak ada jaringan, tidak ada artifact live, `checkLink` TIDAK
 di-invoke. Eksperimen ini mensimulasikan pola kode dari
 `site/server/src/actions.ts:520-533` (dikutip read-only, bukan
 dieksekusi dari artifact) pada string yang dibangun lokal.
+
+## Perubahan v2.3.17 (F-033 — instrumen pengukuran tidak simetris; F-032 E2E)
+
+Audit V10 benar: `TextEncoder.encode(segment)` di dalam fase yang
+diukur mengalokasikan Uint8Array sementara sebesar segmen, dan
+jadwal GC kedua pola tidak setara — pola A membangun tiga segmen
+sebelum GC pertama, pola B GC setelah tiap segmen; `segLower`
+pola B pula masih hidup saat `doGc()` dipanggil. Karena VmHWM
+monotonik, rasio v2.3.16 (1,13–1,84×) terkonfounded dan dinyatakan
+**SUPERSEDED** — bukan lagi angka yang boleh dikutip, bahkan
+sebagai bukti VM. Harness BERUBAH lagi, sehingga rerun penuh
+dibenarkan (protokol butir 6) dan dijelaskan di sini:
+
+**F-033 — TextEncoder dikeluarkan dari measured process.**
+`exp-pattern.ts` TIDAK LAGI memanggil TextEncoder sama sekali
+(grep: tidak ada `TextEncoder` di file itu). Jumlah byte dihitung
+**aritmetik deterministik** dari lebar byte filler/marker yang
+diketahui (`fixture.ts` — modul konstruksi bersama): filler ASCII
+1 byte, U+00E9 2 byte, marker ASCII 33/15/13 byte (konstanta yang
+di-hardcode). Bukti byte yang INDEPENDEN adalah
+**`preflight-fixture.ts`** — proses TERPISAH yang dijalankan
+parent harness (`run-f029.ts`) SEBELUM satu pun child terukur
+di-spawn; preflight membangun segmen yang sama (via `fixture.ts`)
+dan mengukurnya dengan TextEncoder: 61 checks (marker 33/15/13,
+lebar filler, ascii + nonascii-bytes pada cap−1/cap/cap+1 per
+segmen + total, nonascii total 1.999.939) — 0 gagal di kedua versi
+Bun, tercatat di kepala tiap log run. Bila preflight gagal,
+parent abort (exit 1) tanpa menjalankan child apa pun. Tiap
+RESULT kini membawa `encoderInMeasuredPhase: false` +
+`byteProof: "preflight+arithmetic"`, dan parent meng-assert
+keduanya pada setiap run. Overhead tetap yang didokumentasikan:
+hanya import modul (sebelum baseline, identik untuk A/B);
+tidak ada lagi klaim overhead "berlaku sama" — alokasi encoder
+dihilangkan dari fase ukur, bukan disamakan.
+
+**Lifecycle pola B dibuat eksplisit.** Pemindaian satu segmen
+pindah ke helper `scanSegment(i)` dengan scope tertutup: helper
+mengembalikan hanya `{ found, bytes, chars }`; `seg` dan
+`segLower` keluar dari scope saat helper return, dan caller
+menjalankan `doGc()` HANYA setelah return itu. Tiap forced GC
+pola B dicatat di log (`B gc after segment i: seg refs out of
+scope ...`, 90 baris per log = 30 run B × 3 segmen) sebagai bukti
+lifetime eksplisit.
+
+**F-032 E2E** (detail + log di
+`evidence/f032-harness-validation/README.md`): child dummy
+`hang-child.ts` + driver `run-f032-timeout-e2e.ts` membuktikan
+parent timeout, mematikan, dan menggagalkan 12 child yang
+menggantung tanpa mencetak success line. `run-f029.ts` mendapat
+test seam env `F029_CHILD_SCRIPT` / `F029_CHILD_TIMEOUT_MS`
+(tervalidasi, dicatat eksplisit bila aktif; production run tidak
+pernah mengesetnya). Tes regresi negatif diulang pada harness
+baru (log `run-f032-negative-v2317.txt`): 7 kasus exit 2,
+kontrol positif `--runs 1` exit 0 dengan 12 RESULT.
+
+## Hasil v2.3.17 (harness de-confounded, preflight terpisah)
+
+Rerun penuh 60 run anak per versi Bun, 0 gagal, 60 PID berbeda
+terverifikasi per versi, `asksConnect = true` pada SEMUA 120
+run anak, `encoderInMeasuredPhase = false` pada SEMUA 120 RESULT.
+Log mentah baru: `run-1310-f033.txt`, `run-144-f033.txt` (995
+baris masing-masing — 61 baris preflight + 90 baris `B gc` di
+dalamnya). Log v2.3.16 DIPERTAHANKAN sebagai bukti historis —
+tetapi rasio 1,13–1,84×-nya TIDAK dibawa ulang: rasio itu
+terukur dengan instrumen terkonfounded (F-033).
+
+### Rasio A/B yang terukur ulang (median VmHWM delta)
+
+| Bun | Fixture | GC | A median | B median | Rasio A/B |
+| --- | --- | --- | --- | --- | --- |
+| 1.3.10 | ascii | forced | 4.861.952 | 2.871.296 | **1,69×** |
+| 1.3.10 | ascii | natural | 4.784.128 | 3.670.016 | **1,30×** |
+| 1.3.10 | nonascii | forced | 5.337.088 | 2.965.504 | **1,80×** |
+| 1.3.10 | nonascii | natural | 4.915.200 | 3.796.992 | **1,29×** |
+| 1.3.10 | nonascii-bytes | forced | 2.912.256 | 1.490.944 | **1,95×** |
+| 1.3.10 | nonascii-bytes | natural | 2.809.856 | 2.281.472 | **1,23×** |
+| 1.4.4 | ascii | forced | 4.104.192 | 1.654.784 | **2,48×** |
+| 1.4.4 | ascii | natural | 4.542.464 | 3.964.928 | **1,15×** |
+| 1.4.4 | nonascii | forced | 4.177.920 | 1.597.440 | **2,62×** |
+| 1.4.4 | nonascii | natural | 4.624.384 | 3.977.216 | **1,16×** |
+| 1.4.4 | nonascii-bytes | forced | 2.453.504 | 1.335.296 | **1,84×** |
+| 1.4.4 | nonascii-bytes | natural | 2.818.048 | 2.527.232 | **1,12×** |
+
+**Rasio terukur ulang keseluruhan: 1,12–2,62× (median VmHWM).**
+Rentang v2.3.16 (1,13–1,84×) dinyatakan **SUPERSEDED** (instrumen
+terkonfounded F-033). Yang TIDAK berubah: pola B lebih rendah
+dari pola A pada SEMUA 12 kombinasi di kedua versi; forced-GC
+kini 1,69–2,62× vs natural-GC 1,12–1,30×.
+
+**Mengapa rasio forced-GC NAIK, bukan turun?** Dua confound
+v2.3.16 mendorong ke arah berlawanan: (a) transient encoder
+menghukum pola A (sebelum GC pertama) → cenderung
+MEMBESARKAN rasio; (b) `segLower` yang hidup melewati forced
+GC menghukum pola B → cenderung MENGECILKAN rasio. Rerun ini
+menunjukkan (b) adalah confound yang LEBIH BESAR: median B
+forced-GC 1.4.4 jatuh jauh (ascii 3.379.200 → 1.654.784;
+nonascii 3.149.824 → 1.597.440) setelah `segLower` dilepas
+sebelum GC, sementara median A turun lebih sedikit (ascii
+5.300.224 → 4.104.192). Hipotesis arah audit V10 ("rasio lama
+melebih-lebihkan manfaat incremental") karena itu TIDAK
+terkonfirmasi pada sel forced-GC — bias neto justru berjalan
+sebaliknya di sel itu. Pada sel natural-GC rasio hampir tidak
+bergerak (1,13–1,28× → 1,12–1,30×), sesuai harapan: tanpa
+checkpoint forced-GC, lifetime `segLower` tidak berpengaruh
+pada puncak. Semua ini dilaporkan apa adanya; **rasio
+1,12–2,62× tetap HANYA bukti VM atas pola simulasi — BUKAN
+sizing/cgroup acceptance, BUKAN acceptance staging**
+(H-RES-05 tetap harus dijalankan di staging, gate G-I; status
+rasio sebagai angka operasional tetap NOT VERIFIED sampai
+review independen atas paket ini).
+
+### Varian cap−1 / cap / cap+1 (log `run-144-f033-byte-variants.txt`)
+
+14 run langsung `exp-pattern.ts` (Bun 1.4.4, gc natural):
+pola A dan B × fixture `ascii` dan `nonascii-bytes` ×
+`--bytes` 999.999 / 1.000.000 / 1.000.001, plus pola A dan B ×
+`nonascii` default. Semua exit 0; total byte (aritmetik, dengan
+`encoderInMeasuredPhase: false`) TEPAT sama dengan target pada
+setiap run; bukti byte independennya adalah preflight (61
+checks, termasuk ketiga target itu). Karakter hidup pola A
+tetap 3,60× input pada semua varian.
+
+### Temuan yang dipertahankan dari v2.3.16
+
+- **`heapUsed` tetap bukan oracle di Bun 1.3.10:** delta
+  heapUsed = 0 pada SEMUA 60 run anak 1.3.10 (kedua pola, semua
+  fixture, kedua mode GC) — direproduksi v2.3.17.
+- **Karakter hidup 3,60× DIPERTAHANKAN sebagai character
+  accounting** (ascii: 3.600.005 karakter hidup pada titik
+  analisis pola A; nonascii-bytes: 1.800.116 / 500.032 =
+  3,60×), BUKAN klaim peak-memory.
+- **Deteksi tidak hilang:** `asksConnect = true` pada SEMUA
+  120 run anak.
+- **Konkurensi TIDAK disimulasikan di VM** — oracle
+  konkurensi tetap staging H-RES-05.
 
 ## Perubahan v2.3.16 (F-031 — fixture exact-byte, F-032 — validasi harness)
 
@@ -88,6 +223,13 @@ BUKAN produksi.
 
 ## Hasil v2.3.16 (harness yang sudah diperbaiki, fixture exact-byte)
 
+**[PEMBARUAN v2.3.17 (F-033): rasio 1,13–1,84× di bagian ini
+dinyatakan SUPERSEDED — instrumen pengukurannya terkonfounded
+(encoder sementara + `segLower` hidup melewati GC pola B).
+Pengukuran de-confounded v2.3.17 memberi 1,12–2,62×; lihat
+"Hasil v2.3.17" di atas. Bagian ini dipertahankan sebagai catatan
+sejarah.]**
+
 Rerun penuh 60 run anak per versi Bun, 0 gagal, 60 PID berbeda
 terverifikasi per versi, `asksConnect = true` pada SEMUA 120
 run anak. Log mentah baru: `run-1310-f031-f032.txt`,
@@ -161,6 +303,8 @@ semua varian (mis. cap−1 ascii: 3.600.002 / 999.999).
 | 1 | Draf pertama v2.3.16 membangun fixture SEBELUM baseline | Delta VmHWM menyusut ke 0 pada beberapa kombinasi 1.4.4 (baseline VmHWM sudah memuat input) dan rasio menjadi "Infinityx" pada 2 kombinasi | Urutan diperbaiki (baseline dulu, lalu bangun fixture); log trial draf ini DIBUANG (tidak di-commit) dan dicatat di sini, bukan disembunyikan |
 | 2 | Draf kedua membangun SEMUA segmen di muka untuk pola B | Pola B tidak lagi incremental (input dipegang bersamaan); B melebihi A pada 1 kombinasi 1.4.4 nonascii-bytes forced (rasio 0,93×) | Segmen dibangun lazy per pola (pola B satu per satu, dilepas sebelum berikutnya); log trial DIBUANG (tidak di-commit) dan dicatat di sini |
 | 3 | Rentang rasio v2.3.15 (1,18–1,88×) tidak direproduksi eksak | Rerun exact-byte memberi 1,13–1,84× | Rentang lama dinyatakan SUPERSEDED; rentang baru dilaporkan apa adanya; bukan acceptance staging |
+| 4 | Binary Bun 1.3.10 tidak ada di VM ini (`/tmp/bun1310` dibersihkan antar sesi; `~/.bun` tidak ada) | Diunduh ulang dari rilis resmi oven-sh/bun `bun-v1.3.10` (zip 39.328.732 byte) ke `/tmp/bun1310`; verifikasi `bun --revision` = `1.3.10+30e609e08` (SAMA dengan revisi v2.3.14/v2.3.15/v2.3.16) | Binary di `/tmp` bersifat ephemeral — revisi berikutnya kemungkinan harus mengunduh ulang; log mentah di repo adalah bukti yang dipertahankan, bukan binary-nya |
+| 5 | Draf pertama driver E2E F-032 hanya memeriksa PID child gantung TERAKHIR (hang-child menimpa pidfile) | Driver diperbaiki: hang-child APPEND satu PID per baris; driver memeriksa ke-12 PID mati (kill(pid,0) → ESRCH) + rerun penuh E2E (36 detik) | Log pertama (`run-f032-timeout-e2e.txt` versi awal) DITIMPA oleh rerun yang lebih kuat — bukan disembunyikan; kelemahan ini dicatat di README F-032 |
 
 ## Hasil v2.3.15 (dipertahankan sebagai catatan sejarah)
 
@@ -334,6 +478,11 @@ tidak kehilangan deteksi pada kasus uji ini.
    rasio 1,13–1,84× (median VmHWM) — rentang 1,18–1,88×
    dinyatakan SUPERSEDED; forced-GC 1,51–1,84×, natural-GC
    1,13–1,28×. Lihat "Hasil v2.3.16" di atas.]**
+   **[PEMBARUAN v2.3.17 (F-033): rasio 1,13–1,84× dinyatakan
+   SUPERSEDED — instrumen terkonfounded; rerun de-confounded
+   memberi 1,12–2,62× (forced-GC 1,69–2,62×, natural-GC
+   1,12–1,30×). Rasio tetap BUKAN acceptance staging. Lihat
+   "Hasil v2.3.17" di atas.]**
 2. **Aturan desain v2.3.14 TETAP BERLAKU dan tidak dilemahkan
    oleh koreksi rasio:** L2 tetap input-body budget (bukan
    peak-memory budget); LARANGAN materialisasi bersamaan tetap
@@ -368,6 +517,18 @@ lama, BUKAN batas byte eksak):
 | `run-f029.ts` (v2.3.15) | `f4e1bbe6ad21dcb95fa91b38ef186e77e9853c096f372e58ca357b68df1be3c1` |
 | `run-1310-f029.txt` | `25abea8cee91999fe233c65c541181eb5481635d70cfd08784057c73e3693513` |
 | `run-144-f029.txt` | `44943f572835ced5347fd9db8ddbf15e25ed1e9902f077b7cae406932fa4df82` |
+
+File v2.3.17 (harness de-confounded — F-033/F-032 E2E):
+
+| File | SHA-256 |
+| --- | --- |
+| `fixture.ts` | `e60c30cd398a0aafa2504758027013fa7b9f372d0d965462c05c6b9aa7a5bf15` |
+| `preflight-fixture.ts` | `8ca260989a1979ac9932fe7155e251bed8fcc3b1619e1ba2a3e63b4864dcf2f2` |
+| `exp-pattern.ts` | `91e593ccb7d81e7e816f4963b7879b23b2062e15982a222e4e7efcfb393386ae` |
+| `run-f029.ts` | `03a73f88ce33304ba0809c9a3ec91f7a407b1d24a9e01fdcd7337a5b6595b6d5` |
+| `run-1310-f033.txt` | `bd6860baaad15fd1aef5572ba8a0db77a73ac4ffa407143b6bf2f6f2a2b171fd` |
+| `run-144-f033.txt` | `44d76ae0b566c13eea49571bce80cefcb84bd4cce884f5d86859ee470ec445f8` |
+| `run-144-f033-byte-variants.txt` | `bb3acc16807c627ee35f08cd5a2c859884c52f68caf886fa0c113dc372f57a36` |
 
 File v2.3.16 (harness yang sudah diperbaiki — F-031/F-032):
 

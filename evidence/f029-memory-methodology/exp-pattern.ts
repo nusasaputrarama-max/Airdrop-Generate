@@ -1,4 +1,4 @@
-// F-029 VM experiment (v2.3.16, F-031 fix): ONE pattern per process
+// F-029 VM experiment (v2.3.17, F-033 fix): ONE pattern per process
 // (child of run-f029.ts).
 // Fixes the F-027 methodology flaw found by audit V8 (F-029): in v2.3.14
 // exp-derived.ts, pattern A and pattern B ran sequentially in ONE process
@@ -9,26 +9,53 @@
 // post-GC process.memoryUsage() checkpoint.
 //
 // v2.3.16 fix (F-031, audit V9): the v2.3.15 fixture was NOT exactly
-// 1,000,000 bytes — it subtracted 40 chars for the page marker and 20
-// per script marker, but the actual ASCII markers are 33 / 15 / 13
-// bytes, so the ASCII fixture was 999,981 bytes and the non-ASCII
-// byte-matched fixture 999,901 bytes. This version measures EVERY
-// segment with TextEncoder().encode(segment).byteLength, builds filler
-// from the MEASURED marker byte lengths, and ASSERTS the byte total
-// before scanning. No character-count estimate is used as a byte claim.
+// 1,000,000 bytes. This version measured every segment with
+// TextEncoder and asserted the byte total before scanning — but that
+// fix itself introduced F-033 (audit V10).
 //
-// ORDERING (methodology, same as v2.3.15):
+// v2.3.17 fix (F-033, audit V10): the v2.3.16 child called
+// TextEncoder.encode(segment) INSIDE the measured phase, allocating
+// a transient Uint8Array up to one segment (<= 400,000 bytes) per
+// segment — and pattern A built three segments before its first GC
+// while pattern B GC'd after every segment, so the encoder overhead
+// hit the two patterns asymmetrically while VmHWM (monotonic) kept
+// every transient peak. The v2.3.16 ratio 1,13-1,84x is therefore
+// SUPERSEDED: it was measured with a confounded instrument and must
+// NOT be used for sizing/cgroup/acceptance. This version removes
+// TextEncoder from the measured process ENTIRELY:
+//   - byte counts are computed ARITHMETICALLY from known filler /
+//     marker byte widths (fixture.ts — no encoder, no full-segment
+//     Uint8Array, identical code path for A and B);
+//   - the INDEPENDENT byte proof is preflight-fixture.ts, a
+//     SEPARATE process run by the parent harness BEFORE any measured
+//     child spawns; it measures the same segments with TextEncoder
+//     and asserts exact per-segment/total bytes (cap-1/cap/cap+1).
+//     Its allocations can never touch a measured child's VmHWM.
+//   - the RESULT line carries encoderInMeasuredPhase=false so the
+//     parent harness can assert it on every run.
+// Fixed pre-baseline overhead (documented, identical for A/B):
+// module import only; the baseline snapshot is taken after imports,
+// before any segment is built — so import cost is inside the
+// baseline, not inside the delta.
+//
+// Pattern B lifecycle (F-033 mitigation, audit V10 §5): the
+// one-segment scan now lives in scanSegment(), a helper with a
+// CLOSED scope. It returns only { found, bytes, chars }; the
+// segment string and its lowercase copy go out of scope when the
+// helper returns, and the caller runs doGc() ONLY after the
+// return — so no segment reference is live across a forced-GC
+// checkpoint or into the next segment's build. Each forced GC in
+// pattern B is logged (lines "B gc after segment i") as the
+// explicit lifetime evidence.
+//
+// ORDERING (methodology, same as v2.3.15/v2.3.16):
 // - The clean baseline snapshot is taken BEFORE any input segment is
 //   built, so building the input counts toward the scan-phase delta.
 // - Segments are built LAZILY per pattern: pattern A builds all three
 //   (it holds them simultaneously by design); pattern B builds ONE
-//   segment at a time inside its loop, scans it, and releases it
+//   segment at a time inside scanSegment(), scans it, and releases it
 //   before building the next — materializing all three up front for
 //   pattern B would defeat the incremental design being measured.
-//   (Two draft orderings that violated this — fixture built before
-//   baseline; all segments materialized up front for B — were caught
-//   during development, their trial logs discarded uncommitted, and
-//   the defects recorded in README § "Hambatan".)
 //
 // Usage (spawned by the parent harness run-f029.ts, same Bun binary):
 //   bun exp-pattern.ts --pattern A|B --fixture ascii|nonascii|nonascii-bytes --gc forced|natural [--bytes N]
@@ -48,13 +75,14 @@
 // checked on its own, lowercased per segment, released before the next
 // segment is built; no join, no combined haystack, no combined lower.
 //
-// Fixtures (all byte totals MEASURED with TextEncoder, asserted):
+// Fixtures (byte totals ARITHMETIC in this process, independently
+// proven exact by preflight-fixture.ts in its own process):
 //   ascii    — 'A'/'B'/'C' filler (1 byte/char UTF-8, 1 UTF-16 code unit).
 //              Total exactly --bytes (default 1,000,000).
 //   nonascii — U+00E9 filler (2 bytes/char UTF-8, 1 UTF-16 code unit);
-//              same char counts as ascii (1,000,000 chars). Measured
-//              total is 1,999,939 bytes (NOT 2,000,000 — the 61 ASCII
-//              marker bytes are 1 byte each, not 2); it tests UTF-16
+//              same char counts as ascii (1,000,000 chars). Total is
+//              1,999,939 bytes (NOT 2,000,000 — the 61 ASCII marker
+//              bytes are 1 byte each, not 2); it tests UTF-16
 //              string-storage cost at the char-count boundary, NOT the
 //              L2 byte boundary.
 //   nonascii-bytes — U+00E9 filler at the L2 BYTE boundary: each
@@ -63,37 +91,22 @@
 //              the marker byte totals are odd (33/15/13), a segment
 //              filler can be 1 byte short of its target; that 1 byte
 //              is closed with a single ASCII 'A' pad char (1 byte,
-//              inert filler). Measured total is exactly --bytes.
-//              At the default target: 499,968 U+00E9 chars + 3 ASCII
+//              inert filler). At the default target: 499,968 U+00E9 chars + 3 ASCII
 //              pad chars + 61 marker chars = 500,032 chars,
 //              1,000,000 bytes.
 //
 // GC modes (reported separately, never mixed):
 //   forced  — Bun.gc(true) at every measurement point
 //   natural — no explicit GC; the engine collects on its own schedule
-//
-// Measurement overhead (noted honestly): each segment is encoded once
-// with TextEncoder to measure it; the transient Uint8Array copy (at
-// most one segment, <= 400,000 bytes) counts toward VmHWM like any
-// transient allocation, and applies equally to both patterns.
 
 import { readFileSync } from "node:fs";
+import {
+  buildSegment,
+  expectedSegmentBytes,
+  expectedTotal,
+  type Fixture,
+} from "./fixture.ts";
 
-const enc = new TextEncoder();
-
-// ASCII signal markers (lengths MEASURED, never assumed — F-031).
-const MARKERS = [
-  "window.solana connect your wallet", // 33 bytes
-  "window.ethereum",                   // 15 bytes
-  "walletconnect",                     // 13 bytes
-];
-const MARKER_BYTES = MARKERS.map((m) => enc.encode(m).byteLength);
-const MARKER_BYTES_TOTAL = MARKER_BYTES.reduce((a, b) => a + b, 0); // 61
-
-// Char counts for the char-driven fixtures (ascii, nonascii).
-const PAGE_CHARS = 400_000;
-const SCRIPT_CHARS = 300_000;
-// Byte targets for the byte-driven fixtures (ascii, nonascii-bytes).
 const SCRIPT_BYTES = 300_000;
 
 function fail(msg: string): never {
@@ -130,50 +143,7 @@ if (fixture !== "ascii" && fixture !== "nonascii" && fixture !== "nonascii-bytes
 if (gc !== "forced" && gc !== "natural") fail("gc must be forced or natural");
 if (fixture === "nonascii" && bytesGiven) fail("--bytes is not applicable to the char-matched fixture nonascii (defined by character counts, not a byte target)");
 
-const FILLER = fixture === "ascii" ? { p: "A", s1: "B", s2: "C" } : { p: "é", s1: "é", s2: "é" };
-const FILLER_CHARS = [FILLER.p, FILLER.s1, FILLER.s2];
-
-// Per-segment byte targets (byte-driven fixtures) and per-segment char
-// counts (char-driven fixture), indexed 0=page, 1=script1, 2=script2.
-function segmentByteTarget(i: number): number {
-  return i === 0 ? BYTE_TARGET - 2 * SCRIPT_BYTES : SCRIPT_BYTES;
-}
-function segmentCharCount(i: number): number {
-  return i === 0 ? PAGE_CHARS : SCRIPT_CHARS;
-}
-// Expected MEASURED bytes of segment i (used as the assertion target).
-function expectedSegmentBytes(i: number): number {
-  if (fixture === "nonascii") {
-    const chars = segmentCharCount(i);
-    return 2 * (chars - MARKERS[i].length) + MARKERS[i].length;
-  }
-  return segmentByteTarget(i);
-}
-
-// Build segment i, MEASURE its UTF-8 bytes with TextEncoder, and assert
-// the measurement equals the expected value BEFORE the segment is used.
-// Returns the segment, its measured bytes, and its char length.
-function makeSegment(i: number): { seg: string; bytes: number; chars: number } {
-  const marker = MARKERS[i];
-  const fillerChar = FILLER_CHARS[i];
-  let seg: string;
-  if (fixture === "nonascii") {
-    const chars = segmentCharCount(i);
-    seg = fillerChar.repeat(chars - marker.length) + marker;
-  } else {
-    const byteTarget = segmentByteTarget(i);
-    const markerLen = MARKER_BYTES[i];
-    const fillerBytes = byteTarget - markerLen;
-    const bytesPerFiller = enc.encode(fillerChar).byteLength;
-    const fillerChars = Math.floor(fillerBytes / bytesPerFiller);
-    const padChars = fillerBytes - fillerChars * bytesPerFiller; // 0 (ascii) or 0..1 (U+00E9)
-    seg = fillerChar.repeat(fillerChars) + "A".repeat(padChars) + marker;
-  }
-  const bytes = enc.encode(seg).byteLength;
-  const expected = expectedSegmentBytes(i);
-  if (bytes !== expected) fail(`segment ${i} byte mismatch: measured ${bytes}, expected ${expected}`);
-  return { seg, bytes, chars: seg.length };
-}
+const FIXTURE = fixture as Fixture;
 
 function doGc() {
   if (gc === "forced") {
@@ -206,15 +176,15 @@ function snap() {
 }
 
 const pid = process.pid;
-console.log(`child pid=${pid} bun=${Bun.version} pattern=${pattern} fixture=${fixture} gc=${gc}`);
+console.log(`child pid=${pid} bun=${Bun.version} pattern=${pattern} fixture=${fixture} gc=${gc} encoderInMeasuredPhase=false byteProof=preflight+arithmetic`);
 
-// Clean baseline FIRST (same methodology as v2.3.15): input segments are
+// Clean baseline FIRST (same methodology as v2.3.15/v2.3.16): input segments are
 // built after this snapshot, so building the input counts toward the delta.
 doGc();
 const base = snap();
 console.log(`baseline: rss=${base.rss} heapUsed=${base.heapUsed} heapTotal=${base.heapTotal} external=${base.external} vmHwm=${base.vmHwm}`);
 
-const EXPECTED_TOTAL = expectedSegmentBytes(0) + expectedSegmentBytes(1) + expectedSegmentBytes(2);
+const EXPECTED_TOTAL = expectedTotal(FIXTURE, BYTE_TARGET);
 const BYTE_TARGET_LOG = fixture === "nonascii" ? "n/a (char-matched)" : String(BYTE_TARGET);
 
 let found = false;
@@ -223,12 +193,33 @@ let segmentBytes: { page: number; script1: number; script2: number };
 let inputChars: number;
 let utf8Bytes: number;
 
+// Pattern B single-segment scan (F-033): CLOSED SCOPE helper.
+// Builds segment i, scans it, and returns ONLY { found, bytes,
+// chars }. The segment string `seg` and its lowercase copy
+// `segLower` are locals of this function: they go out of scope
+// when it returns, so the caller's doGc() runs with NO segment
+// reference live, and the next segment is built only after that
+// GC. Nothing segment-sized survives into the next iteration.
+function scanSegment(i: number): { found: boolean; bytes: number; chars: number } {
+  const built = buildSegment(i, FIXTURE, BYTE_TARGET);
+  const seg = built.seg;
+  const segLower = seg.toLowerCase();
+  const hit =
+    /connect\s*(your\s*)?wallet/i.test(seg) ||
+    segLower.includes("window.solana") ||
+    segLower.includes("window.ethereum") ||
+    segLower.includes("walletconnect") ||
+    segLower.includes("eth_requestaccounts");
+  console.log(`bytes: segment ${i} = ${built.bytes} (expected ${expectedSegmentBytes(i, FIXTURE, BYTE_TARGET)})`);
+  return { found: hit, bytes: built.bytes, chars: built.chars };
+}
+
 if (pattern === "A") {
   // Current pattern: join + haystack + lower, all live at analysis time.
   // All three segments are built up front (held simultaneously by design).
-  const s0 = makeSegment(0);
-  const s1 = makeSegment(1);
-  const s2 = makeSegment(2);
+  const s0 = buildSegment(0, FIXTURE, BYTE_TARGET);
+  const s1 = buildSegment(1, FIXTURE, BYTE_TARGET);
+  const s2 = buildSegment(2, FIXTURE, BYTE_TARGET);
   segmentBytes = { page: s0.bytes, script1: s1.bytes, script2: s2.bytes };
   inputChars = s0.chars + s1.chars + s2.chars;
   utf8Bytes = s0.bytes + s1.bytes + s2.bytes;
@@ -269,34 +260,28 @@ if (pattern === "A") {
   console.log(`A6 live string chars at peak analysis point: ${liveChars} (input ${inputChars}; ratio ${(liveChars / inputChars).toFixed(2)}x)`);
 } else {
   // Design alternative: incremental per-segment scan. Each segment is
-  // built, measured + asserted, scanned, and released before the next
+  // built, scanned inside scanSegment(), and released before the next
   // segment is built — the input is never held simultaneously.
   const segBytes: number[] = [];
   const segChars: number[] = [];
   let peakRss = base.rss;
   let peakHeap = base.heapUsed;
   for (let i = 0; i < 3; i++) {
-    let built = makeSegment(i);
-    segBytes.push(built.bytes);
-    segChars.push(built.chars);
-    console.log(`bytes: segment ${i} = ${built.bytes} (expected ${expectedSegmentBytes(i)})`);
-    let seg: string | null = built.seg;
-    built = null as any;
-    const segLower = seg.toLowerCase();
-    found = found
-      || /connect\s*(your\s*)?wallet/i.test(seg)
-      || segLower.includes("window.solana")
-      || segLower.includes("window.ethereum")
-      || segLower.includes("walletconnect")
-      || segLower.includes("eth_requestaccounts");
+    const r = scanSegment(i);
+    segBytes.push(r.bytes);
+    segChars.push(r.chars);
+    found = found || r.found;
     const s = snap();
     if (s.rss > peakRss) peakRss = s.rss;
     if (s.heapUsed > peakHeap) peakHeap = s.heapUsed;
-    seg = null;
+    // r holds only numbers/boolean; seg + segLower already went out
+    // of scope when scanSegment() returned. GC runs now, with no
+    // segment reference live.
     doGc();
     const s2 = snap();
     if (s2.rss > peakRss) peakRss = s2.rss;
     if (s2.heapUsed > peakHeap) peakHeap = s2.heapUsed;
+    console.log(`B gc after segment ${i}: seg refs out of scope (helper returned), gc=${gc}, rss=${s2.rss} vmHwm=${s2.vmHwm}`);
   }
   segmentBytes = { page: segBytes[0], script1: segBytes[1], script2: segBytes[2] };
   inputChars = segChars[0] + segChars[1] + segChars[2];
@@ -320,7 +305,7 @@ const result = {
   fixture,
   gc,
   inputChars,
-  utf8Bytes, // MEASURED with TextEncoder (F-031); replaces the v2.3.15 utf8BytesApprox estimate
+  utf8Bytes, // ARITHMETIC byte total (F-033 — no TextEncoder in this process); independently proven exact by preflight-fixture.ts
   byteTarget: fixture === "nonascii" ? null : BYTE_TARGET,
   segmentBytes,
   asksConnect: found,
@@ -331,6 +316,9 @@ const result = {
   rssDelta: fin.rss - base.rss,
   heapUsedDelta: fin.heapUsed - base.heapUsed,
   externalDelta: fin.external - base.external,
+  // F-033 proof fields: the parent harness asserts encoderInMeasuredPhase === false on every RESULT.
+  encoderInMeasuredPhase: false,
+  byteProof: "preflight+arithmetic",
 };
 console.log("RESULT " + JSON.stringify(result));
 console.log("done");
