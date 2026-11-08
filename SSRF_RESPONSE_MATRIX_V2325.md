@@ -474,8 +474,8 @@ diulang (tidak ada perubahan material — DL-24-08).
 Verifikasi `git ls-remote origin development` = `b884c3d35b8b08557ece3394000994dd72adbdb4`
 (cocok HEAD lokal development); `origin/main` sebelum commit revisi
 ini = `cfb55a67dfb79982a78a7f381448862124d47f0b`; HEAD `main` setelah
-commit revisi ini = `PENDING` (diisi commit lanjutan, pola `6167749`
-v2.3.24; terverifikasi via `git ls-remote origin main`).
+commit revisi ini = `f1bfea39e62b36d6481881e6a2260bbc0f39eb13`
+(terverifikasi via `git ls-remote origin main`).
 
 ## §10. Unresolved Blockers
 
