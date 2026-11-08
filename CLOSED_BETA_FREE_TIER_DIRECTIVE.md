@@ -71,3 +71,26 @@ Do not fabricate owners, provider accounts, keys, test results, URLs, or evidenc
 The owner can click a real public HTTPS beta URL and use the intended safe subset of the product without paying, OR receives a precise, evidence-backed BLOCKED report that identifies the minimum remaining work and owner actions. Security gates must pass before testers are invited.
 
 Final status remains DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED unless the owner separately grants implementation approval.
+
+## F. Development must continue — do not freeze the product
+
+The closed-beta preparation is an additional workstream, NOT a replacement for ongoing product development. Do not stop feature development, bug fixing, documentation, test-harness work, or architecture work while preparing the free beta.
+
+Run these workstreams in parallel where practical:
+
+1. **Core product development:** continue implementing and refining the planned Airdrop-Generate features on an isolated development branch. Prioritize useful user-facing functionality, reliability, maintainability, and clear Indonesian UX.
+2. **Security remediation:** address the open SSRF, authorization/tenant-isolation, database, and resource-exhaustion issues. Security work is a prerequisite for exposing affected functionality to testers, not a reason to halt unrelated safe development.
+3. **Beta/deployment preparation:** build the free-tier compatibility plan, isolated staging/beta environment, tester docs, health checks, and release evidence.
+4. **Quality assurance:** add regression tests for every code change; preserve raw evidence and report failures honestly.
+
+### Development boundaries
+
+- Continue coding and committing to a dedicated non-production development branch. Keep changes small, reviewable, and tied to tests/issues.
+- Do not push experimental or unreviewed changes directly into production/main deployment. Do not overwrite the existing live artifact or production data.
+- Do not expose an insecure feature merely to make the demo look complete. Feature-flag or disable unsafe functionality in beta and clearly disclose limitations.
+- Do not enable Link Scanner or any wallet connection/signing/transaction flow until its specific security gates pass and the owner separately approves exposure.
+- If a task requires production mutation, paid services, account authorization, or a new secret, stop only that task and report the exact owner approval/action needed. Continue all other safe work.
+- Keep a visible backlog with: task, priority, branch/commit, owner, status, test evidence, blocker, and next action. Avoid duplicate status-only documents.
+- Each Muse response must identify concrete code/docs/tests changed, commit links, test commands/results, and remaining work. A proposal alone does not count as implementation progress.
+
+**Owner instruction:** keep the project moving continuously. Do not interpret the closed-beta security gates as an instruction to pause all development. Deliver the beta when safe; meanwhile continue building the product in parallel.
