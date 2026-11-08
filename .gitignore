@@ -2,6 +2,10 @@ node_modules/
 .next/
 out/
 dist/
+# Exception: the space-sdk-stub's dist/ holds HAND-WRITTEN source files
+# (not build output) and must be tracked — the stub is useless without
+# them. All other dist/ dirs (site build outputs) stay ignored.
+!tools/space-sdk-stub/dist/
 .env
 .env.local
 .env.*.local
