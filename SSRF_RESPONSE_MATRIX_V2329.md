@@ -584,8 +584,8 @@ read-only baru, bukan pengulangan pengujian.
 Verifikasi `git ls-remote origin development` = `291e25d5ca20190095525830417e3a2757b7596e`
 (cocok HEAD lokal development); `origin/main` sebelum commit revisi
 ini = `56c6c274c672b7945b3d39f270af1458fb771a6a`; HEAD `main` setelah
-commit revisi ini = (dicatat pada commit tindak lanjut, pola §9
-v2.3.28 — lihat commit kedua revisi ini).
+commit revisi ini = `760b6be6bf7793bf6647d5115ebe94852052e3ee`
+(terverifikasi via `git ls-remote origin main`).
 
 **Catatan pola §9 (seperti v2.3.25/v2.3.26/v2.3.27/v2.3.28):** matriks ini di-commit dulu
 (commit pertama), lalu commit kedua mencatat SHA main hasil commit
