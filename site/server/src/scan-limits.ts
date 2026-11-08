@@ -1,4 +1,4 @@
-// Scan concurrency leases + per-principal rate limits (F-003c, D-06).
+// Scan concurrency leases + per-principal rate limits (F-003c, D-03).
 //
 // Design (v2.3.20 §3, F-003): the checkLink path is bounded by TWO
 // independent mechanisms — a global concurrency lease (max 5 scans in

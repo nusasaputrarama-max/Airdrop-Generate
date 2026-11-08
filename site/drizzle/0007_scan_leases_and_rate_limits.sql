@@ -1,6 +1,6 @@
 -- ======================================================================
 -- 0007_scan_leases_and_rate_limits.sql — MIGRASI AKTIF (branch dev)
--- Status: IMPLEMENTASI v2.3.23 (D-06 / F-003c) atas desain v2.3.20 §3.
+-- Status: IMPLEMENTASI v2.3.23 (D-03 / F-003c) atas desain v2.3.20 §3.
 -- BUKAN lagi proposal: file ini adalah migrasi Drizzle yang dijalankan
 -- runtime Hatch (site/drizzle/meta/_journal.json, idx 6).
 --

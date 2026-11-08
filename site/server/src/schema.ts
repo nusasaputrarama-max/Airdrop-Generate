@@ -9,7 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-// Migrasi 0006 + 0007 (v2.3.23, D-01/D-06) — skema ini HARUS tetap cocok
+// Migrasi 0006 + 0007 (v2.3.23, D-01/D-03) — skema ini HARUS tetap cocok
 // dengan DDL di site/drizzle/0006_unified_ownership_and_uniqueness.sql
 // dan site/drizzle/0007_scan_leases_and_rate_limits.sql. Bila keduanya
 // menyimpang, harness v2.3.23 (H-MIG-02 / H-CAT-13) gagal: DDL Drizzle
