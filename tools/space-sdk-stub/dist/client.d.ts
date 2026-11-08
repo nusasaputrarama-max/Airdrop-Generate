@@ -1,5 +1,6 @@
 // STUB — NOT the real @hatch/space-sdk/client (see ../README.md).
 import { QueryClient } from "@tanstack/react-query";
+import type { JSX } from "react";
 import type { ZodType } from "zod";
 import type { ActionRequest, ActionResponse } from "./index";
 
@@ -78,4 +79,4 @@ export interface SafeAreaTopScrimProps {
 }
 
 /** Minimal top safe-area scrim. Visual parity with the real SDK is NOT claimed. */
-export declare function SafeAreaTopScrim(props: SafeAreaTopScrimProps): unknown;
+export declare function SafeAreaTopScrim(props: SafeAreaTopScrimProps): JSX.Element;

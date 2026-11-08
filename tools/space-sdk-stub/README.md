@@ -18,6 +18,15 @@ the harnesses can run on a clean clone that has no `/opt/hatch`
 
 ## What it deliberately does NOT do
 
+> Note on `@libsql/client` (declared as a dependency although the stub
+> never calls it at runtime): the real SDK's install provides it into
+> `site/node_modules` (SDK 0.14.0 lists it in devDependencies), and the
+> repo's harnesses import it from there
+> (`evidence/v2323/harness-helpers.ts` builds real drizzle libsql
+> instances over disposable DBs). The stub declares the same package so
+> a clean-clone `bun install` provides it too and the harnesses keep
+> resolving. If the harnesses ever stop needing it, drop the dep.
+
 - **No runtime.** There is no daemon, no `ctx.db`, no `ctx.inference`,
   no `ctx.agent`, no `ctx.tool`, no privileged execution, no worker
   dispatch. A space built against the stub cannot serve real actions;
