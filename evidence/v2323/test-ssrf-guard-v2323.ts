@@ -160,7 +160,9 @@ test("H-SSRF-04", "classifyIp: blocked IPv6 corpus DENY with exact reason", () =
     ["2001:db8::1", "ipv6-documentation-2001:db8::/32"],
     ["2001:2::1", "ipv6-benchmarking-2001:2::/48"],
     ["2001:10::1", "ipv6-deprecated-orchid-2001:10::/28"],
-    ["2001:20::1", "ipv6-orchidv2-2001:20::/28"],
+    // 2001:20::1 REMOVED v2.3.24 (F-049): IANA marks 2001:20::/28
+    // ORCHIDv2 Globally Reachable=True — the old DENY expectation was
+    // a false positive (V18 §5). It is now ALLOW, covered by H-IP-06.
     ["3fff::1", "ipv6-documentation-3fff::/20"],
     ["100::1", "ipv6-discard-100::/64"],
   ];

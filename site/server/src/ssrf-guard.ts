@@ -65,11 +65,19 @@ export const AGGREGATE_DECODED_CAP = 1_000_000;
 export type IpVerdict = { ok: true; ip: string } | { ok: false; reason: string };
 
 // ---------------------------------------------------------------------------
-// IP classification (§A.4 — IANA special-purpose registries, 7 Nov 2026;
-// IANA last updated 9 Oct 2025). Blocked = every range whose IANA
-// "Globally Reachable" is FALSE (plus CGNAT by owner decision).
-// Classification is BYTE-based: literals are parsed to bytes first, so
-// textual variants of the same address cannot smuggle past the check.
+// IP classification (§A.4 — IANA special-purpose registries, fetched live
+// 2026-11-08; IANA last updated 2025-10-09 — see
+// evidence/v2324/iana-registry-corpus-v2324.md for the full derived corpus
+// with per-entry disposition. Blocked = every range whose IANA
+// "Globally Reachable" is FALSE (plus CGNAT by owner decision), with
+// parent-prefix default-deny (2001::/23) and explicit more-specific
+// globally-reachable exceptions. Two deliberately stricter-than-IANA
+// choices are documented in the corpus file: the whole 192.88.99.0/24
+// is denied (the registry only marks 192.88.99.2/32 GR=False) and
+// ff00::/8 multicast is denied (IPv6 multicast lives in a separate
+// registry). Classification is BYTE-based: literals are parsed to bytes
+// first, so textual variants of the same address cannot smuggle past
+// the check.
 // ---------------------------------------------------------------------------
 
 function parseIPv4(ip: string): number[] | null {
@@ -142,7 +150,18 @@ function classifyIPv4Bytes(b: number[]): IpVerdict {
   if (b0 === 127) return deny("ipv4-loopback-127/8");
   if (b0 === 169 && b1 === 254) return deny("ipv4-link-local-169.254/16");
   if (b0 === 172 && (b1 & 0xf0) === 0x10) return deny("ipv4-private-172.16/12");
+  // IANA GR=True more-specific exceptions inside 192.0.0.0/24 (F-049):
+  // 192.0.0.9/32 PCP Anycast and 192.0.0.10/32 TURN Anycast are globally
+  // reachable per the registry — they are allowed, the rest of the /24
+  // (incl. GR=False 192.0.0.8, 192.0.0.170/171, 192.0.0.0/29) is denied.
+  if (b0 === 192 && b1 === 0 && b2 === 0 && (b3 === 9 || b3 === 10))
+    return { ok: true, ip: b.join(".") };
   if (b0 === 192 && b1 === 0 && b2 === 0) return deny("ipv4-ietf-192.0.0/24");
+  // 192.88.99.0/24 — Deprecated 6to4 Relay Anycast (RFC 7526, terminated
+  // 2015-03). The registry marks only 192.88.99.2/32 GR=False; the whole
+  // /24 is denied here (deliberately stricter — no public HTTP service
+  // exists in this deprecated relay block; see corpus file).
+  if (b0 === 192 && b1 === 88 && b2 === 99) return deny("ipv4-6to4-relay-192.88.99/24");
   if (b0 === 192 && b1 === 0 && b2 === 2) return deny("ipv4-documentation-192.0.2/24");
   if (b0 === 192 && b1 === 168) return deny("ipv4-private-192.168/16");
   if (b0 === 198 && (b1 & 0xfe) === 0x12) return deny("ipv4-benchmarking-198.18/15");
@@ -218,12 +237,49 @@ export function classifyIp(ip: string): IpVerdict {
     return deny("ipv6-benchmarking-2001:2::/48");
   if (at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && (at(3) & 0xf0) === 0x10)
     return deny("ipv6-deprecated-orchid-2001:10::/28");
+  // 2001::/23 default-deny exceptions (F-049): IANA Globally Reachable =
+  // True more-specific allocations inside the 2001::/23 parent (whose own
+  // GR flag is False "unless allowed by a more specific allocation",
+  // footnote [1]). Checked BEFORE the default-deny below; the specific
+  // denies above (Teredo, benchmarking, deprecated ORCHID) already ran.
+  // 2001:1::1/128 PCP Anycast, 2001:1::2/128 TURN Anycast,
+  // 2001:1::3/128 DNS-SD SRP Anycast:
+  if (
+    at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && at(3) === 0x01 &&
+    isZero(4, 14) && (at(15) === 0x01 || at(15) === 0x02 || at(15) === 0x03)
+  )
+    return { ok: true, ip: ip.toLowerCase() };
+  // 2001:3::/32 AMT (GR=True):
+  if (at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && at(3) === 0x03)
+    return { ok: true, ip: ip.toLowerCase() };
+  // 2001:4:112::/48 AS112-v6 (GR=True):
+  if (
+    at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && at(3) === 0x04 &&
+    at(4) === 0x01 && at(5) === 0x12
+  )
+    return { ok: true, ip: ip.toLowerCase() };
+  // 2001:20::/28 ORCHIDv2 (GR=True) — DECISION F-049: follow IANA and
+  // ALLOW. The v2.3.23 test corpus wrongly expected DENY for 2001:20::1
+  // (false positive found by V18); the test is corrected in H-IP-06 and
+  // the stale H-SSRF-04 expectation removed. No stricter product policy
+  // is adopted: ORCHIDv2 identifiers are cryptographic, not routable
+  // hosts, and there is no product reason to block an IANA-reachable
+  // range while allowing the neighbouring GR=True anycast entries.
   if (at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && (at(3) & 0xf0) === 0x20)
-    return deny("ipv6-orchidv2-2001:20::/28");
+    return { ok: true, ip: ip.toLowerCase() };
+  // 2001:30::/28 Drone Remote ID DETs (GR=True):
+  if (at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x00 && (at(3) & 0xf0) === 0x30)
+    return { ok: true, ip: ip.toLowerCase() };
+  // Default-deny for the REST of 2001::/23 (second hextet 0x0000–0x01ff):
+  // e.g. 2001:1::4 (audit example) has no more-specific GR=True entry.
+  if (at(0) === 0x20 && at(1) === 0x01 && (at(2) & 0xfe) === 0x00)
+    return deny("ipv6-ietf-2001::/23-default-deny");
   if (at(0) === 0x20 && at(1) === 0x01 && at(2) === 0x0d && at(3) === 0xb8)
     return deny("ipv6-documentation-2001:db8::/32");
   if (at(0) === 0x20 && at(1) === 0x02) return deny("ipv6-6to4-2002::/16");
   if (at(0) === 0x3f && (at(1) & 0xf0) === 0xf0) return deny("ipv6-documentation-3fff::/20");
+  // 5f00::/16 — Segment Routing (SRv6) SIDs (RFC 9602, GR=False; F-049).
+  if (at(0) === 0x5f) return deny("ipv6-srv6-5f00::/16");
   if ((at(0) & 0xfe) === 0xfc) return deny("ipv6-ula-fc00::/7");
   if (
     at(0) === 0xfd && at(1) === 0x00 && at(2) === 0x0e && at(3) === 0xc2 &&
@@ -670,11 +726,18 @@ export type UrlValidation =
  * preflight before the fetch cache (a cached entry is only served after
  * the URL itself passes validation — no new connection is made for a
  * cache hit, so the preflight only re-checks the URL).
+ *
+ * F-052: `opts.deadline` is the scan's TOTAL deadline. DNS is raced
+ * against BOTH the 5 s per-query timeout AND the total deadline — a slow
+ * resolver can no longer outlive the scan. An already-aborted deadline
+ * returns immediately without calling the resolver.
  */
 export async function validateUrlForFetch(
   url: string,
-  opts: { resolver?: Resolver } = {},
+  opts: { resolver?: Resolver; deadline?: AbortSignal } = {},
 ): Promise<UrlValidation> {
+  if (opts.deadline?.aborted)
+    return { ok: false, reason: "deadline-aborted" };
   let host: CanonicalHost;
   try {
     host = canonicalizeHost(url);
@@ -687,17 +750,33 @@ export async function validateUrlForFetch(
   let ips: string[];
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    // IP literals need no DNS — the literal itself is the destination.
-    // The 5 s race applies to the INJECTED resolver too (H-SSRF-18,
-    // v2.3.23): without it a never-settling injected resolver hangs the
-    // check and the 20 s total deadline is never enforced on this path.
-    // (The real resolveAll has its own identical race inside; wrapping
-    // it again is harmless.) The timer is cleared in `finally` so a
-    // late rejection can never surface as unhandled.
-    const resolve = opts.resolver ?? resolveAll;
-    ips = isLiteral
-      ? [host.hostname]
-      : await Promise.race([
+    // IP literals need no DNS — the literal itself is the destination,
+    // and the resolver is NEVER called for them (H-SSRF-24). The DNS
+    // race below is built only for hostnames.
+    if (isLiteral) {
+      ips = [host.hostname];
+    } else {
+      // F-052: the deadline race. The listener is removed in `finally`
+      // so no listener leaks when the resolver settles first.
+      let onDeadlineAbort: (() => void) | undefined;
+      const deadlineRace =
+        opts.deadline === undefined
+          ? null
+          : new Promise<never>((_resolve, reject) => {
+              onDeadlineAbort = () =>
+                reject(new DnsError("deadline-aborted", "Deadline total pemeriksaan tercapai saat resolusi DNS."));
+              opts.deadline!.addEventListener("abort", onDeadlineAbort, { once: true });
+            });
+      try {
+        // The 5 s race applies to the INJECTED resolver too (H-SSRF-18,
+        // v2.3.23): without it a never-settling injected resolver hangs
+        // the check and the 20 s total deadline is never enforced on
+        // this path. (The real resolveAll has its own identical race
+        // inside; wrapping it again is harmless.) The timer is cleared
+        // in `finally` so a late rejection can never surface as
+        // unhandled.
+        const resolve = opts.resolver ?? resolveAll;
+        ips = await Promise.race([
           resolve(host.hostname),
           new Promise<never>((_resolve, reject) => {
             timer = setTimeout(
@@ -705,7 +784,19 @@ export async function validateUrlForFetch(
               DNS_TIMEOUT_MS,
             );
           }),
+          ...(deadlineRace === null ? [] : [deadlineRace]),
         ]);
+      } finally {
+        if (onDeadlineAbort !== undefined && opts.deadline !== undefined)
+          opts.deadline.removeEventListener("abort", onDeadlineAbort);
+        // Swallow a late deadline-race rejection so it never becomes an
+        // unhandled rejection (its result is discarded by construction).
+        if (deadlineRace !== null) deadlineRace.then(
+          () => undefined,
+          () => undefined,
+        );
+      }
+    }
   } catch (err) {
     return { ok: false, reason: err instanceof DnsError ? err.code : "dns-error" };
   } finally {
@@ -732,7 +823,9 @@ export async function fetchGuardedOnce(
     accept?: string;
   } = {},
 ): Promise<GuardedResponse | null> {
-  const validation = await validateUrlForFetch(url, { resolver: opts.resolver });
+  // F-052: the total deadline is passed into validation, so DNS cannot
+  // outlive the scan — validation itself races the resolver against it.
+  const validation = await validateUrlForFetch(url, { resolver: opts.resolver, deadline: opts.deadline });
   if (!validation.ok) return null;
   const { host } = validation;
   const port = host.port ?? (host.secure ? 443 : 80);
