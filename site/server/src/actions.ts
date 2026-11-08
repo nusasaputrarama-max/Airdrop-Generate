@@ -31,6 +31,7 @@ import {
   createScanBudget,
   fetchGuardedOnce,
   readCappedStream,
+  tryReserve,
   validateUrlForFetch,
   type Connector,
   type Resolver,
@@ -117,7 +118,7 @@ function normalizeUrl(raw: string): URL {
 }
 
 // ---------------------------------------------------------------------------
-// Principal (F-005/F-018/F-046 — v2.3.23, D-01/D-04).
+// Principal (F-005/F-018/F-046 — v2.3.23, D-01/D-04; F-051 — v2.3.24).
 // ---------------------------------------------------------------------------
 // The SDK DOES expose a verifiable per-invocation identity: `ctx.viewer`
 // (@hatch/space-sdk 0.14.0, server-contract.d.ts — PortableCtx.viewer?).
@@ -134,38 +135,63 @@ function normalizeUrl(raw: string): URL {
 // is proven, every consumer below treats a missing viewer as
 // "anonymous" and fails closed (see L-A).
 //
-// Principal string: namespaced by source so a local owner id can never
-// collide with a cloudflare share id. Local uses ownerUserId (the stable
-// owner identity — userId distinguishes the agent delegate from the
-// owner's browser, it is NOT the owner key). Cloudflare uses shareId:
-// all viewers of one share share one principal (documented limitation —
-// a share link is not a user identity; isOwner is available but is NOT
-// used as the principal key).
+// F-051 (v2.3.24): a shareId is NOT a per-user identity — all viewers of
+// one Cloudflare share resolved to the SAME principal, so they shared
+// check history and saved state. The fix:
+//   - Cloudflare NON-OWNER viewers have NO principal (null): they read
+//     no history, their checks are owner-NULL (write-only under L-A),
+//     Gibran gets no history for them, and saved state is DISABLED for
+//     them (listProjects returns defaults; setProjectState is a no-op).
+//   - Cloudflare OWNER viewers (isOwner === true, runtime-verified)
+//     get `cloudflare-owner:{shareId}` — the owner is one person, so
+//     this is a genuine single-user principal, distinct from any viewer.
+//   - Local viewers keep `local:{ownerUserId}` (verified by the daemon).
+//   - Anonymous (no viewer at all) keeps the '<LEGACY>' saved-state
+//     sentinel (DL-23-03: single-user local deployment, UI state on the
+//     PUBLIC catalog — bookmark/task flags, no private content). Checks
+//     are treated STRICTLY differently: anonymous never reads legacy
+//     check rows (L-A, F-046) because check history contains
+//     user-submitted URLs. K-10 may tighten this later; the two policies
+//     are intentionally different and both are explicit.
 // ---------------------------------------------------------------------------
 
 /** Sentinel principal for pre-migration saved_projects rows (D-01). */
 const LEGACY_PRINCIPAL = "<LEGACY>";
 
-/** Derive the calling principal from the SDK viewer, or null when anonymous. */
+/**
+ * Sentinel principal used ONLY as a never-matching key when saved state
+ * is disabled for a viewer (F-051): no setProjectState call ever writes
+ * this principal, so a listProjects join against it can match nothing.
+ */
+const DISABLED_SAVED_PRINCIPAL = "<DISABLED-SHARE-VIEWER>";
+
+/**
+ * Derive the calling principal from the SDK viewer, or null when no
+ * per-user identity is available. A Cloudflare NON-OWNER viewer has no
+ * per-user identity (the shareId names the LINK, not the visitor) and
+ * therefore resolves to null — never to `cloudflare:{shareId}` (F-051).
+ */
 function resolvePrincipal(ctx: Ctx): string | null {
   const viewer = ctx.viewer;
   if (!viewer) return null;
   if (viewer.source === "local") return `local:${viewer.ownerUserId}`;
-  if (viewer.source === "cloudflare") return `cloudflare:${viewer.shareId}`;
+  if (viewer.source === "cloudflare") {
+    if (viewer.isOwner === true) return `cloudflare-owner:${viewer.shareId}`;
+    return null; // shared-link viewer: no per-user identity (F-051)
+  }
   return null;
 }
 
 /**
  * Principal used for saved_projects rows. Known principal -> its own id;
- * anonymous -> the '<LEGACY>' sentinel (DL-23-03: saved state is UI state
- * on the PUBLIC catalog — bookmark/task flags, no private content — so the
- * anonymous single-user deployment keeps reading/writing the legacy rows
- * exactly as before migration. Checks are treated STRICTLY differently:
- * anonymous never reads legacy check rows (L-A, F-046) because check
- * history contains user-submitted URLs. K-10 may tighten this later;
- * the two policies are intentionally different and both are explicit.)
+ * anonymous (no viewer) -> the '<LEGACY>' sentinel (DL-23-03, see above);
+ * Cloudflare shared-link viewer -> null, meaning saved state is DISABLED
+ * for that viewer (F-051): callers must not read or write saved state
+ * for them. Returns null ONLY for that case — never for anonymous.
  */
-function savedPrincipal(ctx: Ctx): string {
+function savedPrincipal(ctx: Ctx): string | null {
+  const viewer = ctx.viewer;
+  if (viewer?.source === "cloudflare" && viewer.isOwner !== true) return null;
   return resolvePrincipal(ctx) ?? LEGACY_PRINCIPAL;
 }
 
@@ -183,6 +209,14 @@ interface FetchResult {
    */
   fetchedAt: number;
   fromCache: boolean;
+  /**
+   * Exact decoded byte length of this text (F-054): stored per cache
+   * entry so a cache hit can be charged to the current scan's aggregate
+   * budget exactly like a network read. Set by fetchTextOnce from
+   * readCappedStream; a hit reserves this many bytes via tryReserve
+   * before the cached text is returned.
+   */
+  decodedBytes: number;
 }
 
 /**
@@ -288,11 +322,19 @@ export async function fetchText(
   deadline?: AbortSignal,
   budget?: ScanBudget,
   testHooks?: FetchTestHooks,
-  opts?: { forceFresh?: boolean },
+  opts?: { forceFresh?: boolean; allowedOrigin?: string },
 ): Promise<FetchResult | null> {
+  // F-052: an already-aborted total deadline ends the fetch BEFORE any
+  // cache read — no cached copy is served after the scan is over.
+  if (deadline?.aborted) return null;
+  // F-052: the total deadline is passed into the preflight, so DNS
+  // cannot outlive the scan (validateUrlForFetch races the resolver
+  // against it).
   const preflight = await validateUrlForFetch(
     url,
-    testHooks?.resolver ? { resolver: testHooks.resolver } : undefined,
+    testHooks?.resolver
+      ? { resolver: testHooks.resolver, deadline }
+      : { deadline },
   );
   if (!preflight.ok) return null;
   const key = fetchCacheKey(url, cap);
@@ -300,14 +342,26 @@ export async function fetchText(
     const cached = cacheGet(FETCH_CACHE, key);
     // H-CACHE-02: the cached entry keeps its original fetchedAt; only the
     // fromCache flag flips, so the caller can tell a cached copy apart.
-    if (cached !== undefined) return { ...cached, fromCache: true };
+    if (cached !== undefined) {
+      // F-054: a cache hit is charged to the CURRENT scan's aggregate
+      // budget exactly like a network read — cached bytes are not free.
+      // The entry stores its exact decoded length; a caller without a
+      // budget gets a fresh one (a single entry can never exceed the
+      // cap on its own). When the reserve fails the hit is NOT served
+      // and no network retry is attempted (a fresh fetch would fail
+      // the same aggregate check) — null, like an aggregate-cap failure.
+      const scanBudget = budget ?? createScanBudget();
+      const bytes = cached.decodedBytes ?? Buffer.byteLength(cached.text, "utf-8");
+      if (!tryReserve(scanBudget, bytes)) return null;
+      return { ...cached, fromCache: true };
+    }
   }
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       if (deadline?.aborted) return null;
     }
-    const result = await fetchTextOnce(url, cap, deadline, budget, testHooks);
+    const result = await fetchTextOnce(url, cap, deadline, budget, testHooks, opts);
     if (result !== null) {
       cacheSet(FETCH_CACHE, key, result, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
       return result;
@@ -347,12 +401,30 @@ async function fetchTextOnce(
   deadline?: AbortSignal,
   budget?: ScanBudget,
   testHooks?: FetchTestHooks,
+  opts?: { allowedOrigin?: string },
 ): Promise<FetchResult | null> {
   const chain: string[] = [];
   let current = url;
   const scanBudget = budget ?? createScanBudget();
   try {
     for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+      // F-056: when an allowed origin is set (script fetches), EVERY hop
+      // — including the first URL — must stay on that origin. A
+      // same-origin script endpoint that redirects cross-origin is
+      // rejected BEFORE the second-hop connection is opened. Checked
+      // here, before fetchGuardedOnce, so a cross-origin redirect target
+      // is never even validated/connected.
+      if (opts?.allowedOrigin !== undefined) {
+        let origin: string;
+        try {
+          origin = new URL(current).origin;
+        } catch {
+          return null;
+        }
+        if (origin !== opts.allowedOrigin) return null;
+      }
+      // F-052: never start a new hop after the total deadline fired.
+      if (deadline?.aborted) return null;
       chain.push(new URL(current).hostname.toLowerCase());
       // F-001: every hop is re-validated in full (canonicalize + port +
       // resolve ALL + validate ALL + pinned connect) by fetchGuardedOnce.
@@ -380,7 +452,7 @@ async function fetchTextOnce(
       // F-002/F-003: streamed read with L0 wire cap + L1 decoded cap +
       // shared aggregate budget. Partial results are NEVER returned —
       // readCappedStream throws and the whole fetch fails (null).
-      const { text } = await readCappedStream(guarded.body, {
+      const { text, decodedBytes } = await readCappedStream(guarded.body, {
         contentEncoding: guarded.headers.get("content-encoding"),
         contentLength: parseContentLength(guarded.headers.get("content-length")),
         compressedCap: cap,
@@ -388,7 +460,7 @@ async function fetchTextOnce(
         budget: scanBudget,
         signal: deadline ?? AbortSignal.timeout(TOTAL_DEADLINE_MS),
       });
-      return { text, finalUrl: current, status: guarded.status, chain, fetchedAt: Date.now(), fromCache: false };
+      return { text, finalUrl: current, status: guarded.status, chain, fetchedAt: Date.now(), fromCache: false, decodedBytes };
     }
     return null; // redirect loop or too many hops — treat as unreachable
   } catch {
@@ -407,6 +479,8 @@ interface RdapInfo {
  * lagi. `deadline` sama seperti di `fetchText`.
  */
 async function lookupRdap(domain: string, deadline?: AbortSignal, testHooks?: FetchTestHooks): Promise<RdapInfo> {
+  // F-052: never serve (or start) RDAP work after the total deadline.
+  if (deadline?.aborted) return { registeredAt: null, registrar: null };
   const cached = cacheGet(RDAP_CACHE, domain);
   if (cached !== undefined) return cached;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -589,6 +663,24 @@ interface Analysis {
   domainAgeDays: number | null;
 }
 
+/**
+ * F-053: typed timeout signal. `analyze` THROWS this (instead of
+ * returning a partial Analysis) when the total deadline fires at any
+ * checkpoint — runCheck converts it into an explicit, retryable timeout
+ * error and inserts NO checks row. A timeout is "not a verdict".
+ */
+export class ScanTimeoutError extends Error {
+  constructor() {
+    super("Pemeriksaan kehabisan waktu (batas 20 detik) sebelum selesai.");
+    this.name = "ScanTimeoutError";
+  }
+}
+
+/** Throw ScanTimeoutError when the scan's total deadline has fired. */
+function throwIfDeadlineAborted(deadline: AbortSignal): void {
+  if (deadline.aborted) throw new ScanTimeoutError();
+}
+
 async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: FetchTestHooks }): Promise<Analysis> {
   const hostname = input.hostname.toLowerCase();
   const domain = registrableDomain(hostname);
@@ -629,6 +721,11 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
       forceFresh: opts?.forceFresh ?? false,
     }),
   ]);
+
+  // F-053: the deadline may have fired while RDAP/page were in flight —
+  // a timeout is NOT a verdict: throw (no Analysis, no checks row)
+  // instead of scoring partial/unreachable results as if complete.
+  throwIfDeadlineAborted(deadline);
 
   // --- Domain age (RDAP) ---
   let domainAgeDays: number | null = null;
@@ -757,12 +854,22 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
     const scriptTexts: string[] = [];
     const pageOrigin = new URL(page.finalUrl).origin;
     for (const src of scriptSrcs) {
+      // F-052: never start another script fetch after the deadline fired.
+      throwIfDeadlineAborted(deadline);
       try {
         const abs = new URL(src, page.finalUrl).toString();
         if (new URL(abs).origin !== pageOrigin) continue; // lintas origin — skip
-        const s = await fetchText(abs, SCRIPT_DECODED_CAP, deadline, budget);
+        // F-056: the allowed origin is enforced on EVERY redirect hop
+        // inside fetchText — a same-origin script that redirects
+        // cross-origin is rejected before the second-hop connection.
+        const s = await fetchText(abs, SCRIPT_DECODED_CAP, deadline, budget, opts?.testHooks, {
+          allowedOrigin: pageOrigin,
+        });
         scriptTexts.push(s ? s.text : "");
-      } catch {
+      } catch (err) {
+        // F-053: a deadline abort inside a script fetch is a timeout,
+        // not a skippable script failure — propagate it.
+        if (err instanceof ScanTimeoutError) throw err;
         // skip bad script URL
       }
     }
@@ -963,6 +1070,10 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
   else if (!page && domainAgeDays === null && !knownBad) verdict = "tidak_diketahui";
   else verdict = "lebih_aman";
 
+  // F-053 (final gate): never return an Analysis after the deadline
+  // fired — even if every fetch above happened to settle first.
+  throwIfDeadlineAborted(deadline);
+
   return {
     verdict,
     score: Math.min(score, 100),
@@ -1061,7 +1172,21 @@ export async function runCheck(
     throw new Error("Server sedang sibuk — coba lagi sebentar lagi.");
   }
   try {
-    const result = await analyze(input, opts);
+    // F-053: a timeout is NOT a verdict — analyze throws
+    // ScanTimeoutError when the deadline fires; it is converted here
+    // into an explicit, retryable timeout error and NO checks row is
+    // inserted (the insert below only runs on a completed analysis).
+    let result;
+    try {
+      result = await analyze(input, opts);
+    } catch (err) {
+      if (err instanceof ScanTimeoutError) {
+        throw new Error(
+          "Pemeriksaan kehabisan waktu (batas 20 detik) — hasilnya tidak disimpan. Coba lagi; bila terus timeout, situsnya mungkin memang lambat atau tidak merespons.",
+        );
+      }
+      throw err;
+    }
     const inserted = await db
       .insert(schema.checks)
       .values({
@@ -1399,6 +1524,26 @@ function deriveExplorerUrl(chain: string, contractAddress: string | null): strin
   return null;
 }
 
+/**
+ * F-050 (v2.3.24): authorization for addProject. ONLY the space owner
+ * (ctx.viewer.isOwner === true, an identity the runtime verifies — local
+ * daemon / share) may insert into the GLOBAL catalog. There is NO other
+ * trusted principal in this codebase or runtime: no scheduled-job
+ * service identity, token, or role exists anywhere (searched: no
+ * service principal, no job token, no dispatch-layer contract in the
+ * repo or the SDK surface used here), so the "narrowly defined trusted
+ * scheduled-job principal" from the audit cannot be named yet — until
+ * such an identity is defined and proven (staging gate), the scheduled
+ * auto-discovery job can only add projects when it runs as the owner.
+ * This gate runs INSIDE the handler, before ANY DB access, so an
+ * unauthorized call creates zero rows. It does NOT rely on any assumed
+ * dispatch-layer control: the dispatch boundary is NOT VERIFIED at
+ * runtime (V18 §5 F-050), and the handler must not assume it.
+ */
+function isAddProjectAuthorized(ctx: Ctx): boolean {
+  return ctx.viewer?.isOwner === true;
+}
+
 async function addProject(
   ctx: Ctx,
   args: {
@@ -1424,6 +1569,13 @@ async function addProject(
     reason,
     project: null,
   });
+
+  // F-050: authorize BEFORE any validation that touches the DB and
+  // before any write — anonymous, non-owner local, and non-owner
+  // Cloudflare viewers are rejected here with zero rows created.
+  if (!isAddProjectAuthorized(ctx)) {
+    return reject("Hanya pemilik yang boleh menambah proyek ke katalog.");
+  }
 
   const name = args.name.trim();
   if (!name) return reject("Nama proyek wajib diisi.");
@@ -1841,8 +1993,12 @@ export const Actions = {
       // Satu query LEFT JOIN (bukan dua SELECT penuh + join di JS).
       // Join di-scope ke principal pemanggil (F-040): state tiap
       // principal independen; anonymous membaca baris '<LEGACY>' —
-      // lihat savedPrincipal() (DL-23-03).
-      const principal = savedPrincipal(ctx);
+      // lihat savedPrincipal() (DL-23-03). F-051: untuk viewer share
+      // Cloudflare non-owner, savedPrincipal() null — saved state
+      // DINONAKTIFKAN: join memakai sentinel yang tidak pernah cocok,
+      // jadi semua proyek kembali dengan state default (tidak dibaca
+      // state viewer lain, tidak ada state yang bocor antar viewer).
+      const principal = savedPrincipal(ctx) ?? DISABLED_SAVED_PRINCIPAL;
       const rows = await db
         .select({
           project: schema.projects,
@@ -1886,7 +2042,15 @@ export const Actions = {
       // state principal lain (bug cross-principal write pada kode lama
       // yang hanya memfilter projectId). Anonymous memakai '<LEGACY>' —
       // lihat savedPrincipal() (DL-23-03).
+      // F-051: viewer share Cloudflare non-owner TIDAK punya principal —
+      // saved state dinonaktifkan untuk mereka: no-op (ok generik, tanpa
+      // write) supaya dua viewer satu share tidak saling menimpa/membaca
+      // state. Responsnya tidak membocorkan apakah state itu ada.
       const principal = savedPrincipal(ctx);
+      if (principal === null) {
+        ctx.invalidateQueries();
+        return { ok: true };
+      }
       const existing = await db
         .select()
         .from(schema.savedProjects)
@@ -1934,7 +2098,7 @@ export const Actions = {
 
   addProject: defineAction({
     description:
-      "Adds a new project to the verified airdrop catalog (used by the scheduled auto-discovery job). Strict rules enforced inside the action: rejects a project whose name or contract address already exists in the catalog, rejects any project without a valid official URL, rejects contract-based projects without a contract address and any malformed EVM/Solana address. New projects are appended after the last catalog entry and start with task_status not_started. Returns { added, reason, project } instead of throwing so the caller can log rejections.",
+      "Adds a new project to the verified airdrop catalog (used by the scheduled auto-discovery job running as the owner). OWNER-ONLY (F-050): anonymous, non-owner local, and non-owner share viewers are rejected before any database write. Strict rules enforced inside the action: rejects a project whose name or contract address already exists in the catalog, rejects any project without a valid official URL, rejects contract-based projects without a contract address and any malformed EVM/Solana address. New projects are appended after the last catalog entry and start with task_status not_started. Returns { added, reason, project } instead of throwing so the caller can log rejections.",
     request: z.object({
       name: z.string().min(1).max(200),
       ticker: z.string().max(32).nullable().optional(),

@@ -30,6 +30,18 @@
 // A crashed scan's lease expires by TTL; expired rows are deleted
 // best-effort on the next acquire.
 //
+// F-052 (v2.3.24): the 25 s TTL is sufficient ONLY because the 20 s
+// deadline is now a HARD bound — it is propagated into every DNS
+// validation/preflight (validateUrlForFetch races the resolver against
+// it), checked before cache reads and before each script fetch, and
+// aborts in-flight connectors/streams. No scan work can START after
+// 20 s, and in-flight work unwinds promptly on abort (H-DL/H-TO prove
+// the whole runCheck terminates within 20 s + grace and releases its
+// lease). The 5 s margin covers that unwind (synchronous throw +
+// one DELETE in runCheck's finally). Before v2.3.24 the deadline did
+// NOT bound DNS, so a scan could outlive its lease unboundedly; that
+// gap is closed, not papered over by lengthening the TTL.
+//
 // Staging gates: STAGE-P02 (ctx.viewer populated at runtime) decides
 // whether principals are real; the lease/rate logic itself is tested on
 // a real Drizzle libsql DB in evidence/v2323/test-lease-v2323.ts.
