@@ -1,0 +1,11 @@
+PASS H-MIGR-42 U-120 unset allowlist: inventory, archive-special and rename refuse exit 2 before opening the DB; no backup; DB unchanged
+PASS H-MIGR-43 U-120 shared/group-writable allowlist directory refused: mode 0777, 0775, and 1777 (sticky — directory itself refused regardless of sticky)
+PASS H-MIGR-44 U-120 private owner-controlled directory accepted: mode 0700, operator-owned; inventory exit 0 and a normal rename succeeds
+PASS H-MIGR-45 U-120 writable-ancestor + symlinked-directory cases: non-sticky writable ancestor refused, sticky accepted, symlinked allowlist resolved to its real target
+RACE observed-A=62 observed-B=58 (N=120) realpath-ENOENT-retries=21
+RACE DEMONSTRATED: the tool opened the swapped-in database in 58/120 runs — a concurrent writer that can modify the allowlisted directory CAN change which file the tool opens after the guard. This is the U-118 residual, reproduced in a disposable setting; it is NOT closed by this revision.
+RACE RESIDUAL (U-118, explicit): the only enforceable boundary is the U-120 private-directory precondition — no untrusted local writer may be able to modify the allowlisted directory. If such a writer exists, the tool cannot guarantee which database it opens.
+PASS H-MIGR-46 U-118/U-120 disposable path-swap race: every inventory run reports exactly one consistent state (A or B); the residual is recorded, not hidden
+PASS H-MIGR-47 U-120 allowlist directory owned by another uid refused; restored to operator ownership it is accepted again
+
+H-MIGR: 6 PASS / 0 FAIL (total 6)

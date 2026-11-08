@@ -106,9 +106,28 @@
 //     directory: env PRINCIPAL_MIGRATION_ALLOWED_DIR
 //     (colon-separated); when set, the resolved DB path must sit
 //     under one of those directories or the tool refuses (exit 2).
-//     When unset, the tool prints an explicit U-118 WARNING on every
-//     run and the residual stays OPEN. Run the tool only on a copy
-//     in a private directory with no concurrent writers.
+//     U-120 (v2.3.30): the variable is now REQUIRED for EVERY mode,
+//     including inventory — an unset variable refuses (exit 2)
+//     BEFORE the database is opened (audit V24 §3 mitigation 1,
+//     safer default: inventory reads sensitive principal data).
+//     Every allowlisted directory is validated by
+//     validateAllowedDir(): resolved to its real path, must be
+//     owned by the operator running the process, must NOT be
+//     group/world-writable (regardless of the sticky bit — there is
+//     NO trusted-group escape hatch in this project; no
+//     trusted-group policy has been documented or approved, so the
+//     rejection is unconditional), and every ancestor must be
+//     owned by the operator or uid 0 (root) and must not be
+//     group/world-writable unless the sticky bit is set. Path
+//     containment alone is NOT treated as proof of privacy. Run
+//     the tool only on a copy in a private directory with no
+//     concurrent writers. RESIDUAL: the guard→open TOCTOU still
+//     cannot be closed from inside the process (see U-118 probe);
+//     U-118 stays OPEN — the directory validation only narrows the
+//     window to directories no untrusted local writer can modify.
+//     H-MIGR-42..47 (evidence/v2330) test the new precondition,
+//     including a disposable path-swap race test that documents the
+//     remaining limitation instead of claiming it closed.
 //   - refuses to open a file named app.db or under a ts-spaces path —
 //     checked on the RESOLVED real path, not just the given string;
 //   - refuses ANY symlink as the db path (lstatSync), and refuses a
@@ -202,11 +221,11 @@ import {
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
-const TOOL_VERSION = "v2329-1";
+const TOOL_VERSION = "v2330-1";
 // Backups this tool version accepts for rollback. v2327-1 backups carry
 // no integrity hash (pre-hash format); they are accepted only after
 // every other strict check passes, with an explicit warning (F-066).
-const SUPPORTED_BACKUP_VERSIONS = ["v2327-1", "v2328-1", "v2329-1"];
+const SUPPORTED_BACKUP_VERSIONS = ["v2327-1", "v2328-1", "v2329-1", "v2330-1"];
 // Retention/ownership note recorded in every backup/archive document
 // (F-067): operator-owned, private, delete securely when no longer
 // needed; never copy to shared storage unencrypted.
@@ -254,6 +273,78 @@ function parseArgs(argv: string[]): Record<string, string> {
     }
   }
   return out;
+}
+
+// U-120 (v2.3.30): validate ONE allowlisted directory — its real
+// path, ownership, mode, and the ownership/mode of every writable
+// ancestor. Returns the directory's real path. Refuses (exit 2) on
+// any failure: the directory must exist, be a directory, be owned by
+// the operator running this process, and must NOT be group- or
+// world-writable — regardless of the sticky bit, because a
+// group/world-writable directory lets another local user create
+// entries inside it, and the tool must not treat path containment
+// alone as proof of privacy. There is NO trusted-group escape hatch
+// in this project: no trusted-group policy has been documented or
+// approved, so the rejection is unconditional (audit V24 §3
+// mitigation 2 allows a narrowly documented and tested trusted-group
+// policy; none exists here, and adding one needs an explicit owner
+// decision + tests). Ancestors: each ancestor directory must be
+// owned by the operator or by uid 0 (root), and must not be
+// group/world-writable UNLESS the sticky bit is set — a sticky
+// directory does not let a non-owner unlink or rename entries owned
+// by others, so a sticky world-writable ancestor (e.g. /tmp, mode
+// 1777) cannot be used to swap the allowlisted directory itself. A
+// non-sticky writable ancestor CAN be used to replace the directory,
+// so it is refused. If the platform cannot report the process uid,
+// fail closed: the ownership check cannot run, so the directory
+// cannot be trusted.
+function validateAllowedDir(dirRaw: string): string {
+  let real: string;
+  try {
+    real = realpathSync(dirRaw);
+  } catch (e) {
+    fail(`PRINCIPAL_MIGRATION_ALLOWED_DIR entry ${dirRaw} cannot be resolved: ${e instanceof Error ? e.message : String(e)} (U-120)`, 2);
+  }
+  let st;
+  try {
+    st = statSync(real);
+  } catch (e) {
+    fail(`PRINCIPAL_MIGRATION_ALLOWED_DIR entry ${dirRaw} cannot be statted (resolved: ${real}): ${e instanceof Error ? e.message : String(e)} (U-120)`, 2);
+  }
+  if (!st.isDirectory()) {
+    fail(`PRINCIPAL_MIGRATION_ALLOWED_DIR entry ${dirRaw} (resolved: ${real}) is not a directory (U-120)`, 2);
+  }
+  const uid = typeof process.getuid === "function" ? process.getuid() : undefined;
+  if (uid === undefined) {
+    fail(`cannot determine the process owner (process.getuid unavailable) — refusing to trust allowlisted directory ${real} without an ownership check (U-120)`, 2);
+  }
+  if (st.uid !== uid) {
+    fail(`PRINCIPAL_MIGRATION_ALLOWED_DIR entry ${dirRaw} (resolved: ${real}) is owned by uid ${st.uid}, not by the operator (uid ${uid}) — run this tool only from a directory you own (U-120)`, 2);
+  }
+  if ((st.mode & 0o022) !== 0) {
+    fail(`PRINCIPAL_MIGRATION_ALLOWED_DIR entry ${dirRaw} (resolved: ${real}) has mode 0${(st.mode & 0o777).toString(8)} — group/world-writable directories are refused (no trusted-group policy exists in this project); use a private directory (mode 0700) (U-120)`, 2);
+  }
+  // Walk the ancestors from the parent up to "/".
+  let ancestor = dirname(real);
+  while (true) {
+    let ast;
+    try {
+      ast = statSync(ancestor);
+    } catch (e) {
+      fail(`cannot stat ancestor directory ${ancestor} of allowlisted directory ${real}: ${e instanceof Error ? e.message : String(e)} (U-120)`, 2);
+    }
+    if (ast.uid !== uid && ast.uid !== 0) {
+      fail(`ancestor directory ${ancestor} of allowlisted directory ${real} is owned by uid ${ast.uid} (operator uid ${uid}) — a third-party owner can rename/replace the allowlisted directory; use a path whose ancestors are owned by you or by root (U-120)`, 2);
+    }
+    const writableByOthers = (ast.mode & 0o022) !== 0;
+    const sticky = (ast.mode & 0o1000) !== 0;
+    if (writableByOthers && !sticky) {
+      fail(`ancestor directory ${ancestor} of allowlisted directory ${real} has mode 0${(ast.mode & 0o777).toString(8)} — group/world-writable without the sticky bit, so another local user could replace the allowlisted directory; use a path under a private or sticky ancestor (U-120)`, 2);
+    }
+    if (ancestor === "/") break;
+    ancestor = dirname(ancestor);
+  }
+  return real;
 }
 
 function guardDbPath(dbPath: string): void {
@@ -326,25 +417,30 @@ function guardDbPath(dbPath: string): void {
       fail(`refusing database path ${dbPath} — same device/inode as known runtime database ${known}`, 2);
     }
   }
-  // U-118 (v2.3.29): allowlisted working directory. Bun SQLite exposes
-  // no fd/inode for the opened file (see header probe note), so the
-  // guard→open TOCTOU cannot be closed from inside the process. When
-  // the operator sets PRINCIPAL_MIGRATION_ALLOWED_DIR
-  // (colon-separated), the resolved DB path must sit under one of those
-  // directories; otherwise refuse. When unset, main() warns on every
-  // run and the residual stays OPEN — see the header note.
-  const allowedDirs = (process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? "").split(":").filter(Boolean);
-  if (allowedDirs.length > 0) {
-    const inside = allowedDirs.some((d) => {
-      const ad = resolve(d);
-      return real === ad || real.startsWith(ad + "/");
-    });
-    if (!inside) {
-      fail(
-        `refusing database path ${dbPath} — resolved path ${real} is outside PRINCIPAL_MIGRATION_ALLOWED_DIR (${allowedDirs.join(":")}); run this tool only on a copy inside an allowlisted private working directory (U-118)`,
-        2,
-      );
-    }
+  // U-120 (v2.3.30): the allowlisted working directory is now a
+  // REQUIRED precondition for EVERY mode, including inventory —
+  // inventory reads sensitive principal data (audit V24 §3
+  // mitigation 1, safer default). An unset variable refuses (exit 2)
+  // BEFORE the database is opened; there is no warning-and-continue
+  // path any more. Every listed directory is validated (real path,
+  // ownership, mode, writable ancestors) by validateAllowedDir(),
+  // and the containment check uses the REAL path of each allowlisted
+  // directory, so a symlinked allowlist entry resolves to its target
+  // instead of silently failing containment.
+  const allowedRaw = (process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? "").split(":").filter(Boolean);
+  if (allowedRaw.length === 0) {
+    fail(
+      `PRINCIPAL_MIGRATION_ALLOWED_DIR is not set — refusing to run without an allowlisted private working directory (U-120); set it to the private directory holding the database copy, for every mode including inventory (the variable is required because even inventory reads sensitive principal data)`,
+      2,
+    );
+  }
+  const allowedDirs = allowedRaw.map((d) => validateAllowedDir(d));
+  const inside = allowedDirs.some((ad) => real === ad || real.startsWith(ad + "/"));
+  if (!inside) {
+    fail(
+      `refusing database path ${dbPath} — resolved path ${real} is outside PRINCIPAL_MIGRATION_ALLOWED_DIR (${allowedDirs.join(":")}); run this tool only on a copy inside an allowlisted private working directory (U-118)`,
+      2,
+    );
   }
 }
 
@@ -1073,16 +1169,12 @@ function main(): void {
     process.exit(2);
   }
   guardDbPath(dbPath);
-  // U-118: when no allowlisted working directory is configured, say so
-  // on every run — the guard→open TOCTOU residual is OPEN and the
-  // operator must run only on a copy in a private directory with no
-  // concurrent writers. (When PRINCIPAL_MIGRATION_ALLOWED_DIR is set,
-  // guardDbPath() enforces it instead.)
-  if (!process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR) {
-    console.error(
-      "principal-key-migration: WARNING: PRINCIPAL_MIGRATION_ALLOWED_DIR is not set — U-118 residual TOCTOU open: run this tool only on a copy in a private directory with no concurrent writers",
-    );
-  }
+  // U-120 (v2.3.30): guardDbPath() above now FAILS CLOSED when
+  // PRINCIPAL_MIGRATION_ALLOWED_DIR is unset, for every mode — the
+  // v2.3.29 warn-and-continue path is gone (H-MIGR-41 now asserts
+  // refusal). The U-118 guard→open TOCTOU residual is still OPEN:
+  // the allowlist + private-directory validation only narrows the
+  // window to directories no untrusted local writer can modify.
   const flags = parseArgs(rest);
   // F-066: validate the rollback backup (structure + integrity) BEFORE
   // opening the database, so an incomplete/malformed backup is refused

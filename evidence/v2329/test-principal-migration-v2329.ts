@@ -48,8 +48,13 @@
 //   H-MIGR-40  U-118 allowlisted working directory enforced: DB outside
 //              PRINCIPAL_MIGRATION_ALLOWED_DIR refused exit 2; DB
 //              inside allowed
-//   H-MIGR-41  U-118 with no allowlist configured: tool warns explicitly
-//              (residual OPEN) and still runs
+//   H-MIGR-41  U-118/U-120 (UPDATED v2.3.30) with no allowlist
+//              configured: the tool now REFUSES (exit 2) instead of
+//              warning and running — the v2.3.29 warn-and-continue
+//              path is gone (audit V24 §3 mitigation 1, safer
+//              default: inventory reads sensitive principal data).
+//              This is an INTENTIONAL behaviour change, not a
+//              regression (DL-30-01).
 //
 // Run:  bun evidence/v2329/test-principal-migration-v2329.ts
 // Exit 0 = semua PASS; exit 1 = ada FAIL. VM evidence only.
@@ -161,7 +166,15 @@ function fileHash(p: string): string {
 }
 
 function runTool(dbPath: string, ...args: string[]): { status: number | null; stdout: string; stderr: string } {
-  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8" });
+  // v2.3.30 (U-120): the tool now fails closed without an allowlisted
+  // private working directory for EVERY mode. These regression
+  // harnesses run only on disposable DBs in their own fresh private
+  // mkdtemp directory, so they allowlist exactly that directory.
+  // The allowlist precondition itself is tested by H-MIGR-42..47
+  // (evidence/v2330); this wiring is harness plumbing, not a test
+  // of the precondition.
+  const env = { ...process.env, PRINCIPAL_MIGRATION_ALLOWED_DIR: process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? dirname(dbPath) };
+  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8", env });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
@@ -170,7 +183,11 @@ function runToolEnv(
   envExtra: Record<string, string | undefined>,
   ...args: string[]
 ): { status: number | null; stdout: string; stderr: string } {
-  const env: Record<string, string | undefined> = { ...process.env, ...envExtra };
+  // v2.3.30 (U-120): default the allowlist to the DB's own private
+  // directory, same as runTool() above; an explicit envExtra entry
+  // (including an explicit undefined, which deletes the variable)
+  // still wins — H-MIGR-41 relies on that to test the unset case.
+  const env: Record<string, string | undefined> = { ...process.env, PRINCIPAL_MIGRATION_ALLOWED_DIR: process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? dirname(dbPath), ...envExtra };
   for (const k of Object.keys(envExtra)) if (envExtra[k] === undefined) delete env[k];
   const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8", env: env as Record<string, string> });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
@@ -461,14 +478,17 @@ test("H-MIGR-40", "U-118 allowlisted working directory enforced: DB outside refu
   }
 });
 
-test("H-MIGR-41", "U-118 with no allowlist configured: tool warns explicitly (residual OPEN) and still runs", async () => {
+test("H-MIGR-41", "U-120 (UPDATED v2.3.30) with no allowlist configured: tool REFUSES exit 2 instead of warning and running — intentional behaviour change, DL-30-01", async () => {
   const tdb = seedLegacyDb();
   try {
+    const bytesBefore = fileHash(tdb.dbPath);
     const r = runToolEnv(tdb.dbPath, { PRINCIPAL_MIGRATION_ALLOWED_DIR: undefined }, "inventory");
-    eq(r.status, 0, `inventory without an allowlist must exit 0 (stderr: ${r.stderr})`);
-    assert(r.stderr.includes("WARNING") && r.stderr.includes("U-118"), "tool must warn explicitly that the U-118 residual is open when no allowlist is configured");
-    assert(r.stderr.includes("PRINCIPAL_MIGRATION_ALLOWED_DIR is not set"), "warning must name the unset allowlist variable");
-    assert(r.stdout.includes("local:owner-1: 2"), "inventory must still report the legacy checks");
+    eq(r.status, 2, `inventory without an allowlist must be REFUSED with exit 2 (got ${r.status}; stdout: ${r.stdout}; stderr: ${r.stderr})`);
+    assert(r.stderr.includes("PRINCIPAL_MIGRATION_ALLOWED_DIR is not set"), "refusal must name the unset allowlist variable");
+    assert(r.stderr.includes("U-120"), "refusal must name U-120");
+    assert(!r.stderr.includes("WARNING"), "the v2.3.29 warn-and-continue path must be gone");
+    assert(!r.stdout.includes("local:owner-1"), "refused inventory must NOT print any principal data");
+    eq(fileHash(tdb.dbPath), bytesBefore, "the database file bytes must be untouched");
   } finally {
     tdb.close();
   }

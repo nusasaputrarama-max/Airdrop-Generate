@@ -49,7 +49,7 @@ import { Database } from "bun:sqlite";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 let pass = 0;
 let fail = 0;
@@ -113,7 +113,15 @@ function keyCount(tdb: TestDb, table: string, column: string, key: string): numb
 }
 
 function runTool(dbPath: string, ...args: string[]): { status: number | null; stdout: string; stderr: string } {
-  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8" });
+  // v2.3.30 (U-120): the tool now fails closed without an allowlisted
+  // private working directory for EVERY mode. These regression
+  // harnesses run only on disposable DBs in their own fresh private
+  // mkdtemp directory, so they allowlist exactly that directory.
+  // The allowlist precondition itself is tested by H-MIGR-42..47
+  // (evidence/v2330); this wiring is harness plumbing, not a test
+  // of the precondition.
+  const env = { ...process.env, PRINCIPAL_MIGRATION_ALLOWED_DIR: process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? dirname(dbPath) };
+  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8", env });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 

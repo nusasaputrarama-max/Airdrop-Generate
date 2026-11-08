@@ -61,7 +61,7 @@ import { Database } from "bun:sqlite";
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 let pass = 0;
 let fail = 0;
@@ -147,7 +147,15 @@ function snapshot(tdb: TestDb): string {
 }
 
 function runTool(dbPath: string, ...args: string[]): { status: number | null; stdout: string; stderr: string } {
-  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8" });
+  // v2.3.30 (U-120): the tool now fails closed without an allowlisted
+  // private working directory for EVERY mode. These regression
+  // harnesses run only on disposable DBs in their own fresh private
+  // mkdtemp directory, so they allowlist exactly that directory.
+  // The allowlist precondition itself is tested by H-MIGR-42..47
+  // (evidence/v2330); this wiring is harness plumbing, not a test
+  // of the precondition.
+  const env = { ...process.env, PRINCIPAL_MIGRATION_ALLOWED_DIR: process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? dirname(dbPath) };
+  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8", env });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
@@ -405,7 +413,7 @@ test("H-MIGR-18", "sanity: valid non-chain rename + normal rollback still succee
     eq(r1.status, 0, `valid rename must exit 0 (stderr: ${r1.stderr})`);
     assert(existsSync(r1.backupFile), "valid rename must write a backup JSON");
     const backup = JSON.parse(readFileSync(r1.backupFile, "utf8"));
-    eq(backup.version, "v2329-1", "backup must record the new tool version v2329-1");
+    eq(backup.version, "v2330-1", "backup must record the new tool version v2330-1");
     eq(JSON.stringify(counts(tdb)), JSON.stringify(before), "valid rename must NOT change per-table row counts");
     eq(keyCount(tdb, "checks", "owner_user_id", LEGACY_A), 0, "no checks row may keep the legacy key");
     eq(keyCount(tdb, "checks", "owner_user_id", CURRENT_A), 3, "3 checks must now carry the current key");

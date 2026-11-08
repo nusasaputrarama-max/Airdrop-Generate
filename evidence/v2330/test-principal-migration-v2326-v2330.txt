@@ -1,0 +1,10 @@
+PASS H-MIGR-01 inventory reports exact per-key counts per table
+PASS H-MIGR-02 archive copies legacy rows to JSON; DB NOT modified
+PASS H-MIGR-03 rename with verified mapping: counts unchanged, owner reads history, second user isolated
+PASS H-MIGR-04 rename with saved_projects PK collision -> exit 2, DB unchanged, no backup
+PASS H-MIGR-05 rename without --mapping -> exit 2, DB unchanged
+PASS H-MIGR-06 rename mapping '<LEGACY>' -> exit 2, DB unchanged
+PASS H-MIGR-07 rollback restores original keys; counts unchanged; owner loses renamed rows
+PASS H-MIGR-08 tool refuses a database file named app.db (exit 2)
+
+H-MIGR: 8 PASS / 0 FAIL (total 8)

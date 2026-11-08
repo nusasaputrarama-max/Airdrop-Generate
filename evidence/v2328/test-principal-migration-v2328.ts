@@ -1,7 +1,7 @@
 // test-principal-migration-v2328.ts — F-065..F-068 (v2.3.28, audit V22),
-// re-run under tool v2329-1 (v2.3.29, audit V23):
+// re-run under tool v2330-1 (v2.3.30, audit V24):
 // principal-key migration tool (evidence/v2326/principal-key-migration.ts,
-// TOOL_VERSION v2329-1).
+// TOOL_VERSION v2330-1).
 //
 // Audit V22 found four follow-on flaws in the v2.3.27 tool:
 //   F-065 High   backup/archive output paths unprotected — an output
@@ -96,7 +96,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 let pass = 0;
 let fail = 0;
@@ -184,7 +184,15 @@ function fileHash(p: string): string {
 }
 
 function runTool(dbPath: string, ...args: string[]): { status: number | null; stdout: string; stderr: string } {
-  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8" });
+  // v2.3.30 (U-120): the tool now fails closed without an allowlisted
+  // private working directory for EVERY mode. These regression
+  // harnesses run only on disposable DBs in their own fresh private
+  // mkdtemp directory, so they allowlist exactly that directory.
+  // The allowlist precondition itself is tested by H-MIGR-42..47
+  // (evidence/v2330); this wiring is harness plumbing, not a test
+  // of the precondition.
+  const env = { ...process.env, PRINCIPAL_MIGRATION_ALLOWED_DIR: process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? dirname(dbPath) };
+  const r = spawnSync("bun", [TOOL, dbPath, ...args], { encoding: "utf8", env });
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
@@ -610,7 +618,7 @@ test("H-MIGR-32", "sanity: valid archive + rename + rollback succeed with integr
     eq(r1.status, 0, `valid rename must exit 0 (stderr: ${r1.stderr})`);
     assert(existsSync(r1.backupFile), "valid rename must write a backup JSON");
     const backup = JSON.parse(readFileSync(r1.backupFile, "utf8"));
-    eq(backup.version, "v2329-1", "backup must record the new tool version v2329-1");
+    eq(backup.version, "v2330-1", "backup must record the new tool version v2330-1");
     eq(backup.integrity.algorithm, "sha-256", "backup must record integrity algorithm sha-256");
     assert(/^[0-9a-f]{64}$/.test(backup.integrity.hash), "backup integrity hash must be 64 hex chars");
     eq(backup.totalRows, 5, "backup totalRows must be 5 (2 checks + 2 saved + 1 provenance)");

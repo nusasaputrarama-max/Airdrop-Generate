@@ -1,0 +1,2 @@
+u120-realpath-race-probe: realpathSync fails 87/5000, statSync fails 0/5000 (tmpfs, swap worker running)
+CONCLUSION: realpath(3) can return a transient ENOENT while a rename swaps the final component — a single stat(2) does not. H-MIGR-46 therefore retries runs that fail ONLY with the exact "cannot resolve real path ... ENOENT" error and counts the retries; any other failure FAILS the test. This is a harness/filesystem artifact of swapping as fast as possible, not evidence the tool opened the wrong database.
