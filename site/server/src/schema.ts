@@ -9,8 +9,9 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-// Migrasi 0006 (v2.3.23, D-01) — skema ini HARUS tetap cocok dengan DDL
-// di site/drizzle/0006_unified_ownership_and_uniqueness.sql. Bila keduanya
+// Migrasi 0006 + 0007 (v2.3.23, D-01/D-06) — skema ini HARUS tetap cocok
+// dengan DDL di site/drizzle/0006_unified_ownership_and_uniqueness.sql
+// dan site/drizzle/0007_scan_leases_and_rate_limits.sql. Bila keduanya
 // menyimpang, harness v2.3.23 (H-MIG-02 / H-CAT-13) gagal: DDL Drizzle
 // dibangkitkan dari definisi ini dan dibandingkan dengan hasil migrasi.
 // Lantai versi SQLite: >= 3.31.0 (generated columns). Versi runtime
@@ -170,4 +171,48 @@ export const savedProjects = sqliteTable(
       .$defaultFn(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.principalId, t.projectId] })],
+);
+
+/**
+ * Scan concurrency leases (F-003c, migrasi 0007). One row = one scan in
+ * flight. Acquired via a SINGLE atomic conditional INSERT (see
+ * scan-limits.ts): the live-lease count check and the insert happen in
+ * one statement, so the global cap (5) holds even under concurrency —
+ * SpaceDb exposes no transaction (SDK 0.14.0), so atomicity must come
+ * from the statement itself, not an app transaction.
+ * Rows are ephemeral: expires_at = acquired_at + 25 s (TTL > 20 s total
+ * deadline by design — a lease never expires mid-scan); expired rows
+ * are deleted best-effort on the next acquire. A crashed scan's lease
+ * expires by TTL — no manual cleanup needed.
+ */
+export const scanLeases = sqliteTable(
+  "scan_leases",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    principalId: text("principal_id").notNull(),
+    acquiredAt: integer("acquired_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("scan_leases_expires_idx").on(t.expiresAt)],
+);
+
+/**
+ * Per-principal rate-limit counters (F-003c, migrasi 0007). One row per
+ * (principal, window, window_start): window = 'minute' (10/menit) atau
+ * 'hour' (100/jam). Updated via UPSERT (ON CONFLICT DO UPDATE) —
+ * approximate under concurrency (the count read-back is a separate
+ * statement); the HARD global bound is the lease cap, not this counter.
+ * Anonymous callers share the single bucket principal '<ANONYMOUS>'.
+ * U-85: IP-based enforcement is BLOCKED — the SDK Ctx exposes no peer
+ * TCP address, so the key is the principal, not the IP.
+ */
+export const rateLimits = sqliteTable(
+  "rate_limits",
+  {
+    principalId: text("principal_id").notNull(),
+    window: text("window", { enum: ["minute", "hour"] }).notNull(),
+    windowStart: integer("window_start", { mode: "timestamp_ms" }).notNull(),
+    count: integer("count").notNull().default(1),
+  },
+  (t) => [primaryKey({ columns: [t.principalId, t.window, t.windowStart] })],
 );

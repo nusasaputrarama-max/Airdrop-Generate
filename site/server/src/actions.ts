@@ -15,6 +15,12 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import * as schema from "./schema";
 import { canonicalizeContractAddress } from "./catalog";
 import {
+  ANONYMOUS_RATE_BUCKET,
+  acquireScanSlot,
+  checkRateLimit,
+  releaseScanSlot,
+} from "./scan-limits";
+import {
   MAX_REDIRECT_HOPS,
   MAX_SCRIPTS_PER_PAGE,
   PAGE_DECODED_CAP,
@@ -918,33 +924,53 @@ function rowToCheck(row: typeof schema.checks.$inferSelect): Check {
 async function runCheck(ctx: Ctx, rawUrl: string): Promise<Check> {
   const input = normalizeUrl(rawUrl);
   const domain = registrableDomain(input.hostname.toLowerCase());
-  const result = await analyze(input);
   const db = ctx.db<typeof schema>();
-  const inserted = await db
-    .insert(schema.checks)
-    .values({
-      url: input.toString(),
-      domain,
-      verdict: result.verdict,
-      score: result.score,
-      signals: JSON.stringify(result.signals),
-      contracts: JSON.stringify(result.contracts),
-      pageTitle: result.pageTitle,
-      finalUrl: result.finalUrl,
-      httpStatus: result.httpStatus,
-      registeredAt: result.registeredAt,
-      registrar: result.registrar,
-      domainAgeDays: result.domainAgeDays,
-      // Owner of this check (F-046): the calling principal when known,
-      // NULL when anonymous. NULL means "no recorded owner" — under
-      // policy L-A the row is write-only until a principal exists (K-4).
-      ownerUserId: resolvePrincipal(ctx),
-    })
-    .returning();
-  const row = inserted[0];
-  if (!row) throw new Error("Hasil cek gagal disimpan.");
-  ctx.invalidateQueries();
-  return rowToCheck(row);
+  const principal = resolvePrincipal(ctx) ?? ANONYMOUS_RATE_BUCKET;
+  // F-003c: per-principal rate limit, then global concurrency lease.
+  // Both fail CLOSED — a denied scan stores NO check row and performs
+  // NO outbound fetch.
+  const rate = await checkRateLimit(db, principal);
+  if (!rate.allowed) {
+    throw new Error(
+      rate.reason === "rate-limit-minute"
+        ? "Terlalu banyak pemeriksaan — coba lagi sebentar lagi."
+        : "Batas pemeriksaan per jam tercapai — coba lagi nanti.",
+    );
+  }
+  const lease = await acquireScanSlot(db, principal);
+  if (!lease.acquired) {
+    throw new Error("Server sedang sibuk — coba lagi sebentar lagi.");
+  }
+  try {
+    const result = await analyze(input);
+    const inserted = await db
+      .insert(schema.checks)
+      .values({
+        url: input.toString(),
+        domain,
+        verdict: result.verdict,
+        score: result.score,
+        signals: JSON.stringify(result.signals),
+        contracts: JSON.stringify(result.contracts),
+        pageTitle: result.pageTitle,
+        finalUrl: result.finalUrl,
+        httpStatus: result.httpStatus,
+        registeredAt: result.registeredAt,
+        registrar: result.registrar,
+        domainAgeDays: result.domainAgeDays,
+        // Owner of this check (F-046): the calling principal when known,
+        // NULL when anonymous. NULL means "no recorded owner" — under
+        // policy L-A the row is write-only until a principal exists (K-4).
+        ownerUserId: resolvePrincipal(ctx),
+      })
+      .returning();
+    const row = inserted[0];
+    if (!row) throw new Error("Hasil cek gagal disimpan.");
+    ctx.invalidateQueries();
+    return rowToCheck(row);
+  } finally {
+    await releaseScanSlot(db, lease.leaseId);
+  }
 }
 
 const projectSchema = z.object({
