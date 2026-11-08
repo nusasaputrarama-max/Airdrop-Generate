@@ -445,7 +445,8 @@ pada revisi ini. U-113/U-116/U-117/T-01 tidak dicek ulang
 Verifikasi `git ls-remote origin development` = `29b1e6ee4d02d37921689f49417a25f083d0bb57`
 (cocok HEAD lokal development); `origin/main` sebelum commit revisi
 ini = `7fb26a5c40c02f731c3ecacbd1ff984acd6a2aff`; HEAD `main` setelah
-commit revisi ini = `TBD (commit kedua mencatat SHA-nya di sini)`
+commit revisi ini = `077b6ece88fa04f020422a98347ec76aef0d816a`; HEAD `main` setelah
+commit revisi ini = `077b6ece88fa04f020422a98347ec76aef0d816a`
 (terverifikasi via `git ls-remote origin main`).
 
 **Catatan pola §9 (seperti v2.3.25/v2.3.26/v2.3.27/v2.3.28/v2.3.29):**
