@@ -32,14 +32,19 @@
 //
 // TEST-ONLY SEAM (F-032 timeout E2E, see
 // evidence/f032-harness-validation/run-f032-timeout-e2e.txt):
+//   F029_TEST_MODE=1                  — explicit test mode; REQUIRED
+//     for either override below to be honored (U-72, v2.3.18).
 //   F029_CHILD_SCRIPT=<path>        — spawn this script instead of
 //     exp-pattern.ts (the E2E test points it at hang-child.ts).
+//     Only an approved fixture (exp-pattern.ts or hang-child.ts,
+//     realpath, no symlinks, inside the evidence tree) is accepted.
 //   F029_CHILD_TIMEOUT_MS=<ms>      — child timeout override, integer
 //     100..120000 (default 120000). The E2E test uses 3000.
-// Both are validated (bad value → exit 2) and, when set, the parent
-// prints an explicit "test-seam:" line in the log so an overridden
-// run can never be mistaken for a production run. Production runs
-// NEVER set these variables.
+// Overrides without F029_TEST_MODE=1, symlinks, or paths outside
+// the approved fixtures all exit 2 before any child spawns. When
+// set, the parent prints an explicit "test-seam:" line in the log
+// so an overridden run can never be mistaken for a production run.
+// Production runs NEVER set these variables.
 //
 // Output: full raw log on stdout (redirect to run-<version>-f033.txt)
 // + a summary table with median + range per combination. Forced-GC and
@@ -53,15 +58,80 @@
 // and fails on child timeout/signal instead of silently skipping.
 
 import { spawnSync } from "node:child_process";
+import { lstatSync, realpathSync } from "node:fs";
+import { resolve } from "node:path";
 
 const MAX_RUNS = 10; // approved range for --runs: 1..10
 const DEFAULT_CHILD_TIMEOUT_MS = 120_000;
 
-// TEST-ONLY SEAM (F-032 E2E): validated env overrides. Production
-// runs never set these; when set, the parent logs them explicitly.
-const CHILD_SCRIPT = process.env.F029_CHILD_SCRIPT ?? "exp-pattern.ts";
+// TEST-ONLY SEAM (F-032 E2E), tightened v2.3.18 (U-72): an override
+// is honored ONLY when explicit test mode is active
+// (F029_TEST_MODE=1) AND the child script resolves (realpath, no
+// symlinks) to an APPROVED fixture inside the evidence tree
+// (exp-pattern.ts or hang-child.ts). Any override without explicit
+// test mode, any symlink, any path outside the evidence tree, or
+// any unapproved script → exit 2 BEFORE any child spawns.
+// Production runs never set these variables.
+const TEST_MODE = process.env.F029_TEST_MODE === "1";
+
+function seamFail(msg: string): never {
+  console.error(`run-f029: ERROR: ${msg}`);
+  process.exit(2);
+}
+
+function resolveChildScript(): string {
+  const override = process.env.F029_CHILD_SCRIPT;
+  if (override === undefined) return "exp-pattern.ts";
+  if (!TEST_MODE) {
+    seamFail(
+      "F029_CHILD_SCRIPT requires F029_TEST_MODE=1 (explicit test mode); refusing to run an overridden child script",
+    );
+  }
+  let lst;
+  try {
+    lst = lstatSync(override);
+  } catch {
+    seamFail(`F029_CHILD_SCRIPT does not exist: ${JSON.stringify(override)}`);
+  }
+  if (lst.isSymbolicLink()) {
+    seamFail(`F029_CHILD_SCRIPT must not be a symlink: ${JSON.stringify(override)}`);
+  }
+  let real: string;
+  try {
+    real = realpathSync(override);
+  } catch {
+    seamFail(`F029_CHILD_SCRIPT does not resolve: ${JSON.stringify(override)}`);
+  }
+  // Allowlist: canonical realpaths of the two approved fixtures.
+  // realpathSync on the allowlist entries themselves, so a fixture
+  // that is itself a symlink resolves to its target and the check
+  // still compares canonical paths.
+  const approved = new Set(
+    [
+      resolve(import.meta.dir, "exp-pattern.ts"),
+      resolve(import.meta.dir, "../f032-harness-validation/hang-child.ts"),
+    ].map((p) => {
+      try {
+        return realpathSync(p);
+      } catch {
+        return p;
+      }
+    }),
+  );
+  if (!approved.has(real)) {
+    seamFail(
+      `F029_CHILD_SCRIPT realpath ${real} is not an approved fixture (allowed: ${[...approved].join(", ")}); refusing to run an arbitrary child script`,
+    );
+  }
+  return real;
+}
+
+const CHILD_SCRIPT = resolveChildScript();
 let CHILD_TIMEOUT_MS = DEFAULT_CHILD_TIMEOUT_MS;
 if (process.env.F029_CHILD_TIMEOUT_MS !== undefined) {
+  if (!TEST_MODE) {
+    seamFail("F029_CHILD_TIMEOUT_MS requires F029_TEST_MODE=1 (explicit test mode)");
+  }
   const raw = process.env.F029_CHILD_TIMEOUT_MS;
   if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw) < 100 || Number(raw) > DEFAULT_CHILD_TIMEOUT_MS) {
     console.error(`run-f029: ERROR: F029_CHILD_TIMEOUT_MS must be an integer 100..${DEFAULT_CHILD_TIMEOUT_MS}, got ${JSON.stringify(raw)}`);
@@ -132,7 +202,7 @@ console.log(`matrix: patterns=${PATTERNS.join(",")} fixtures=${FIXTURES.join(","
 console.log(`total child runs: ${EXPECTED_RUNS}`);
 console.log(`child: script=${CHILD_SCRIPT} timeoutMs=${CHILD_TIMEOUT_MS}`);
 if (TEST_SEAM_ACTIVE) {
-  console.log(`test-seam: F029_CHILD_SCRIPT/F029_CHILD_TIMEOUT_MS override ACTIVE (test-only; this is NOT a production run)`);
+  console.log(`test-seam: F029_TEST_MODE=1, F029_CHILD_SCRIPT/F029_CHILD_TIMEOUT_MS override ACTIVE (test-only; this is NOT a production run)`);
 }
 
 // v2.3.17 (F-033): run the independent byte preflight FIRST, in its

@@ -1,4 +1,5 @@
-// F-032 timeout END-TO-END test driver (v2.3.17).
+// F-032 timeout END-TO-END test driver (v2.3.18 — F-034 strict PID
+// oracle + F-035 private per-run directory).
 //
 // Closes the V10 caveat on F-032: the v2.3.16 timeout mechanism was
 // verified only in isolation (sleep 30 + 200 ms timeout). This test
@@ -9,17 +10,42 @@
 //   2. counts each timeout as a failure (FAIL lines, reason
 //      "timeout after 3000 ms"),
 //   3. TERMINATES the child (the recorded child PID no longer
-//      exists after the parent exits — kill(pid, 0) throws),
+//      exists after the parent exits — strict oracle, see below),
 //   4. does NOT print "all child runs ok" and exits non-zero,
 //   5. prints "parent done: FAILED" and a COUNT MISMATCH (0 of 12
 //      records), and emits NO RESULT line.
 //
+// v2.3.18 (F-034): the v2.3.17 driver treated EVERY exception from
+// `process.kill(pid, 0)` as "process is dead" and parsed PID lines
+// with a bare `Number(...)`. The liveness check now uses the strict
+// oracle in `pid-oracle.ts`: only ESRCH means dead; EPERM means the
+// process exists (alive → FAIL); any other error is inconclusive
+// (FAIL); a surviving PID is verified by starttime identity from
+// `/proc/<pid>/stat` so PID reuse cannot false-pass. The PID file
+// is strictly parsed (exactly "<pid> <starttime>" per line, positive
+// safe integers, no empty/malformed/duplicate/out-of-range lines),
+// and the number of PIDs tested must equal the number of children
+// launched (12 == 12).
+//
+// v2.3.18 (F-035): the v2.3.17 driver used the fixed path
+// `/tmp/f032-hang-child.pid` (unlink-then-child-opens race, symlink
+// follow via appendFileSync, and two concurrent drivers sharing one
+// file). The driver now creates a PRIVATE per-run directory with
+// `mkdtemp` (mode 0700, realpath + ownership validated) and creates
+// the PID file inside it EXCLUSIVELY (`openSync "wx"`, mode 0600,
+// fstat-validated). The directory is removed in a `finally` block
+// after all children are done. Two concurrent drivers get two
+// separate directories and can never mix PID files. The legacy fixed
+// path is NOT referenced by this driver at all (see
+// test-f035-pidfile.ts, which proves a pre-planted symlink there is
+// never followed).
+//
 // The test uses the harness's own test-only env seam
-// (F029_CHILD_SCRIPT + F029_CHILD_TIMEOUT_MS=3000); the harness
-// logs the seam as active, so the run in the log can never be
-// mistaken for a production run. The hanging child is a local dummy
-// in this evidence folder only — no production target, no artifact,
-// no checkLink.
+// (F029_TEST_MODE=1 + F029_CHILD_SCRIPT + F029_CHILD_TIMEOUT_MS=3000);
+// the harness logs the seam as active, so the run in the log can
+// never be mistaken for a production run. The hanging child is a
+// local dummy in this evidence folder only — no production target,
+// no artifact, no checkLink.
 //
 // Usage (from evidence/f032-harness-validation/):
 //   bun run-f032-timeout-e2e.ts
@@ -28,95 +54,179 @@
 // printed first, so redirecting stdout captures the complete log.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  fstatSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { classifyLiveness, defaultDeps, parsePidFile } from "./pid-oracle.ts";
 
 const HERE = import.meta.dir;
 const F029_DIR = resolve(HERE, "../f029-memory-methodology");
 const HANG_CHILD = join(HERE, "hang-child.ts");
-const PID_FILE = "/tmp/f032-hang-child.pid";
 const CHILD_TIMEOUT_MS = 3000;
 const OUTER_TIMEOUT_MS = 180_000;
 
-if (existsSync(PID_FILE)) rmSync(PID_FILE);
+// F-035: one private directory per driver invocation. Created once
+// here; removed in the finally block below whatever happens.
+const RUN_DIR = mkdtempSync(join(tmpdir(), "f032-e2e-"));
 
-console.log(`e2e driver pid=${process.pid} bun=${Bun.version}`);
-console.log(`driving: bun run-f029.ts --runs 1 (cwd=${F029_DIR})`);
-console.log(`test seam: F029_CHILD_SCRIPT=${HANG_CHILD} F029_CHILD_TIMEOUT_MS=${CHILD_TIMEOUT_MS}`);
-console.log(`hang-child pid file: ${PID_FILE}`);
-
-const driven = spawnSync(
-  process.execPath,
-  ["run-f029.ts", "--runs", "1"],
-  {
-    cwd: F029_DIR,
-    env: {
-      ...process.env,
-      F029_CHILD_SCRIPT: HANG_CHILD,
-      F029_CHILD_TIMEOUT_MS: String(CHILD_TIMEOUT_MS),
-      F032_PID_FILE: PID_FILE,
-    },
-    encoding: "utf8",
-    timeout: OUTER_TIMEOUT_MS,
-  },
-);
-const out = ((driven.stdout ?? "") as string) + ((driven.stderr ?? "") as string);
-console.log("--- driven run-f029.ts raw output (begin) ---");
-console.log(out.trimEnd());
-console.log("--- driven run-f029.ts raw output (end) ---");
-console.log(`driven exit status=${driven.status} signal=${driven.signal} error=${(driven as any).error?.code ?? "none"}`);
-
-// Assertions.
-const failures: string[] = [];
-const check = (cond: boolean, label: string) => {
-  console.log(`e2e assert ${cond ? "PASS" : "FAIL"}: ${label}`);
-  if (!cond) failures.push(label);
-};
-
-const failLines = out.split("\n").filter((l) => l.startsWith("FAIL "));
-const timeoutFails = failLines.filter((l) => l.includes(`timeout after ${CHILD_TIMEOUT_MS} ms`));
-const resultLines = out.split("\n").filter((l) => l.startsWith("RESULT "));
-
-check(driven.status === 1, `driven run exits 1 (got status=${driven.status})`);
-check(failLines.length === 12, `12 FAIL lines for 12 hanging children (got ${failLines.length})`);
-check(timeoutFails.length === 12, `all 12 FAILs are timeouts after ${CHILD_TIMEOUT_MS} ms (got ${timeoutFails.length})`);
-check(out.includes("parent done: FAILED"), `parent prints "parent done: FAILED"`);
-check(!out.includes("all child runs ok"), `parent does NOT print "all child runs ok"`);
-check(out.includes("COUNT MISMATCH"), `parent prints COUNT MISMATCH (0 of 12 records)`);
-check(resultLines.length === 0, `no RESULT line emitted (got ${resultLines.length})`);
-check(out.includes("test-seam:"), `parent logs the test-seam override line`);
-check(out.includes("preflight: all fixture byte counts verified exact"), `preflight still ran and passed before the hanging children`);
-
-// The hanging children must have been TERMINATED by the parent:
-// EVERY recorded PID must no longer exist.
-let childPids: number[] = [];
-if (!existsSync(PID_FILE)) {
-  failures.push("hang-child never wrote its PID file");
-  console.log("e2e assert FAIL: hang-child wrote its PID file (missing)");
-} else {
-  childPids = readFileSync(PID_FILE, "utf8").split("\n").filter(Boolean).map(Number);
-  console.log(`e2e: hang-child recorded ${childPids.length} pid(s): ${childPids.join(", ")}`);
-  check(childPids.length === 12, `all 12 hanging children recorded a PID (got ${childPids.length})`);
-  const leaked: number[] = [];
-  for (const pid of childPids) {
-    let stillAlive = false;
-    try {
-      process.kill(pid, 0);
-      stillAlive = true;
-    } catch {
-      stillAlive = false; // ESRCH: no such process — the parent killed it.
-    }
-    if (stillAlive) {
-      // Clean up the leaked child so the test never leaves a hang behind.
-      try { process.kill(pid, "SIGKILL"); } catch { /* already gone */ }
-      leaked.push(pid);
-    }
+let exitCode = 1;
+try {
+  exitCode = main();
+} catch (e: any) {
+  console.log(`E2E TIMEOUT TEST: FAIL — driver threw: ${e?.stack ?? e}`);
+  exitCode = 1;
+} finally {
+  // F-035: cleanup in finally — the private directory (and the PID
+  // file inside it) must not survive the run.
+  try {
+    rmSync(RUN_DIR, { recursive: true, force: true });
+  } catch {
+    // Best effort; the assertion below reports it.
   }
-  check(leaked.length === 0, `all ${childPids.length} hanging children terminated by parent (leaked: ${leaked.join(", ") || "none"})`);
+  console.log(`e2e cleanup: private run dir ${RUN_DIR} removed: ${!existsSync(RUN_DIR)}`);
 }
+process.exit(exitCode);
 
-if (failures.length > 0) {
-  console.log(`E2E TIMEOUT TEST: FAIL — ${failures.length} assertion(s) failed: ${failures.join("; ")}`);
-  process.exit(1);
+function main(): number {
+  const failures: string[] = [];
+  const check = (cond: boolean, label: string) => {
+    console.log(`e2e assert ${cond ? "PASS" : "FAIL"}: ${label}`);
+    if (!cond) failures.push(label);
+  };
+
+  // F-035: validate the private run directory before any child runs.
+  const runDirReal = realpathSync(RUN_DIR);
+  const runDirStat = statSync(RUN_DIR);
+  const myUid = typeof process.getuid === "function" ? process.getuid() : undefined;
+  console.log(`e2e driver pid=${process.pid} bun=${Bun.version}`);
+  console.log(
+    `private run dir: ${RUN_DIR} (realpath=${runDirReal} mode=${(runDirStat.mode & 0o777).toString(8)} uid=${runDirStat.uid})`,
+  );
+  check(runDirReal === RUN_DIR, `private run dir realpath matches (no symlink): ${runDirReal}`);
+  check((runDirStat.mode & 0o777) === 0o700, `private run dir mode is 700 (got ${(runDirStat.mode & 0o777).toString(8)})`);
+  if (myUid !== undefined) {
+    check(runDirStat.uid === myUid, `private run dir owned by our uid ${myUid} (got ${runDirStat.uid})`);
+  }
+
+  // F-035: create the PID file EXCLUSIVELY (O_CREAT|O_EXCL — fails
+  // if the path is a symlink, even a dangling one), mode 0600.
+  const PID_FILE = join(RUN_DIR, "hang-child.pid");
+  let fd: number;
+  try {
+    fd = openSync(PID_FILE, "wx", 0o600);
+  } catch (e: any) {
+    failures.push(`exclusive PID file create failed: ${e?.code ?? e}`);
+    console.log(`e2e assert FAIL: PID file created exclusively (error: ${e?.code ?? e})`);
+    console.log(`E2E TIMEOUT TEST: FAIL — ${failures.length} assertion(s) failed: ${failures.join("; ")}`);
+    return 1;
+  }
+  const pidFileStat = fstatSync(fd);
+  console.log(`pid file: ${PID_FILE} (mode=${(pidFileStat.mode & 0o777).toString(8)} regular=${pidFileStat.isFile()})`);
+  check(pidFileStat.isFile(), `PID file is a regular file`);
+  check((pidFileStat.mode & 0o777) === 0o600, `PID file mode is 600 (got ${(pidFileStat.mode & 0o777).toString(8)})`);
+  closeSync(fd);
+
+  console.log(`driving: bun run-f029.ts --runs 1 (cwd=${F029_DIR})`);
+  console.log(
+    `test seam: F029_TEST_MODE=1 F029_CHILD_SCRIPT=${HANG_CHILD} F029_CHILD_TIMEOUT_MS=${CHILD_TIMEOUT_MS}`,
+  );
+
+  const driven = spawnSync(
+    process.execPath,
+    ["run-f029.ts", "--runs", "1"],
+    {
+      cwd: F029_DIR,
+      env: {
+        ...process.env,
+        F029_TEST_MODE: "1",
+        F029_CHILD_SCRIPT: HANG_CHILD,
+        F029_CHILD_TIMEOUT_MS: String(CHILD_TIMEOUT_MS),
+        F032_PID_FILE: PID_FILE,
+      },
+      encoding: "utf8",
+      timeout: OUTER_TIMEOUT_MS,
+    },
+  );
+  const out = ((driven.stdout ?? "") as string) + ((driven.stderr ?? "") as string);
+  console.log("--- driven run-f029.ts raw output (begin) ---");
+  console.log(out.trimEnd());
+  console.log("--- driven run-f029.ts raw output (end) ---");
+  console.log(`driven exit status=${driven.status} signal=${driven.signal} error=${(driven as any).error?.code ?? "none"}`);
+
+  // Assertions.
+  const failLines = out.split("\n").filter((l) => l.startsWith("FAIL "));
+  const timeoutFails = failLines.filter((l) => l.includes(`timeout after ${CHILD_TIMEOUT_MS} ms`));
+  const resultLines = out.split("\n").filter((l) => l.startsWith("RESULT "));
+
+  check(driven.status === 1, `driven run exits 1 (got status=${driven.status})`);
+  check(failLines.length === 12, `12 FAIL lines for 12 hanging children (got ${failLines.length})`);
+  check(timeoutFails.length === 12, `all 12 FAILs are timeouts after ${CHILD_TIMEOUT_MS} ms (got ${timeoutFails.length})`);
+  check(out.includes("parent done: FAILED"), `parent prints "parent done: FAILED"`);
+  check(!out.includes("all child runs ok"), `parent does NOT print "all child runs ok"`);
+  check(out.includes("COUNT MISMATCH"), `parent prints COUNT MISMATCH (0 of 12 records)`);
+  check(resultLines.length === 0, `no RESULT line emitted (got ${resultLines.length})`);
+  check(out.includes("test-seam:"), `parent logs the test-seam override line`);
+  check(out.includes("preflight: all fixture byte counts verified exact"), `preflight still ran and passed before the hanging children`);
+
+  // F-034: the hanging children must have been TERMINATED by the
+  // parent. The PID file is strictly parsed first; any parse error
+  // fails the run BEFORE the liveness assertion. Only a strict
+  // "dead" verdict (ESRCH / exited / PID-reused) satisfies the
+  // assertion; "alive" or "inconclusive" fails it.
+  if (!existsSync(PID_FILE)) {
+    failures.push("hang-child never wrote its PID file");
+    console.log("e2e assert FAIL: hang-child wrote its PID file (missing)");
+  } else {
+    const { records, errors } = parsePidFile(readFileSync(PID_FILE, "utf8"));
+    for (const e of errors) {
+      failures.push(`pid file parse: ${e}`);
+      console.log(`e2e assert FAIL: pid file parses strictly (${e})`);
+    }
+    console.log(
+      `e2e: hang-child recorded ${records.length} pid(s): ${records.map((r) => r.pid).join(", ")}`,
+    );
+    check(records.length === 12, `all 12 hanging children recorded a PID (got ${records.length})`);
+    check(
+      records.length === failLines.length,
+      `PIDs tested (${records.length}) == children launched (${failLines.length})`,
+    );
+    const deps = defaultDeps();
+    const leaked: number[] = [];
+    for (const rec of records) {
+      const v = classifyLiveness(rec.pid, rec.starttime, deps);
+      console.log(`e2e liveness pid=${rec.pid} starttime=${rec.starttime}: ${v.verdict} (${v.reason})`);
+      if (v.verdict === "alive") {
+        // Clean up the leaked child so the test never leaves a hang behind.
+        try {
+          process.kill(rec.pid, "SIGKILL");
+        } catch {
+          /* already gone */
+        }
+        leaked.push(rec.pid);
+      } else if (v.verdict === "inconclusive") {
+        failures.push(`liveness oracle inconclusive for pid ${rec.pid}: ${v.reason}`);
+      }
+    }
+    check(
+      leaked.length === 0,
+      `all ${records.length} hanging children terminated by parent (leaked: ${leaked.join(", ") || "none"})`,
+    );
+  }
+
+  if (failures.length > 0) {
+    console.log(`E2E TIMEOUT TEST: FAIL — ${failures.length} assertion(s) failed: ${failures.join("; ")}`);
+    return 1;
+  }
+  console.log("E2E TIMEOUT TEST: PASS — parent timed out, killed, and failed all 12 hanging children with no success line");
+  return 0;
 }
-console.log("E2E TIMEOUT TEST: PASS — parent timed out, killed, and failed all 12 hanging children with no success line");

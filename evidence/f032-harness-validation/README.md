@@ -1,7 +1,8 @@
 # Bukti F-032 — Validasi argumen harness F-029 (tidak ada lagi false green)
 
-**Revisi:** v2.3.17 — jawaban atas audit independen V10 (F-032 timeout E2E)
+**Revisi:** v2.3.18 — jawaban atas audit independen V11 (F-034, F-035, U-72)
 **Tanggal:** 2026-11-08 (WIB)
+**Revisi sebelumnya:** v2.3.17 — jawaban atas audit independen V10 (F-032 timeout E2E)
 **Lingkungan bukti: VM LOKAL SAJA — BUKAN staging, BUKAN produksi.**
 Tidak ada jaringan, tidak ada artifact live, `checkLink` TIDAK
 di-invoke. Paket ini hanya menguji parent harness
@@ -65,6 +66,126 @@ sebagai oracle penerimaan tidak dapat menghasilkan false green.
    `failures === 0` DAN jumlah record tepat DAN semua kombinasi
    lengkap; bila tidak, parent mencetak
    "parent done: FAILED — …" dan **exit 1**.
+
+## Perubahan v2.3.18 (F-034, F-035, U-72 — jawaban atas audit V11)
+
+Audit V11 menerima angka dan log v2.3.17 tetapi menemukan dua
+kelemahan pada oracle/bukti terminasi child serta satu celah pada
+test seam. Revisi ini memperbaikinya tanpa mengubah metodologi
+pengukuran memori (F-029 tidak diulang — lihat batasan di bawah):
+
+**F-034 — oracle terminasi PID diperketat (`pid-oracle.ts` BARU).**
+Driver v2.3.17 menganggap SEMUA exception dari `process.kill(pid,
+0)` sebagai "proses mati" dan mem-parsing baris PID dengan
+`Number(...)` tanpa validasi. Kini: hanya `error.code ===
+"ESRCH"` yang berarti proses tidak ada; EPERM berarti proses
+ADA tetapi tidak bisa di-signal (verdict "alive" → FAIL);
+EINVAL / `ERR_INVALID_ARG_TYPE` / exception lain berarti oracle
+tidak dapat memutuskan (verdict "inconclusive" → FAIL). File
+PID di-parse ketat (`parsePidFile`): tiap baris harus tepat
+`"<pid> <starttime>"`, keduanya positive safe integer, pid
+1..2^31−1; baris kosong/malformed/duplikat/di luar rentang adalah
+error dan file ditolak SEBELUM assertion liveness. Identitas PID
+diverifikasi terhadap starttime yang dicatat child saat spawn
+(field 22 `/proc/<pid>/stat`): starttime cocok = child yang sama
+masih hidup; berbeda = PID dipakai ulang proses lain (child asli
+mati); state Z/X = zombie/mati; `/proc` tak terbaca/tak ter-parse
+= inconclusive (FAIL). Satu-satunya pengecualian: proses yang
+keluar di antara probe signal dan pembacaan `/proc` (ENOENT) =
+mati. Modul oracle sengaja injectable (`kill`/`readStat`) supaya
+tes regresi dapat membuktikan EPERM/EINVAL tidak bisa PASS tanpa
+bergantung pada layout permission host.
+
+**Tes regresi oracle — `test-pid-oracle.ts` (log
+`test-pid-oracle-v2318.txt`, 36 baris, Bun 1.4.4, 30 assert
+PASS):** 15 kasus parsing (valid, tanpa trailing newline, file
+kosong, baris kosong, tanpa starttime, non-numerik, field
+tambahan, pid 0, pid > 2^31−1, float, negatif, duplikat, starttime
+sama di dua pid diizinkan, spasi di depan); 11 kasus klasifikasi
+dengan stub injeksi (ESRCH→dead, EPERM→alive, EINVAL→
+inconclusive, ERR_INVALID_ARG_TYPE→inconclusive, `parseProcStat`
+mem-parse `/proc/self/stat`, hidup + starttime cocok→alive, hidup
++ starttime berbeda→dead, state Z→dead, kill ok + `/proc`
+ENOENT→dead, kill ok + `/proc` EPERM→inconclusive, kill ok + stat
+tak ter-parse→inconclusive);
+4 kasus proses hidup nyata (child yang sudah exit→dead via
+ESRCH sungguhan; `sleep 30` stat ter-parse + alive, lalu SIGKILL
+terkontrol→dead).
+**Catatan jujur:** VM ini berjalan sebagai root (uid 0),
+sehingga `kill(1,0)` berhasil dan EPERM HIDUP tidak dapat
+diproduksi di sini — aturan EPERM→FAIL dibuktikan oleh kasus
+stub injeksi, bukan oleh proses hidup. Itu dicatat di log, bukan
+dipalsukan.
+
+**F-035 — file PID pindah ke direktori privat per-run
+(`run-f032-timeout-e2e.ts` + `hang-child.ts` diperbarui).**
+Path tetap `/tmp/f032-hang-child.pid` DIHAPUS dari driver.
+Kini driver membuat direktori privat per-run via `mkdtemp`
+(mode 0700 — realpath + kepemilikan uid divalidasi sebelum child
+dijalankan) dan membuat file PID di dalamnya secara EKSKLUSIF
+(`openSync "wx"`, mode 0600, fstat-validated; `O_EXCL` gagal
+bila path adalah symlink, bahkan yang menggantung). `hang-child.ts`
+kini mencatat `"<pid> <starttime>"` (starttime dari
+`/proc/self/stat` saat spawn) dan, sebelum append, memvalidasi
+file PID dengan `lstat`: harus file regular (bukan symlink),
+milik uid yang sama, mode 0600 — bila gagal, child exit 1 tanpa
+menggantung sehingga parent mencatat FAIL non-timeout dan E2E
+gagal dengan keras. Direktori dihapus di blok `finally` setelah
+semua child selesai. Dua invocation paralel mendapat direktori
+terpisah dan tidak pernah mencampur PID.
+
+**Tes regresi F-035 — `test-f035-pidfile.ts` (log
+`test-f035-pidfile-v2318.txt`, 31 baris, Bun 1.4.4, 25 assert
+PASS):** symlink ditanam di path lama menunjuk file sentinel;
+dua driver dijalankan PARALEL — keduanya exit 0 dan PASS,
+direktori privat berbeda (`/tmp/f032-e2e-48auan` vs
+`/tmp/f032-e2e-YyTPEK`), masing-masing mencatat 12 PID, kedua
+set PID disjoint (tidak ada yang tercampur), tak satu pun log
+menyebut path lama, mode direktori 700 + mode file 600
+tervalidasi di kedua log, kedua direktori terhapus setelah run,
+dan file sentinel byte-identik sebelum/sesudah (sha256 sama) +
+symlink tetap menunjuk target (tidak pernah diganti).
+
+**Tes end-to-end diulang pada driver baru (log
+`run-f032-timeout-e2e-v2318.txt`, 189 baris, Bun 1.4.4,
+2026-11-08T03:58:01Z, durasi ~36 detik):** 12 FAIL timeout,
+ke-12 PID tercatat sebagai `"<pid> <starttime>"` (3116, 3126,
+3135, 3147, 3155, 3165, 3178, 3188, 3198, 3206, 3219, 3232),
+jumlah PID yang diuji (12) == jumlah child yang diluncurkan
+(12), ke-12 verdict liveness `dead` via ESRCH sungguhan
+(starttime tercatat di tiap baris log), 0 record, `COUNT
+MISMATCH`, `parent done: FAILED`, exit 1, tanpa success line,
+direktori privat terhapus (`removed: true`). Verdict driver:
+**E2E TIMEOUT TEST: PASS**.
+
+**U-72 — seam diperketat (`run-f029.ts` diperbarui).**
+`F029_CHILD_SCRIPT` / `F029_CHILD_TIMEOUT_MS` kini hanya
+dihormati bila `F029_TEST_MODE=1` eksplisit; script child harus
+realpath ke fixture yang disetujui (`exp-pattern.ts` atau
+`hang-child.ts` di dalam evidence tree) dan path yang diberikan
+tidak boleh berupa symlink; selain itu → exit 2 sebelum child
+mana pun di-spawn. Driver E2E kini menyetel `F029_TEST_MODE=1`.
+**Tes regresi seam — `test-u72-seam.ts` (log
+`test-u72-seam-v2318.txt`, 20 baris, Bun 1.4.4, 15 assert PASS):**
+override tanpa test mode → exit 2; `F029_TEST_MODE=true` (bukan
+"1") → exit 2; timeout override tanpa test mode → exit 2; path
+arbitrer di luar evidence dalam test mode → exit 2; symlink ke
+fixture yang disetujui dalam test mode → exit 2; path tak ada /
+file non-script → exit 2; fixture yang disetujui dalam test mode
+DITERIMA (hang-child + timeout 100 ms → 12 FAIL timeout, exit 1,
+baris `test-seam:` tercatat). TIDAK ADA workflow CI yang
+ditambahkan — sesuai audit, tanpa threat model tidak ada workflow
+yang mengeksekusi input PR tak tepercaya.
+
+**Tes regresi negatif diulang pada harness baru (log
+`run-f032-negative-v2318.txt`, 307 baris, Bun 1.4.4,
+2026-11-08T03:59:29Z):** `--runs 0`, `--runs abc`, `--runs -1`,
+nilai hilang, flag hilang, `--runs 11`, `--runs 1.5` — ketujuh
+kasus tetap exit 2 tanpa mencetak sukses; kontrol positif
+`--runs 1` exit 0 dengan 12 RESULT + `parent done: all child
+runs ok` (perilaku default tidak berubah oleh pengetatan seam).
+Log v2.3.17 (`run-f032-negative-v2317.txt`) dipertahankan sebagai
+bukti historis.
 
 ## Perubahan v2.3.17 (F-032 — timeout end-to-end dengan child yang sengaja menggantung)
 
@@ -175,6 +296,15 @@ mencetak "all child runs ok".
 | `run-f032-timeout-e2e.ts` (v2.3.17) | `169e1d6908806659298cc5f1e862d094eaf0fe7d59029a2e35b306f4820256ab` |
 | `run-f032-timeout-e2e.txt` (v2.3.17) | `6148cb8924fdfd3c0195994f3146ae275064e124e139bcec1558a5fa37c87fd4` |
 | `run-f032-negative-v2317.txt` (v2.3.17) | `4c97e1d079a21f94a8f4e0aec1b7eda961843bc7f5adc36c324123331b8a7a91` |
+| `pid-oracle.ts` (v2.3.18) | `4d36b47ea6bced479944cd6d959a305e9209cf406445c595e306306f69a8166c` |
+| `hang-child.ts` (v2.3.18) | `da44592561e181ff196b607cc94b0f37c71174eb57543f08b17765541ea7b25a` |
+| `run-f032-timeout-e2e.ts` (v2.3.18) | `55be54784500953aed13ac2daa27551ee19a2f2f7cddd0f7e50df2bdce51063f` |
+| `test-pid-oracle.ts` (v2.3.18) | `56e0e0cb2a2b727fa8f12bd30e6e835638e75b1fe10b44447266eb55f42068f9` |
+| `test-f035-pidfile.ts` (v2.3.18) | `7f060400fb07555171334aa976a0178e51293272b65102682f0811ac8efe6975` |
+| `run-f032-timeout-e2e-v2318.txt` | `00d23aa532548242bc19f0399f298f485e25f91a823112798b046b56c594de33` |
+| `test-pid-oracle-v2318.txt` | `4cc0d407c90dbb2900ca35be46afc6c0c68413f849de6dd123f2d749f529b300` |
+| `test-f035-pidfile-v2318.txt` | `937ed44521d09a8c218130ac97f3faf9344e982c15b730c97bc733cd86e539df` |
+| `run-f032-negative-v2318.txt` | `0028237b23af9e93a160ed8c2883e08242775c1d2c969ad7107b90e6889e68dc` |
 
 ## Batasan (dicatat jujur)
 
@@ -193,9 +323,34 @@ mencetak "all child runs ok".
   batas atas untuk pengulangan yang lebih besar tanpa mengubah
   kode). Bukan batas yang ditetapkan owner.
 - Test seam `F029_CHILD_SCRIPT` / `F029_CHILD_TIMEOUT_MS` adalah
-  jalur override yang sengaja ada di harness. Risikonya
-  (seseorang menjalankan harness dengan seam aktif lalu mengira
-  itu run produksi) dimitigasi oleh baris log `test-seam:`
-  eksplisit + dokumentasi ini; seam TIDAK mengubah perilaku
-  default (tanpa env var, script = `exp-pattern.ts`, timeout =
-  120.000 ms — sama seperti v2.3.16).
+  jalur override yang sengaja ada di harness. **[DIPERKETAT
+  v2.3.18 (U-72):]** override kini hanya dihormati bila
+  `F029_TEST_MODE=1` eksplisit, script child harus realpath ke
+  fixture yang disetujui (`exp-pattern.ts` atau `hang-child.ts`),
+  dan path yang diberikan tidak boleh berupa symlink — selain itu
+  exit 2 sebelum child mana pun di-spawn (tes regresi
+  `test-u72-seam.ts`, log `test-u72-seam-v2318.txt`, 15 assert
+  PASS). Perilaku default tidak berubah (tanpa env var, script =
+  `exp-pattern.ts`, timeout = 120.000 ms); bila seam aktif, parent
+  mencetak baris `test-seam:` eksplisit; reviewer WAJIB memeriksa
+  ada/tidaknya baris itu sebelum menerima log sebagai bukti
+  produksi; seam hanya dipakai oleh driver E2E yang terdokumentasi.
+- **[BARU v2.3.18 (F-034):]** klaim "semua child mati" v2.3.17
+  memakai oracle yang menerima semua exception sebagai "mati".
+  Oracle itu diganti modul ketat `pid-oracle.ts` (hanya ESRCH =
+  mati; EPERM = hidup; lainnya = inconclusive; identitas PID
+  diverifikasi via starttime `/proc`); log E2E v2.3.17 tetap
+  dipertahankan sebagai bukti historis, tetapi klaim terminasi
+  yang mengikat kini bersandar pada log v2.3.18
+  (`run-f032-timeout-e2e-v2318.txt`, 12 verdict `dead` via ESRCH
+  + starttime tercatat).
+- **[BARU v2.3.18 (F-035):]** path PID tetap
+  `/tmp/f032-hang-child.pid` tidak lagi dipakai driver mana pun.
+  Direktori privat per-run (`mkdtemp`, 0700) + file PID eksklusif
+  (0600) + cleanup `finally` adalah mekanismenya sekarang; tes
+  paralel + symlink membuktikannya (log
+  `test-f035-pidfile-v2318.txt`). Jendela mikro antara `lstat`
+  dan `append` di `hang-child.ts` ditutup oleh direktori privat
+  itu sendiri (hanya pemilik yang bisa menulis di dalamnya);
+  pemeriksaan `lstat` adalah lapis pertahanan tambahan, bukan
+  satu-satunya kontrol.

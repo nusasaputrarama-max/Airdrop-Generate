@@ -1,0 +1,31 @@
+2026-11-08T03:59:56Z
+bun=1.4.4
+=== bun test-f035-pidfile.ts (F-035 regression, v2.3.18)
+f035 setup: symlink /tmp/f032-hang-child.pid -> /tmp/f035-sentinel-target.txt (sha256 dfdbc64522a6d633…)
+f035 assert PASS: legacy path is a symlink before the runs
+f035 assert PASS: driver A exits 0 (got 0)
+f035 assert PASS: driver B exits 0 (got 0)
+f035 assert PASS: driver A reports E2E TIMEOUT TEST: PASS
+f035 assert PASS: driver B reports E2E TIMEOUT TEST: PASS
+f035 assert PASS: both drivers print a private run dir (A=/tmp/f032-e2e-iQbVc7 B=/tmp/f032-e2e-mHoBmP)
+f035 assert PASS: parallel drivers use DIFFERENT private directories
+f035 assert PASS: driver A run dir is a fresh mkdtemp path (/tmp/f032-e2e-iQbVc7)
+f035 assert PASS: driver B run dir is a fresh mkdtemp path (/tmp/f032-e2e-mHoBmP)
+f035 assert PASS: driver A recorded 12 PIDs (got 12)
+f035 assert PASS: driver B recorded 12 PIDs (got 12)
+f035 assert PASS: PID sets are disjoint — each run read only its own PIDs (overlap: none)
+f035 assert PASS: driver A log never mentions the legacy fixed path
+f035 assert PASS: driver B log never mentions the legacy fixed path
+f035 assert PASS: driver A private dir validated mode=700
+f035 assert PASS: driver B private dir validated mode=700
+f035 assert PASS: driver A PID file validated mode=600
+f035 assert PASS: driver B PID file validated mode=600
+f035 assert PASS: driver A private dir removed after run (/tmp/f032-e2e-iQbVc7)
+f035 assert PASS: driver B private dir removed after run (/tmp/f032-e2e-mHoBmP)
+f035 assert PASS: driver A log confirms cleanup (removed: true)
+f035 assert PASS: driver B log confirms cleanup (removed: true)
+f035 assert PASS: symlink target unchanged (sha256 dfdbc64522a6d633… == before)
+f035 assert PASS: legacy symlink still points at the sentinel target (never replaced)
+f035 assert PASS: legacy symlink removed in teardown
+F-035 PIDFILE TEST: PASS — private per-run dirs, parallel-safe, symlink target untouched, cleanup verified
+exit=0

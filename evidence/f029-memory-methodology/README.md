@@ -62,6 +62,29 @@ pernah mengesetnya). Tes regresi negatif diulang pada harness
 baru (log `run-f032-negative-v2317.txt`): 7 kasus exit 2,
 kontrol positif `--runs 1` exit 0 dengan 12 RESULT.
 
+**v2.3.18 (U-72 — seam diperketat; F-034/F-035 — oracle dan file
+PID diperketat).** Seam kini hanya dihormati bila
+`F029_TEST_MODE=1` eksplisit; script child harus realpath ke
+fixture yang disetujui (`exp-pattern.ts` atau `hang-child.ts` di
+dalam evidence tree) dan path yang diberikan tidak boleh berupa
+symlink — selain itu exit 2 sebelum child mana pun di-spawn
+(tes regresi `test-u72-seam.ts`, log `test-u72-seam-v2318.txt`,
+15 assert PASS). Driver E2E kini memakai direktori privat
+per-run + file PID eksklusif (F-035) dan oracle terminasi ketat
+(F-034, modul `pid-oracle.ts` — hanya ESRCH = mati, EPERM =
+hidup, lainnya inconclusive, identitas via starttime `/proc`);
+log E2E baru `run-f032-timeout-e2e-v2318.txt` (12 PID mati via
+ESRCH, 12 == 12 diluncurkan). Tes regresi negatif diulang pada
+harness baru (log `run-f032-negative-v2318.txt`): 7 kasus exit 2,
+kontrol positif `--runs 1` exit 0 dengan 12 RESULT — perilaku
+default tidak berubah. Eksperimen memori F-029 TIDAK diulang di
+v2.3.18: child terukur dan metodologi byte tidak berubah (yang
+berubah hanya gate seam + oracle/file PID pada jalur uji), dan
+kontrol positif `--runs 1` pada harness baru membuktikan jalur
+default tetap bekerja end-to-end. TIDAK ADA workflow CI yang
+ditambahkan (sesuai audit V11 — tanpa threat model, tidak ada
+workflow yang mengeksekusi input PR tak tepercaya).
+
 ## Hasil v2.3.17 (harness de-confounded, preflight terpisah)
 
 Rerun penuh 60 run anak per versi Bun, 0 gagal, 60 PID berbeda

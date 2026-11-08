@@ -1,0 +1,20 @@
+2026-11-08T03:59:48Z
+bun=1.4.4
+=== bun test-u72-seam.ts (U-72 regression, v2.3.18)
+u72 assert PASS: override without test mode → exit 2 (got 2)
+u72 assert PASS: override without test mode → error names F029_TEST_MODE=1
+u72 assert PASS: override without test mode → refused before preflight
+u72 assert PASS: F029_TEST_MODE=true + override → exit 2 (got 2)
+u72 assert PASS: timeout override without test mode → exit 2 (got 2)
+u72 assert PASS: arbitrary path in test mode → exit 2 (got 2)
+u72 assert PASS: arbitrary path → error says not an approved fixture
+u72 assert PASS: symlink to approved fixture in test mode → exit 2 (got 2)
+u72 assert PASS: symlink → error says must not be a symlink
+u72 assert PASS: nonexistent path in test mode → exit 2 (got 2)
+u72 assert PASS: non-script file in test mode → exit 2 (got 2)
+u72 assert PASS: approved fixture in test mode → proceeds (exit 1 from timeouts, got 1)
+u72 assert PASS: approved fixture run logs the test-seam line
+u72 assert PASS: approved fixture run: 12 timeout FAILs after 100 ms (got 12)
+u72 assert PASS: approved fixture run prints parent done: FAILED
+U-72 SEAM TEST: PASS — overrides refused without explicit test mode, arbitrary/symlink paths refused, approved fixture accepted
+exit=0
