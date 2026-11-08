@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="AIRDROP GENERATE — informasi proyek intelijen keamanan airdrop, phishing, dan tautan berbahaya di ekosistem Web3.">
+  <title>AIRDROP GENERATE — Web3 Security Intelligence</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #121d30;
+      --panel-2: #17243a;
+      --line: #293850;
+      --text: #edf3fc;
+      --muted: #a8b6ca;
+      --accent: #75a7ff;
+      --accent-2: #9b8cff;
+      --warning: #f2c879;
+      --max: 1080px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 80% 0%, rgba(117,167,255,.16), transparent 34rem),
+        radial-gradient(ellipse at 0% 35%, rgba(155,140,255,.10), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; }
+    .wrap { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
+    header { padding: 26px 0; border-bottom: 1px solid rgba(168,182,202,.13); }
+    .nav { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.08em; }
+    .mark {
+      width:38px; height:38px; display:grid; place-items:center; border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#08111f;
+      font-size:18px; font-weight:900;
+    }
+    .nav a { color:var(--muted); text-decoration:none; font-size:14px; }
+    .nav a:hover { color:var(--text); }
+    .hero { padding:92px 0 70px; }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:9px; padding:7px 12px;
+      border:1px solid rgba(242,200,121,.35); border-radius:999px;
+      color:var(--warning); background:rgba(242,200,121,.07); font-size:12px;
+      font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    }
+    .dot { width:7px; height:7px; border-radius:50%; background:var(--warning); }
+    h1 { max-width:850px; margin:24px 0 20px; font-size:clamp(42px,7vw,76px); line-height:1.03; letter-spacing:-.055em; }
+    h1 span { background:linear-gradient(100deg,#9bc1ff,#b5a9ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .lead { max-width:720px; color:var(--muted); font-size:clamp(17px,2.2vw,20px); }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
+    .button {
+      display:inline-flex; align-items:center; justify-content:center; min-height:46px;
+      padding:0 18px; border-radius:12px; text-decoration:none; font-weight:700; font-size:14px;
+      border:1px solid var(--line); background:var(--panel); color:var(--text);
+    }
+    .button.primary { border-color:transparent; color:#08111f; background:linear-gradient(100deg,#9bc1ff,#b5a9ff); }
+    .button:hover { transform:translateY(-1px); }
+    .notice {
+      margin-top:34px; max-width:780px; padding:17px 19px; border:1px solid rgba(242,200,121,.25);
+      border-radius:14px; background:rgba(242,200,121,.055); color:#e9d7b1; font-size:14px;
+    }
+    section { padding:42px 0; }
+    .section-head { max-width:680px; margin-bottom:24px; }
+    h2 { margin:0 0 9px; font-size:clamp(25px,4vw,36px); letter-spacing:-.035em; }
+    .section-head p, .card p { color:var(--muted); margin:0; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
+    .card {
+      padding:22px; border:1px solid var(--line); border-radius:18px;
+      background:linear-gradient(160deg,rgba(23,36,58,.92),rgba(18,29,48,.86));
+    }
+    .tag { display:inline-block; margin-bottom:16px; color:#b9caff; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .card h3 { margin:0 0 8px; font-size:19px; }
+    .status { margin-top:18px; color:var(--warning); font-size:12px; font-weight:700; }
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; counter-reset:step; }
+    .step { padding:19px; border-left:2px solid var(--accent); background:rgba(18,29,48,.65); border-radius:0 14px 14px 0; }
+    .step strong { display:block; margin-bottom:6px; }
+    .step p { margin:0; color:var(--muted); font-size:14px; }
+    .status-panel {
+      display:flex; justify-content:space-between; align-items:center; gap:24px;
+      padding:24px; border:1px solid var(--line); border-radius:18px; background:var(--panel);
+    }
+    .status-panel p { max-width:690px; margin:6px 0 0; color:var(--muted); }
+    .pill { flex:none; padding:8px 12px; border-radius:999px; color:var(--warning); background:rgba(242,200,121,.09); border:1px solid rgba(242,200,121,.25); font-size:12px; font-weight:800; }
+    footer { margin-top:44px; padding:26px 0 38px; border-top:1px solid rgba(168,182,202,.13); color:var(--muted); font-size:13px; }
+    .foot { display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+    @media (max-width:760px) {
+      .hero { padding:68px 0 48px; }
+      .grid, .steps { grid-template-columns:1fr; }
+      .status-panel { align-items:flex-start; flex-direction:column; }
+      .nav .nav-link { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand"><span class="mark" aria-hidden="true">A</span><span>AIRDROP GENERATE</span></div>
+      <a class="nav-link" href="https://github.com/nusasaputrarama-max/Airdrop-Generate" target="_blank" rel="noopener noreferrer">Lihat repository ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div class="eyebrow"><span class="dot" aria-hidden="true"></span> Informational preview</div>
+      <h1>Kenali risiko.<br><span>Jelajahi Web3</span> dengan lebih sadar.</h1>
+      <p class="lead">AIRDROP GENERATE adalah proyek intelijen keamanan yang berfokus pada risiko penipuan airdrop, phishing, dan tautan berbahaya di ekosistem Web3. Tujuannya membantu pengguna mengambil keputusan dengan informasi yang lebih jelas—bukan menjanjikan bahwa suatu tautan pasti aman.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/nusasaputrarama-max/Airdrop-Generate" target="_blank" rel="noopener noreferrer">Pantau pengembangan ↗</a>
+        <a class="button" href="#status">Lihat status proyek</a>
+      </div>
+      <div class="notice"><strong>Transparansi:</strong> halaman ini hanya berisi informasi proyek. Link Scanner belum tersedia untuk publik dan tidak dapat digunakan dari halaman ini. Jangan masukkan tautan, seed phrase, private key, atau data wallet di sini.</div>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <h2>Arah pengembangan</h2>
+        <p>Modul berikut merupakan arah produk yang sedang dikembangkan dan ditinjau. Halaman ini tidak mengaktifkan atau menyediakan fungsi-fungsi tersebut.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <span class="tag">Modul rencana 01</span>
+          <h3>Link Risk Analysis</h3>
+          <p>Analisis indikator risiko pada tautan, redirect, domain, dan pola phishing. Fitur pemindaian publik belum dibuka.</p>
+          <div class="status">Belum tersedia untuk publik</div>
+        </article>
+        <article class="card">
+          <span class="tag">Modul rencana 02</span>
+          <h3>Airdrop Explorer</h3>
+          <p>Informasi proyek dan aktivitas airdrop dengan konteks verifikasi serta sumber yang dapat ditelusuri.</p>
+          <div class="status">Belum tersedia sebagai layanan publik</div>
+        </article>
+        <article class="card">
+          <span class="tag">Modul rencana 03</span>
+          <h3>Gibran Assistant</h3>
+          <p>Asisten informasi keamanan Web3 yang dirancang untuk menjelaskan sinyal risiko dan batas pengetahuan secara transparan.</p>
+          <div class="status">Belum tersedia untuk publik</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap" id="status">
+      <div class="section-head">
+        <h2>Status saat ini</h2>
+        <p>Prioritas pengembangan adalah memperbaiki implementasi dan memverifikasi kontrol keamanan sebelum membuka akses aplikasi.</p>
+      </div>
+      <div class="status-panel">
+        <div>
+          <strong>Security review & implementation</strong>
+          <p>Source aplikasi masih dalam proses peninjauan dan remediasi. Belum ada URL aplikasi beta publik yang dinyatakan siap. Halaman ini tidak terhubung ke database, scanner, atau layanan backend.</p>
+        </div>
+        <span class="pill">Preview informasi saja</span>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <div class="section-head">
+        <h2>Prinsip yang dijaga</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><strong>Jelas soal status</strong><p>Fitur yang belum tersedia tidak akan ditampilkan seolah-olah sudah berfungsi.</p></div>
+        <div class="step"><strong>Utamakan keamanan</strong><p>Fungsi pemindaian tidak dibuka sebelum kontrol jaringan, data, dan resource diuji.</p></div>
+        <div class="step"><strong>Bukti dapat ditinjau</strong><p>Perubahan dan perkembangan teknis dicatat melalui repository proyek.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <span>© 2026 AIRDROP GENERATE — Informational preview, bukan layanan pemindaian.</span>
+      <a href="https://github.com/nusasaputrarama-max/Airdrop-Generate" target="_blank" rel="noopener noreferrer">Repository GitHub ↗</a>
+    </div>
+  </footer>
+</body>
+</html>
