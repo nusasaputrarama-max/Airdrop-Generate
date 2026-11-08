@@ -27,6 +27,7 @@ const MIGRATION_FILES = [
   "0005_translate_catalog_text_to_bahasa_indonesia.sql",
   "0006_unified_ownership_and_uniqueness.sql",
   "0007_scan_leases_and_rate_limits.sql",
+  "0008_solana_base58_check.sql",
 ];
 
 export interface TestDb {

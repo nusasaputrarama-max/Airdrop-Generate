@@ -23,14 +23,12 @@
 //     (tanpa 0/O/I/l/spasi).
 //   NULL -> NULL (tidak masuk unique index).
 //
-// CATATAN — satu arah keketatan (fail-closed, disengaja): fungsi ini JUGA
-// menolak karakter non-base58 pada alamat Solana, sementara CHECK DB
-// hanya memeriksa panjang + larangan 0/O/I/l/spasi. Arah yang mengikat
-// adalah: setiap string yang DITOLAK CHECK pasti DITOLAK di sini
-// (tidak ada jalan app yang lolos tapi DB menolak — diuji H-CAT-13);
-// sebaliknya, aplikasi boleh lebih ketat daripada CHECK. Nilai kanonik
-// untuk semua input yang DITERIMA keduanya adalah IDENTIK (diuji
-// H-CAT-13 pada 12 baris seed + korpus edge).
+// CATATAN — aplikasi dan DB kini SETARA (F-055, v2.3.24, migrasi 0008):
+// CHECK `projects_contract_format_ck` menegakkan allowlist base58 penuh
+// yang sama dengan BASE58_RE di sini, jadi tidak ada lagi arah
+// keketatan satu arah: setiap string yang DITOLAK di satu sisi DITOLAK
+// di sisi lain, dan nilai kanonik untuk semua input yang DITERIMA
+// keduanya adalah IDENTIK (diuji H-CAT-13 + H-B58).
 
 /** Chains whose contract addresses are EVM hex (case-insensitive). */
 export const EVM_CHAINS: ReadonlySet<string> = new Set([

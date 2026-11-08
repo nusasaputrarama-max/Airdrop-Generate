@@ -5,9 +5,9 @@
 // bukan copy-paste test-only), bahwa migrasi aktif branch dev:
 //   H-MIG-00  Reproduksi F-044 (ALTER ADD STORED gagal di tabel berisi).
 //   H-MIG-01  (a) DB kosong + migrator nyata: exit 0, normalized [],
-//             7 migrasi tercatat, seed 12 baris, seq 12, artefak 0006+
-//             0007, FK 0, integrity ok. (b) Jalur populated-DB: 0001–
-//             0005 + fixture legacy, lalu 0006+0007 sebagai pending —
+//             8 migrasi tercatat, seed 12 baris, seq 12, artefak 0006+
+//             0007 + 0008, FK 0, integrity ok. (b) Jalur populated-DB: 0001–
+//             0005 + fixture legacy, lalu 0006+0007+0008 sebagai pending —
 //             sukses + row count sama sebelum/sesudah; sub-kasus
 //             negatif: duplikat kanonik digagalkan pre-check.
 //   H-MIG-02  Inspeksi schema hasil migrasi (STORED, 2 CHECK bernama,
@@ -41,13 +41,14 @@
 //   H-TEN-11..15 F-046/F-040 via handler Actions ASLI (actions.ts)
 //             + mock ctx + drizzle libsql NYATA atas DB disposable.
 //   DK-01..07 Drizzle-kit DDL diff: DDL dari schema.ts ASLI dibanding
-//             semantik dengan skema hasil migrasi.
+//             semantik dengan skema hasil migrasi (file DK v2.3.24 di
+//             evidence/v2324/drizzle-kit-generated/ — CHECK Solana baru).
 //
 // BUKTI VM SAJA — bukan staging, bukan produksi. Semua DB disposable
 // di direktori temp (mkdtemp 0700); DB/katalog live TIDAK disentuh;
 // tidak ada request jaringan (checkLink TIDAK di-invoke; drizzle-kit
 // DDL dibangkitkan offline sebelumnya — lihat
-// evidence/v2323/drizzle-kit-generated/README.md).
+// evidence/v2324/drizzle-kit-generated/README.md).
 //
 // Usage (dari root worktree):
 //   bun evidence/v2323/test-migration-v2323.ts > evidence/v2323/test-migration-v2323.log 2>&1
@@ -142,7 +143,7 @@ const MIG06 = join(repoRoot, "site", "drizzle", "0006_unified_ownership_and_uniq
 const MIG07 = join(repoRoot, "site", "drizzle", "0007_scan_leases_and_rate_limits.sql");
 const DOWN06 = join(evDir, "0006_down.sql");
 const DOWN07 = join(evDir, "0007_down.sql");
-const DK_SQL = join(evDir, "drizzle-kit-generated", "0000_ambitious_firelord.sql");
+const DK_SQL = join(repoRoot, "evidence", "v2324", "drizzle-kit-generated", "0000_amused_dorian_gray.sql");
 for (const [label, p] of [
   ["migration 0006 (AKTIF)", MIG06],
   ["migration 0007 (AKTIF)", MIG07],
@@ -160,8 +161,8 @@ console.log(`harness ini: sha256=${shaFile(import.meta.path)}`);
 // ------------------------------------------------------------------
 // Util umum.
 // ------------------------------------------------------------------
-const JOURNAL_WHEN = [1794042899606, 1794042899606, 1794043679911, 1794043817586, 1794046846965, 1794122805971, 1794123882373];
-const JOURNAL_TAGS = ["0001_initial", "0002_checks_table_replaces_entries", "0003_add_projects_catalog_and_saved_projects", "0004_seed_projects_catalog_permanently", "0005_translate_catalog_text_to_bahasa_indonesia", "0006_unified_ownership_and_uniqueness", "0007_scan_leases_and_rate_limits"];
+const JOURNAL_WHEN = [1794042899606, 1794042899606, 1794043679911, 1794043817586, 1794046846965, 1794122805971, 1794123882373, 1794130567244];
+const JOURNAL_TAGS = ["0001_initial", "0002_checks_table_replaces_entries", "0003_add_projects_catalog_and_saved_projects", "0004_seed_projects_catalog_permanently", "0005_translate_catalog_text_to_bahasa_indonesia", "0006_unified_ownership_and_uniqueness", "0007_scan_leases_and_rate_limits", "0008_solana_base58_check"];
 
 function counts(db: Database): Record<string, number> {
   const c: Record<string, number> = {};
@@ -401,8 +402,8 @@ check("H-MIG-01a-2 migrator TIDAK menormalisasi file (normalized [])", JSON.stri
 {
   const db = new Database(mig01aPath, { readonly: true });
   const led = ledgerRows(db);
-  check("H-MIG-01a-3 ledger __drizzle_migrations = 7 baris", led.length === 7, `n=${led.length}`);
-  check("H-MIG-01a-4 ledger created_at == journal when (7 nilai)", JSON.stringify(ledgerCreatedAts(db)) === JSON.stringify([...JOURNAL_WHEN].sort((a, b) => a - b)), JSON.stringify(ledgerCreatedAts(db)));
+  check("H-MIG-01a-3 ledger __drizzle_migrations = 8 baris", led.length === 8, `n=${led.length}`);
+  check("H-MIG-01a-4 ledger created_at == journal when (8 nilai)", JSON.stringify(ledgerCreatedAts(db)) === JSON.stringify([...JOURNAL_WHEN].sort((a, b) => a - b)), JSON.stringify(ledgerCreatedAts(db)));
   const c = counts(db);
   check("H-MIG-01a-5 projects = 12 baris seed", c.projects === 12, `n=${c.projects}`);
   check("H-MIG-01a-6 checks = 0, saved_projects = 0 (DB kosong)", c.checks === 0 && c.saved_projects === 0, JSON.stringify(c));
@@ -459,7 +460,7 @@ const mig01bPath = freshCopy(basePath, "mig01b");
 const mig01bSpace = copyDrizzleDir(join(workDir, "mig01b-space"), null);
 const mig01bRes = runMigrator(mig01bSpace, mig01bPath);
 normalizeWal(mig01bPath);
-check("H-MIG-01b-1 migrator pending 0006+0007 exit 0 + ok:true", mig01bRes.exit === 0 && mig01bRes.json?.ok === true, `exit=${mig01bRes.exit} out=${mig01bRes.out.trim()} err=${mig01bRes.err.trim()}`);
+check("H-MIG-01b-1 migrator pending 0006+0007+0008 exit 0 + ok:true", mig01bRes.exit === 0 && mig01bRes.json?.ok === true, `exit=${mig01bRes.exit} out=${mig01bRes.out.trim()} err=${mig01bRes.err.trim()}`);
 check("H-MIG-01b-2 migrator TIDAK menormalisasi file (normalized [])", JSON.stringify(mig01bRes.json?.normalized ?? null) === "[]", JSON.stringify(mig01bRes.json?.normalized));
 {
   const db = new Database(mig01bPath);
@@ -496,7 +497,7 @@ check("H-MIG-01b-2 migrator TIDAK menormalisasi file (normalized [])", JSON.stri
   );
   db.exec("DELETE FROM projects WHERE name='Uji Autoincrement'");
   const led = ledgerRows(db);
-  check("H-MIG-01b-12 ledger = 7 baris setelah pending 0006+0007", led.length === 7, `n=${led.length}`);
+  check("H-MIG-01b-12 ledger = 8 baris setelah pending 0006+0007+0008", led.length === 8, `n=${led.length}`);
   const fk: any[] = db.query("PRAGMA foreign_key_check").all();
   check("H-MIG-01b-13 PRAGMA foreign_key_check = 0 baris", fk.length === 0, JSON.stringify(fk));
   const ic: any[] = db.query("PRAGMA integrity_check").all();
@@ -765,7 +766,7 @@ console.log("--- H-MIG-07 (re-run) ---");
   check("H-MIG-07a-1 migrator re-run pada DB termigrasi exit 0 (no-op, bukan error)", res.exit === 0 && res.json?.ok === true, `exit=${res.exit} out=${res.out.trim()} err=${res.err.trim()}`);
   check("H-MIG-07a-2 normalized [] pada re-run", JSON.stringify(res.json?.normalized ?? null) === "[]");
   const dbAfter = new Database(p, { readonly: true });
-  check("H-MIG-07a-3 ledger tetap 7 baris (tidak ada migrasi ganda)", ledgerRows(dbAfter).length === 7);
+  check("H-MIG-07a-3 ledger tetap 8 baris (tidak ada migrasi ganda)", ledgerRows(dbAfter).length === 8);
   check("H-MIG-07a-4 row counts tidak berubah", JSON.stringify(counts(dbAfter)) === JSON.stringify(dumpBefore.c));
   check("H-MIG-07a-5 schemaDump tidak berubah", schemaDump(dbAfter) === dumpBefore.d);
   dbAfter.close();
