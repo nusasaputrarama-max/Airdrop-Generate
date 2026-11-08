@@ -1,0 +1,17 @@
+PASS H-MIGR-19 F-065 archive --out == db path refused exit 2, DB bytes unchanged
+PASS H-MIGR-20 F-065 archive --out symlink to DB refused exit 2, DB bytes unchanged
+PASS H-MIGR-21 F-065 archive --out hard link to DB refused exit 2, DB bytes unchanged
+PASS H-MIGR-22 F-065/F-067 archive --out existing file refused exit 2, bytes + mode untouched
+PASS H-MIGR-23 F-065 rename --backup == db, archive-special --out == db, app.db name, ts-spaces dir — all refused
+PASS H-MIGR-24 F-066 rollback with rows={} refused exit 2, DB unchanged
+PASS H-MIGR-25 F-066 rollback with each table section missing, one at a time — all refused
+PASS H-MIGR-26 F-066 rollback with a table section not an array — refused
+PASS H-MIGR-27 F-066 rollback with empty/duplicate/malformed mapping — all refused
+PASS H-MIGR-28 F-066 rollback with unsupported version, wrong tool, wrong mode — all refused
+PASS H-MIGR-29 F-066 rollback with tampered counts, tampered hash, all-empty rows — all refused
+PASS H-MIGR-30 F-067 archive, archive-special, rename backup files are mode 0600
+PASS H-MIGR-31 F-068 hard-link alias to DB refused; byte copy accepted
+PASS H-MIGR-32 sanity: valid archive + rename + rollback succeed with integrity hash and mode 0600
+PASS H-MIGR-33 F-066 legacy: v2327-1-format backup (no hash) still rolls back, with UNVERIFIED warning
+
+H-MIGR: 15 PASS / 0 FAIL (total 15)
