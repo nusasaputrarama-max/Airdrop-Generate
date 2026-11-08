@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.25 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.25 (design-only) — **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **Respons atas audit independen V16:** `SSRF_RESPONSE_MATRIX_V2323.md` (implementasi D-01..D-04 di branch `development` + jawaban handoff V16 §6 7 butir — lihat §D.4.34, yang hanya ada di branch `development`, commit `31c3db3`; `main` tidak pernah menerima revisi v2.3.23 sebagai dokumen). **Respons atas audit independen V18:** `SSRF_RESPONSE_MATRIX_V2324.md` (F-049..F-056 diimplementasikan di branch `development` + jawaban handoff V18 §7 10 butir — lihat §D.4.35). **Respons atas audit independen V19:** `SSRF_RESPONSE_MATRIX_V2325.md` (F-057 diimplementasikan + F-058 diimplementasikan sebagian di branch `development` + jawaban handoff V19 §6 5 butir — lihat §D.4.36). **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.26 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.26 (design-only) — **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **Respons atas audit independen V16:** `SSRF_RESPONSE_MATRIX_V2323.md` (implementasi D-01..D-04 di branch `development` + jawaban handoff V16 §6 7 butir — lihat §D.4.34, yang hanya ada di branch `development`, commit `31c3db3`; `main` tidak pernah menerima revisi v2.3.23 sebagai dokumen). **Respons atas audit independen V18:** `SSRF_RESPONSE_MATRIX_V2324.md` (F-049..F-056 diimplementasikan di branch `development` + jawaban handoff V18 §7 10 butir — lihat §D.4.35). **Respons atas audit independen V19:** `SSRF_RESPONSE_MATRIX_V2325.md` (F-057 diimplementasikan + F-058 diimplementasikan sebagian di branch `development` + jawaban handoff V19 §6 5 butir — lihat §D.4.36). **Respons atas audit independen V20:** `SSRF_RESPONSE_MATRIX_V2326.md` (F-059 diimplementasikan — mode legacy dihapus + F-060 diimplementasikan sebagian di branch `development` + jawaban handoff V20 §7 6 butir — lihat §D.4.37). **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,17 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.26 (8 November 2026)
+
+| # | Lokasi perubahan | Isi perubahan |
+| --- | --- | --- |
+| 1 | §D.4.37 (baru) + matriks §2 butir 4 | **Sinkronisasi development dengan main:** main HEAD saat re-read `77317c3` (audit V20; mencakup `cb2ab9b` dan `f1bfea3` yang disebut handoff V20 §7 butir 4); merge commit `f93aa72` (dengan konflik 1 dokumen — matriks v2.3.25 memakai versi main); setelah merge `git log origin/main --not HEAD` = 0. Tidak ada merge balik development→main. |
+| 2 | §D.4.37 (baru) + matriks §2 butir 1 | **F-059 — mode legacy DIHAPUS:** `LOCAL_SINGLE_OWNER_MODE` + setter/getter + konstanta `LEGACY_PRINCIPAL` dihapus dari `site/server/src/actions.ts`; `savedPrincipal()` selalu null bila tidak ada principal (missing/unknown viewer, `userId` kosong). H-AN2 6/6 PASS menggantikan H-AN 5/5 (DISUPERSEDE). U-115 DITUTUP (mode dihapus, attestation tak lagi diperlukan). |
+| 3 | §D.4.37 (baru) + matriks §2 butir 2 | **F-060 — tool migrasi kunci principal (PARTIALLY ADDRESSED):** tool offline `evidence/v2326/principal-key-migration.ts` (inventory/archive/rename transaksional + backup/rollback + refusal fail-closed) untuk `checks.owner_user_id`, `saved_projects.principal_id`, `projects.provenance_submitted_by`. H-MIGR 8/8 PASS. Rename butuh mapping eksplisit terverifikasi — mapping TIDAK ADA, jadi U-114 tetap OPEN (menyempit). |
+| 4 | §D.4.37 (baru) + matriks §2 butir 3 + §8 | **Rekonsiliasi bukti:** total regresi **384/384 PASS** (370 baseline + 14 baru: H-AN2 6 + H-MIGR 8); 19/19 sidecar `.sha256` cocok; 9 log re-run byte-identik dengan v2.3.25 dijelaskan (DL-26-02); H-AN disupersede dijelaskan (DL-26-03); bug rollback diperbaiki (DL-26-04); `.tsbuildinfo` ter-commit di merge — dibersihkan (DL-26-05). F-059/F-060 masuk backlog (D-14). |
+| 5 | §D.4.37 + matriks §2 butir 5–6 + §8 | **U-113/D-06/T-01/landing jujur:** pencarian pernyataan provider diulang — tetap nihil (U-113 BLOCKED); npm 404 dikonfirmasi ulang (D-06 BLOCKED); stub tidak disentuh; clean-clone TIDAK diulang. Kemampuan tooling publish statis + URL landing yang sudah ada terverifikasi read-only; publish fresh TIDAK dilakukan; T-01 tetap BLOCKED. |
+| 6 | §D.4.37 + matriks §5 + §10 | **Risiko baru U-116** (CI/branch governance: 0 workflow runs, branch tidak protected). Gate **G-M diperbarui** (V21 + K-1/K-4/K-10 + T-01 + M-1/M-2 + U-108/U-109/U-110/U-113/U-114/U-116 + staging G-E; U-115 keluar dari gate). F-059 addressed (dev + VM); F-060 partially addressed (dev + VM, mapping BLOCKED); staging tetap BLOCKED; F-019/F-028 NOT VERIFIED; F-030 CONFIRMED BLOCKER. |
 
 ## Perubahan di revisi v2.3.25 (8 November 2026)
 
@@ -7231,6 +7242,80 @@ matriks respons v2.3.25 §2/§8; staging readiness v2.3.25 (baris
 owner atas K-1/K-4/K-10/T-01, ATAU bukti runtime G-B (termasuk
 versi SQLite produksi, U-90), ATAU jawaban provider atas U-113,
 ATAU staging tersedia (G-E).
+
+### D.4.37 Jawaban atas audit independen V20 — F-059 mode legacy dihapus + F-060 tool migrasi kunci principal diimplementasikan (sebagian) di branch `development` + Handoff §7 (BARU, v2.3.26)
+
+**Status:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR
+RELEASE — NOT READY FOR COMMUNITY BETA. Revisi ini menjawab audit
+independen V20 (`SSRF_INDEPENDENT_AUDIT_V20.md`, commit `77317c3`,
+8 November 2026) atas `main` sampai `cb2ab9b` dan `development`
+sampai `b884c3d`.
+
+**F-059 — mode local single-owner DIHAPUS dari handler.**
+`LOCAL_SINGLE_OWNER_MODE`, `setLocalSingleOwnerMode`,
+`isLocalSingleOwnerMode`, dan konstanta `LEGACY_PRINCIPAL` dihapus
+dari `site/server/src/actions.ts` (commit `2066f4a`): tidak ada
+lagi flag, setter, atau jalur kode yang dapat mengembalikan
+`'<LEGACY>'` dari `savedPrincipal()` — fungsi itu kini
+`return resolvePrincipal(ctx)` setelah menolak viewer share
+Cloudflare non-owner. Alasan penghapusan (bukan default OFF):
+flag module tidak dapat membuktikan deployment local-only, dan
+tidak ada mekanisme attestation runtime di runtime ini — jadi
+penutupan struktural satu-satunya adalah penghapusan. Kebutuhan
+legacy yang sah (pemulihan baris lama) dipindah ke tool offline
+dengan mapping eksplisit, bukan ke handler. Harness baru H-AN2 6/6
+PASS membuktikan anon tidak pernah membaca/menulis
+`'<LEGACY>'`, API mode tidak ada lagi (assert source-level), viewer
+source tidak dikenal dan `userId` kosong fail-closed, dan kontrol
+positif owner tetap bekerja. H-AN v2325 DISUPERSEDE (H-AN-03
+menegaskan perilaku yang dihapus). U-115 DITUTUP: mode dihapus,
+attestation tak lagi diperlukan. Sisa risiko: `ctx.viewer` terisi
+di runtime NOT VERIFIED (STAGE-P02).
+
+**F-060 — tool migrasi kunci principal (PARTIALLY ADDRESSED).**
+Perubahan v2.3.25 `local:{ownerUserId}` → `local:{userId}`
+meninggalkan baris lama orphan; kunci lama dan baru berbagi format
+`local:<id>` sehingga mapping tidak boleh ditebak. Tool offline
+`evidence/v2326/principal-key-migration.ts` (commit `0e4e06e`,
+BUKAN server action, tidak pernah jalan terhadap live `app.db`)
+menyediakan `inventory`, `archive`, `rename` transaksional
+(backup JSON dulu, pre-check tabrakan PK komposit, post-check
+jumlah baris, rollback otomatis), dan `rollback` — semuanya
+fail-closed tanpa mapping eksplisit terverifikasi operator
+(menolak tanpa mapping, menolak `'<LEGACY>'`, menolak duplikat/
+ambigu, menolak basis kosong). Inventarisasi: `checks.
+owner_user_id`, `saved_projects.principal_id`, `projects.
+provenance_submitted_by`. Harness baru H-MIGR 8/8 PASS (CLI asli
+sebagai child process; exit code adalah exit code tool): inventory
+tepat, archive 6 baris tanpa ubah DB, rename mengubah kunci dengan
+jumlah tetap + owner membaca history via `listChecks` sedang user
+kedua terisolasi, tabrakan PK / tanpa mapping / `'<LEGACY>'`
+ditolak exit 2 tanpa perubahan, rollback mengembalikan kunci asli,
+tool menolak `app.db`. Status jujur: tool siap, mapping TIDAK ADA
+(bergantung U-113) — deployment ke DB berisi baris lama tetap
+BLOCKED; U-114 MENYEMPIT (tool siap, menunggu mapping), bukan
+tertutup. Bug rollback ditemukan dan diperbaiki selama putaran ini
+(backup menyimpan baris mentah, rollback membaca `r.row.*`).
+
+**Sinkronisasi + bukti + investigasi paralel.** Merge `f93aa72`
+(main `77317c3` → development; konflik 1 dokumen diselesaikan
+pakai versi main; behind=0). Regresi penuh v2.3.26: **384/384 PASS**
+(370 baseline + 14 baru), 19/19 sidecar `.sha256` cocok, `tsc`
+server+client exit 0 (Bun 1.4.4, bun:sqlite 3.53.4, sqlite3 CLI
+3.45.1). U-113 dicari ulang — tetap BLOCKED (hanya deklarasi tipe
+SDK 0.14.0; tidak ada pernyataan provider). D-06 tetap BLOCKED
+(npm 404 dikonfirmasi ulang). Jalur project link: kemampuan tooling
+`artifact.create_web_static` ada + URL landing yang sudah ada
+terverifikasi merespons (read-only); publish fresh TIDAK dilakukan;
+T-01 tetap BLOCKED. Risiko baru U-116 (CI/branch governance: 0
+workflow runs, branch tidak protected). Gate G-M diperbarui.
+Detail lengkap: matriks respons v2.3.26 §2/§8; staging readiness
+v2.3.26 (baris 24–25 diperbarui, 26–28 baru).
+
+**Pemicu revisi v2.3.27:** audit independen V21, ATAU keputusan
+owner atas K-1/K-4/K-10/T-01, ATAU bukti runtime G-B (termasuk
+versi SQLite produksi, U-90), ATAU jawaban provider atas U-113,
+ATAU mapping terverifikasi U-114, ATAU staging tersedia (G-E).
 
 ---
 
