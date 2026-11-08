@@ -11,3 +11,6 @@ dist/
 .env.*.local
 *.log
 .DS_Store
+
+# TypeScript incremental build info (local only, changes on every tsc run)
+*.tsbuildinfo

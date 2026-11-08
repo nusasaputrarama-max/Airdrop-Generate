@@ -1,0 +1,28 @@
+setup: tmpRoot=/tmp/v2323-lease-Dd1GL3
+setup: spaceDir=/tmp/v2323-lease-Dd1GL3/space dbPath=/tmp/v2323-lease-Dd1GL3/lease.db
+setup: migrator exit=0 out={"ok":true,"normalized":[]} err=
+setup: sqlite_version=3.45.1
+  migrator ok, tabel: __drizzle_migrations, checks, projects, rate_limits, saved_projects, scan_leases, sqlite_sequence, sqlite 3.45.1
+PASS H-LEASE-00
+  acquire#1 -> {"acquired":true,"leaseId":1}, COUNT(*)=1, rows=[{"id":1,"principal_id":"lease-user-1","acquired_at":1800000000000,"expires_at":1800000025000}]
+PASS H-LEASE-01
+  acquire 5x -> [{"acquired":true,"leaseId":3},{"acquired":true,"leaseId":4},{"acquired":true,"leaseId":5},{"acquired":true,"leaseId":6},{"acquired":true,"leaseId":7}], COUNT(*)=5
+  acquire ke-6 -> {"acquired":false,"reason":"concurrency-limit"}, COUNT(*)=5
+  release id=3 -> COUNT(*)=4, acquire lagi -> {"acquired":true,"leaseId":8}
+PASS H-LEASE-02
+  acquire T -> {"acquired":true,"leaseId":9} COUNT(*)=1
+  acquire T+26000 -> {"acquired":true,"leaseId":10} COUNT(*)=1 rows=[{"id":10,"principal_id":"lease-user-3","acquired_at":1800007226000,"expires_at":1800007251000}]
+PASS H-LEASE-03
+  10x allowed, ke-11 rate-limit-minute, principal lain allowed, window baru allowed
+PASS H-LEASE-04
+  100x allowed (10/menit x 10 menit), counter jam=100, ke-101 rate-limit-hour
+PASS H-LEASE-05
+  "" x10 allowed, "<ANONYMOUS>" ke-11 ditolak (counter gabungan=11), tanpa baris "" terpisah
+PASS H-LEASE-06
+  paralel 10x: acquired=5, denied=5, COUNT(*)=5
+  hasil: [{"acquired":true,"leaseId":11},{"acquired":true,"leaseId":12},{"acquired":true,"leaseId":13},{"acquired":true,"leaseId":14},{"acquired":true,"leaseId":15},{"acquired":false,"reason":"concurrency-limit"},{"acquired":false,"reason":"concurrency-limit"},{"acquired":false,"reason":"concurrency-limit"},{"acquired":false,"reason":"concurrency-limit"},{"acquired":false,"reason":"concurrency-limit"}]
+PASS H-LEASE-07
+
+artefak: tmpRoot=/tmp/v2323-lease-Dd1GL3 (DB disposable, bukan DB live)
+
+==== RINGKASAN test-lease-v2323: PASS 8 / FAIL 0 ====

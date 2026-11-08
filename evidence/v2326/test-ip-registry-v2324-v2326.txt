@@ -1,0 +1,10 @@
+PASS H-IP-01 IPv4 GR=False baru: 6to4 relay + 192.0.0/24 sub-ranges
+PASS H-IP-02 IPv4 GR=True: exception .9/.10 + AS112/AMT ALLOW
+PASS H-IP-03 IPv6 GR=False baru: SRv6 + dummy prefix
+PASS H-IP-04 2001::/23 default-deny: non-exception DENY
+PASS H-IP-05 2001::/23 exception GR=True ALLOW
+PASS H-IP-06 2001:20::/28 ORCHIDv2 ALLOW (keputusan F-049: ikuti IANA)
+PASS H-IP-07 Batas /23: di luar prefix ALLOW, dokumentasi tetap DENY
+PASS H-IP-08 Regresi korpus lama + publik ALLOW
+
+H-IP: 8 PASS / 0 FAIL (total 8)
