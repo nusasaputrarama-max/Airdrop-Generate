@@ -1,0 +1,34 @@
+--- sanity: /opt/hatch contents (must be VISIBLE) ---
+assets
+bin
+connectors
+prompts
+runtime-cell
+--- bun version ---
+1.4.4
+=== bun install --frozen-lockfile ===
+bun install v1.4.4 (38afee6c8)
+
++ @hatch/space-sdk@/opt/hatch/skills/spaces/ts-runtime/dist/space-sdk.tgz
+
+1 package installed [44.00ms]
+INSTALL_EXIT=0
+=== bun run build ===
+$ bun run build:server && bun run build:client
+$ cd server && bun build ./src/actions.ts --target=bun --outfile=./dist/actions.js
+Bundled 191 modules in 25ms
+
+  actions.js  221.0 KB  (entry point)
+
+$ bun ./client/build.mjs
+This web artifact cannot be built by hand. To make this change, call the `artifact.edit` tool (or `artifact.create_web_static` / `artifact.create_web_fullstack` for a new one); it rebuilds and re-publishes the web artifact automatically. Speak to the user as you would about any edit you are making for them: conversational, focused on what is changing and that it will be ready shortly.
+error: script "build:client" exited with code 1
+error: script "build" exited with code 1
+BUILD_EXIT=1
+=== build outputs ===
+ls: cannot access 'client/dist/': No such file or directory
+server/dist/:
+total 216
+drwxr-x--- 2 root root     60 Nov  8 06:44 .
+drwxrwx--- 4 root root    100 Nov  8 06:44 ..
+-rw-r----- 1 root root 221015 Nov  8 06:44 actions.js
