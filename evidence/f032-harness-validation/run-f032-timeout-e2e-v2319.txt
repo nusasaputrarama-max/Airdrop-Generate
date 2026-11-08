@@ -1,0 +1,191 @@
+command: setpriv --reuid=nobody --regid=nogroup --clear-groups /opt/hatch-image/bin/bun run-f032-timeout-e2e.ts
+cwd: /tmp/f036-stage/f032-harness-validation
+uid: 65534 (nobody, non-root)
+bun: 1.4.4
+date: 2026-11-08 12:00:29 WIB / 2026-11-08T05:00:29Z
+staged files: byte-identical to repo (sha256 verified before run)
+---
+e2e driver pid=11283 bun=1.4.4
+private run dir: /tmp/f032-e2e-iO9tfd (realpath=/tmp/f032-e2e-iO9tfd mode=700 uid=65534)
+e2e assert PASS: private run dir realpath matches (no symlink): /tmp/f032-e2e-iO9tfd
+e2e assert PASS: private run dir mode is 700 (got 700)
+e2e assert PASS: private run dir owned by our uid 65534 (got 65534)
+pid file: /tmp/f032-e2e-iO9tfd/hang-child.pid (mode=600 regular=true dev=85 ino=108)
+e2e assert PASS: PID file is a regular file
+e2e assert PASS: PID file mode is 600 (got 600)
+driving: bun run-f029.ts --runs 1 (cwd=/tmp/f036-stage/f029-memory-methodology)
+test seam: F029_TEST_MODE=1 F029_CHILD_SCRIPT=/tmp/f036-stage/f032-harness-validation/hang-child.ts F029_CHILD_TIMEOUT_MS=3000
+--- driven run-f029.ts raw output (begin) ---
+parent pid=11288 bun=1.4.4 execPath=/opt/hatch-image/bin/bun
+matrix: patterns=A,B fixtures=ascii,nonascii,nonascii-bytes gc=forced,natural runs=1 per combination
+total child runs: 12
+child: script=/tmp/f036-stage/f032-harness-validation/hang-child.ts timeoutMs=3000
+test-seam: F029_TEST_MODE=1, F029_CHILD_SCRIPT/F029_CHILD_TIMEOUT_MS override ACTIVE (test-only; this is NOT a production run)
+--- preflight-fixture.ts ---
+preflight PASS: marker[0] byte length — measured 33, hardcoded 33 ("window.solana connect your wallet")
+preflight PASS: marker[0] is pure ASCII — chars 33 == bytes 33
+preflight PASS: marker[1] byte length — measured 15, hardcoded 15 ("window.ethereum")
+preflight PASS: marker[1] is pure ASCII — chars 15 == bytes 15
+preflight PASS: marker[2] byte length — measured 13, hardcoded 13 ("walletconnect")
+preflight PASS: marker[2] is pure ASCII — chars 13 == bytes 13
+preflight PASS: filler 'A' width — 1 byte
+preflight PASS: filler U+00E9 width — 2 bytes
+preflight PASS: ascii target=999999 segment 0 — TextEncoder-measured 399999, arithmetic expected 399999
+preflight PASS: ascii target=999999 segment 0 arithmetic — arithmetic 399999 == expected 399999
+preflight PASS: ascii target=999999 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=999999 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=999999 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=999999 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=999999 total — measured total 999999 == target 999999
+preflight PASS: ascii target=999999 total vs expectedTotal() — measured 999999 == expectedTotal 999999
+preflight PASS: ascii target=1000000 segment 0 — TextEncoder-measured 400000, arithmetic expected 400000
+preflight PASS: ascii target=1000000 segment 0 arithmetic — arithmetic 400000 == expected 400000
+preflight PASS: ascii target=1000000 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000000 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000000 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000000 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000000 total — measured total 1000000 == target 1000000
+preflight PASS: ascii target=1000000 total vs expectedTotal() — measured 1000000 == expectedTotal 1000000
+preflight PASS: ascii target=1000001 segment 0 — TextEncoder-measured 400001, arithmetic expected 400001
+preflight PASS: ascii target=1000001 segment 0 arithmetic — arithmetic 400001 == expected 400001
+preflight PASS: ascii target=1000001 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000001 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000001 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: ascii target=1000001 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: ascii target=1000001 total — measured total 1000001 == target 1000001
+preflight PASS: ascii target=1000001 total vs expectedTotal() — measured 1000001 == expectedTotal 1000001
+preflight PASS: nonascii-bytes target=999999 segment 0 — TextEncoder-measured 399999, arithmetic expected 399999
+preflight PASS: nonascii-bytes target=999999 segment 0 arithmetic — arithmetic 399999 == expected 399999
+preflight PASS: nonascii-bytes target=999999 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=999999 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=999999 total — measured total 999999 == target 999999
+preflight PASS: nonascii-bytes target=999999 total vs expectedTotal() — measured 999999 == expectedTotal 999999
+preflight PASS: nonascii-bytes target=1000000 segment 0 — TextEncoder-measured 400000, arithmetic expected 400000
+preflight PASS: nonascii-bytes target=1000000 segment 0 arithmetic — arithmetic 400000 == expected 400000
+preflight PASS: nonascii-bytes target=1000000 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000000 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000000 total — measured total 1000000 == target 1000000
+preflight PASS: nonascii-bytes target=1000000 total vs expectedTotal() — measured 1000000 == expectedTotal 1000000
+preflight PASS: nonascii-bytes target=1000001 segment 0 — TextEncoder-measured 400001, arithmetic expected 400001
+preflight PASS: nonascii-bytes target=1000001 segment 0 arithmetic — arithmetic 400001 == expected 400001
+preflight PASS: nonascii-bytes target=1000001 segment 1 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 1 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 2 — TextEncoder-measured 300000, arithmetic expected 300000
+preflight PASS: nonascii-bytes target=1000001 segment 2 arithmetic — arithmetic 300000 == expected 300000
+preflight PASS: nonascii-bytes target=1000001 total — measured total 1000001 == target 1000001
+preflight PASS: nonascii-bytes target=1000001 total vs expectedTotal() — measured 1000001 == expectedTotal 1000001
+preflight PASS: nonascii segment 0 — TextEncoder-measured 799967, arithmetic expected 799967
+preflight PASS: nonascii segment 1 — TextEncoder-measured 599985, arithmetic expected 599985
+preflight PASS: nonascii segment 2 — TextEncoder-measured 599987, arithmetic expected 599987
+preflight PASS: nonascii total — measured total 1999939 == 1,999,939
+preflight PASS: nonascii total vs expectedTotal() — measured 1999939 == expectedTotal 1999939
+preflight done: 61 checks, 0 failure(s), bun=1.4.4
+preflight: all fixture byte counts verified exact (TextEncoder, separate process)
+--- preflight ok, starting measured children ---
+FAIL pattern=A fixture=ascii gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11302 starttime=514574 args=["--pattern","A","--fixture","ascii","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=A fixture=ascii gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11316 starttime=514875 args=["--pattern","A","--fixture","ascii","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=A fixture=nonascii gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11329 starttime=515176 args=["--pattern","A","--fixture","nonascii","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=A fixture=nonascii gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11334 starttime=515476 args=["--pattern","A","--fixture","nonascii","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=A fixture=nonascii-bytes gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11352 starttime=515777 args=["--pattern","A","--fixture","nonascii-bytes","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=A fixture=nonascii-bytes gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11357 starttime=516077 args=["--pattern","A","--fixture","nonascii-bytes","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=ascii gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11370 starttime=516378 args=["--pattern","B","--fixture","ascii","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=ascii gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11380 starttime=516678 args=["--pattern","B","--fixture","ascii","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=nonascii gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11390 starttime=516979 args=["--pattern","B","--fixture","nonascii","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=nonascii gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11400 starttime=517279 args=["--pattern","B","--fixture","nonascii","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=nonascii-bytes gc=forced run=1 reason=timeout after 3000 ms
+hang-child pid=11416 starttime=517580 args=["--pattern","B","--fixture","nonascii-bytes","--gc","forced"] — hanging forever (test dummy, no RESULT)
+
+
+FAIL pattern=B fixture=nonascii-bytes gc=natural run=1 reason=timeout after 3000 ms
+hang-child pid=11424 starttime=517880 args=["--pattern","B","--fixture","nonascii-bytes","--gc","natural"] — hanging forever (test dummy, no RESULT)
+
+
+COUNT MISMATCH: expected 12 records (1 per combination), got 0; incomplete: A/ascii/forced: 0 of 1; A/ascii/natural: 0 of 1; A/nonascii/forced: 0 of 1; A/nonascii/natural: 0 of 1; A/nonascii-bytes/forced: 0 of 1; A/nonascii-bytes/natural: 0 of 1; B/ascii/forced: 0 of 1; B/ascii/natural: 0 of 1; B/nonascii/forced: 0 of 1; B/nonascii/natural: 0 of 1; B/nonascii-bytes/forced: 0 of 1; B/nonascii-bytes/natural: 0 of 1
+
+SUMMARY bun=1.4.4 runs-per-combination=1 child-failures=12 distinct-child-pids=0 of 0
+metric = delta vs that child's own clean baseline (bytes). vmHwm = OS high-water RSS from /proc/self/status.
+pattern | fixture | gc | n | vmHwmDelta median [min..max] | rssDelta median [min..max] | heapUsedDelta median [min..max] | externalDelta median [min..max] | asksConnect
+A | ascii | forced | 0 | NO DATA
+A | ascii | natural | 0 | NO DATA
+A | nonascii | forced | 0 | NO DATA
+A | nonascii | natural | 0 | NO DATA
+A | nonascii-bytes | forced | 0 | NO DATA
+A | nonascii-bytes | natural | 0 | NO DATA
+B | ascii | forced | 0 | NO DATA
+B | ascii | natural | 0 | NO DATA
+B | nonascii | forced | 0 | NO DATA
+B | nonascii | natural | 0 | NO DATA
+B | nonascii-bytes | forced | 0 | NO DATA
+B | nonascii-bytes | natural | 0 | NO DATA
+
+RATIO A/B (median vmHwmDelta, same fixture+gc; >1 means pattern A peaked higher than B):
+ascii | forced | NO DATA for ratio
+ascii | natural | NO DATA for ratio
+nonascii | forced | NO DATA for ratio
+nonascii | natural | NO DATA for ratio
+nonascii-bytes | forced | NO DATA for ratio
+nonascii-bytes | natural | NO DATA for ratio
+
+parent done: FAILED — 12 child failure(s), 0 of 12 records, count-ok=false
+--- driven run-f029.ts raw output (end) ---
+driven exit status=1 signal=null error=none
+e2e assert PASS: driven run exits 1 (got status=1)
+e2e assert PASS: 12 FAIL lines for 12 hanging children (got 12)
+e2e assert PASS: all 12 FAILs are timeouts after 3000 ms (got 12)
+e2e assert PASS: parent prints "parent done: FAILED"
+e2e assert PASS: parent does NOT print "all child runs ok"
+e2e assert PASS: parent prints COUNT MISMATCH (0 of 12 records)
+e2e assert PASS: no RESULT line emitted (got 0)
+e2e assert PASS: parent logs the test-seam override line
+e2e assert PASS: preflight still ran and passed before the hanging children
+e2e liveness pid=11302 starttime=514574: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11316 starttime=514875: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11329 starttime=515176: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11334 starttime=515476: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11352 starttime=515777: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11357 starttime=516077: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11370 starttime=516378: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11380 starttime=516678: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11390 starttime=516979: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11400 starttime=517279: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11416 starttime=517580: dead (kill(pid,0) threw ESRCH — no such process)
+e2e liveness pid=11424 starttime=517880: dead (kill(pid,0) threw ESRCH — no such process)
+e2e: hang-child recorded 12 pid(s): 11302, 11316, 11329, 11334, 11352, 11357, 11370, 11380, 11390, 11400, 11416, 11424
+e2e assert PASS: all 12 hanging children terminated by parent (verifyPidFile ok)
+E2E TIMEOUT TEST: PASS — parent timed out, killed, and failed all 12 hanging children with no success line
+e2e cleanup: private run dir /tmp/f032-e2e-iO9tfd removed: true
+exit code: 0

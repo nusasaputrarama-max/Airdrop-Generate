@@ -27,18 +27,22 @@
 // and the number of PIDs tested must equal the number of children
 // launched (12 == 12).
 //
-// v2.3.18 (F-035): the v2.3.17 driver used the fixed path
-// `/tmp/f032-hang-child.pid` (unlink-then-child-opens race, symlink
-// follow via appendFileSync, and two concurrent drivers sharing one
-// file). The driver now creates a PRIVATE per-run directory with
-// `mkdtemp` (mode 0700, realpath + ownership validated) and creates
-// the PID file inside it EXCLUSIVELY (`openSync "wx"`, mode 0600,
-// fstat-validated). The directory is removed in a `finally` block
-// after all children are done. Two concurrent drivers get two
-// separate directories and can never mix PID files. The legacy fixed
-// path is NOT referenced by this driver at all (see
-// test-f035-pidfile.ts, which proves a pre-planted symlink there is
-// never followed).
+// v2.3.19 (F-036): the liveness gate now uses `verifyPidFile()`
+// from pid-oracle.ts — a parse error fails the WHOLE file fast and
+// NO liveness assertion runs over partial records (previously the
+// driver pushed parse errors but still classified the records that
+// did parse). `classifyLiveness()` also validates its own inputs
+// now, so a starttime of 0 can never yield "dead".
+//
+// v2.3.19 (F-035 trust boundary): the driver records the (dev,ino)
+// of the exclusively-created PID file and passes them to the child
+// via F032_PID_FILE_DEV / F032_PID_FILE_INO. hang-child.ts opens
+// the file with O_NOFOLLOW and verifies the descriptor's dev/ino
+// against those values before appending, so the write is pinned to
+// exactly the file the driver created. Same-UID untrusted processes
+// are explicitly OUT of the harness threat model (see hang-child.ts
+// header); the fd pinning is defense-in-depth against accidental /
+// stale path swaps, not a same-UID isolation claim.
 //
 // The test uses the harness's own test-only env seam
 // (F029_TEST_MODE=1 + F029_CHILD_SCRIPT + F029_CHILD_TIMEOUT_MS=3000);
@@ -67,7 +71,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { classifyLiveness, defaultDeps, parsePidFile } from "./pid-oracle.ts";
+import { defaultDeps, verifyPidFile } from "./pid-oracle.ts";
 
 const HERE = import.meta.dir;
 const F029_DIR = resolve(HERE, "../f029-memory-methodology");
@@ -131,10 +135,15 @@ function main(): number {
     return 1;
   }
   const pidFileStat = fstatSync(fd);
-  console.log(`pid file: ${PID_FILE} (mode=${(pidFileStat.mode & 0o777).toString(8)} regular=${pidFileStat.isFile()})`);
+  console.log(`pid file: ${PID_FILE} (mode=${(pidFileStat.mode & 0o777).toString(8)} regular=${pidFileStat.isFile()} dev=${pidFileStat.dev} ino=${pidFileStat.ino})`);
   check(pidFileStat.isFile(), `PID file is a regular file`);
   check((pidFileStat.mode & 0o777) === 0o600, `PID file mode is 600 (got ${(pidFileStat.mode & 0o777).toString(8)})`);
   closeSync(fd);
+  // F-035 (v2.3.19): pin the child writer to EXACTLY this file —
+  // its (dev,ino) travel to hang-child.ts via env (inherited by
+  // run-f029.ts when it spawns the child).
+  const PID_FILE_DEV = String(pidFileStat.dev);
+  const PID_FILE_INO = String(pidFileStat.ino);
 
   console.log(`driving: bun run-f029.ts --runs 1 (cwd=${F029_DIR})`);
   console.log(
@@ -152,6 +161,8 @@ function main(): number {
         F029_CHILD_SCRIPT: HANG_CHILD,
         F029_CHILD_TIMEOUT_MS: String(CHILD_TIMEOUT_MS),
         F032_PID_FILE: PID_FILE,
+        F032_PID_FILE_DEV: PID_FILE_DEV,
+        F032_PID_FILE_INO: PID_FILE_INO,
       },
       encoding: "utf8",
       timeout: OUTER_TIMEOUT_MS,
@@ -178,48 +189,46 @@ function main(): number {
   check(out.includes("test-seam:"), `parent logs the test-seam override line`);
   check(out.includes("preflight: all fixture byte counts verified exact"), `preflight still ran and passed before the hanging children`);
 
-  // F-034: the hanging children must have been TERMINATED by the
-  // parent. The PID file is strictly parsed first; any parse error
-  // fails the run BEFORE the liveness assertion. Only a strict
-  // "dead" verdict (ESRCH / exited / PID-reused) satisfies the
-  // assertion; "alive" or "inconclusive" fails it.
+  // F-034/F-036: the hanging children must have been TERMINATED by
+  // the parent. The WHOLE PID file is verified by verifyPidFile():
+  // ANY parse error (including a starttime of 0) fails the file
+  // fast and NO liveness assertion runs at all; the record count
+  // must equal the number of children launched; only a strict
+  // "dead" verdict (ESRCH / exited / PID-reused) on EVERY record
+  // satisfies the assertion — "alive" or "inconclusive" on any
+  // record fails it.
   if (!existsSync(PID_FILE)) {
     failures.push("hang-child never wrote its PID file");
     console.log("e2e assert FAIL: hang-child wrote its PID file (missing)");
   } else {
-    const { records, errors } = parsePidFile(readFileSync(PID_FILE, "utf8"));
-    for (const e of errors) {
-      failures.push(`pid file parse: ${e}`);
-      console.log(`e2e assert FAIL: pid file parses strictly (${e})`);
-    }
-    console.log(
-      `e2e: hang-child recorded ${records.length} pid(s): ${records.map((r) => r.pid).join(", ")}`,
-    );
-    check(records.length === 12, `all 12 hanging children recorded a PID (got ${records.length})`);
-    check(
-      records.length === failLines.length,
-      `PIDs tested (${records.length}) == children launched (${failLines.length})`,
-    );
-    const deps = defaultDeps();
-    const leaked: number[] = [];
-    for (const rec of records) {
-      const v = classifyLiveness(rec.pid, rec.starttime, deps);
-      console.log(`e2e liveness pid=${rec.pid} starttime=${rec.starttime}: ${v.verdict} (${v.reason})`);
-      if (v.verdict === "alive") {
+    const result = verifyPidFile(readFileSync(PID_FILE, "utf8"), failLines.length, defaultDeps());
+    for (const v of result.verdicts) {
+      console.log(`e2e liveness pid=${v.pid} starttime=${v.starttime}: ${v.liveness.verdict} (${v.liveness.reason})`);
+      if (v.liveness.verdict === "alive") {
         // Clean up the leaked child so the test never leaves a hang behind.
         try {
-          process.kill(rec.pid, "SIGKILL");
+          process.kill(v.pid, "SIGKILL");
         } catch {
           /* already gone */
         }
-        leaked.push(rec.pid);
-      } else if (v.verdict === "inconclusive") {
-        failures.push(`liveness oracle inconclusive for pid ${rec.pid}: ${v.reason}`);
       }
     }
+    if (result.verdicts.length === 0) {
+      console.log(
+        `e2e: NO liveness verdicts — file failed fast (${result.errors.join("; ") || "no records"})`,
+      );
+    } else {
+      console.log(
+        `e2e: hang-child recorded ${result.verdicts.length} pid(s): ${result.verdicts.map((v) => v.pid).join(", ")}`,
+      );
+    }
+    for (const e of result.errors) {
+      failures.push(`pid file verification: ${e}`);
+      console.log(`e2e assert FAIL: pid file verifies strictly (${e})`);
+    }
     check(
-      leaked.length === 0,
-      `all ${records.length} hanging children terminated by parent (leaked: ${leaked.join(", ") || "none"})`,
+      result.ok,
+      `all ${failLines.length} hanging children terminated by parent (verifyPidFile ok)`,
     );
   }
 

@@ -2,7 +2,7 @@
 
 - **Tanggal:** 7 November 2026 — **Revisi v2.3.18 (8 November 2026)**
 - **Status dokumen:** RANCANGAN v2.3.18 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) BELUM dikerjakan — dicatat eksplisit di matriks §11 sebagai pekerjaan berikutnya. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) BELUM dikerjakan — dicatat eksplisit di matriks §11 sebagai pekerjaan berikutnya. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,19 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.19 (8 November 2026)
+
+Revisi ini menjawab audit independen V12 (`SSRF_INDEPENDENT_AUDIT_V12.md`, commit `cd96768`, audit 2026-11-08 11:36 WIB atas v2.3.18 commit `3f129fc`) — keenam butir Handoff §10 dijawab satu per satu; matriks respons lengkap: `SSRF_RESPONSE_MATRIX_V2319.md`. Status tetap **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED**. F-001..F-005 TETAP blocked (proposal kini tersedia untuk ditinjau — bukan implementasi, bukan otorisasi). Dokumen respons lengkap:
+
+| # | Lokasi | Perubahan |
+| --- | --- | --- |
+| 1 | §D.4.30 (baru) + matriks §2 F-036 + `evidence/f032-harness-validation/pid-oracle.ts` (diperbarui) + `test-pid-oracle.ts` (diperbarui) | **F-036 — parser PID menolak starttime 0:** `parsePidFile()` dan `parseProcStat()` kini menolak `starttime <= 0` (sebelumnya `< 0`); `classifyLiveness()` memvalidasi input pid/recordedStarttime sendiri (invalid → "inconclusive", tidak pernah "dead", `kill()` tidak pernah dipanggil); helper baru `verifyPidFile()` gagal-cepat untuk SELURUH file bila ada parse error — tidak ada assertion liveness atas record parsial; driver E2E memakai `verifyPidFile()`. Tes regresi `test-pid-oracle.ts` (log `test-pid-oracle-v2319.txt`, 59 baris, Bun 1.4.4, uid 65534, 50 assert PASS): starttime 0 (kasus penerimaan audit), negatif, non-integer, unsafe integer, sangat besar, valid+invalid campur, `parseProcStat` starttime 0 → null, 8 kasus validasi input oracle, 4 kasus fail-fast `verifyPidFile()`. |
+| 2 | §D.4.30 (baru) + matriks §2 F-037 + `evidence/f032-harness-validation/test-f035-pidfile.ts` (ditulis ulang) + `evidence/f029-memory-methodology/test-u72-seam.ts` (ditulis ulang) | **F-037 — keselamatan filesystem pada tes F-035 dan U-72:** kedua file tes ditulis ulang — semua fixture di SATU direktori privat per-run (`mkdtemp`, 0700); file dibuat EKSKLUSIF (`openSync "wx"`, 0600); symlink dibuat hanya setelah memastikan path tidak ada; bila path legacy SUDAH ADA saat tes mulai, tes GAGAL AMAN tanpa menyentuhnya; teardown hanya menghapus objek yang (dev,ino)-nya masih cocok dengan yang dicatat saat pembuatan; kedua tes MENOLAK berjalan sebagai root (uid 0). Tes regresi F-035 (log `test-f035-pidfile-v2319.txt`, 75 baris, Bun 1.4.4, uid 65534, 59 assert PASS): DUA skenario (legacy = symlink DAN regular file, masing-masing dua driver paralel) — file lama tidak pernah berubah/terhapus, set PID disjoint, cleanup terverifikasi, tidak ada leftover `/tmp`. Tes regresi U-72 (log `test-u72-seam-v2319.txt`, 36 baris, Bun 1.4.4, uid 65534, 25 assert PASS): 7 penolakan + 1 penerimaan seperti v2.3.18 + pemeriksaan direktori privat + cleanup terverifikasi. Bukti kanonik uid 65534 dari salinan stage byte-identik (sha256 terverifikasi) karena repo tidak dapat dibaca `nobody` — lihat matriks §10 butir 1. |
+| 3 | §D.4.30 (baru) + matriks §2 trust boundary + `evidence/f032-harness-validation/hang-child.ts` (ditulis ulang) + `run-f032-timeout-e2e.ts` (diperbarui) | **Trust boundary F-035 — child writer fd-based + keputusan eksplisit:** pola `lstat` lalu `appendFileSync` DIGANTI open fd `O_WRONLY\|O_APPEND\|O_NOFOLLOW` + verifikasi `fstat` pada descriptor (regular, uid sama, mode 0600, (dev,ino) sama dengan yang dicatat driver via `F032_PID_FILE_DEV`/`F032_PID_FILE_INO`) + satu `writeSync`; tanpa env pin, child exit 1. Keputusan yang dinyatakan eksplisit: proses tidak tepercaya UID-sama DI LUAR threat model harness (alasan: same-UID dapat ptrace/signal/mem-baca driver; direktori 0700 sudah mengecualikan UID lain; child adalah kode tepercaya) — penjepitan fd adalah defense-in-depth terhadap swap path yang tidak disengaja. Uji E2E diulang pada driver baru (log `run-f032-timeout-e2e-v2319.txt`, 191 baris, Bun 1.4.4, uid 65534): 12 FAIL timeout, ke-12 PID mati via ESRCH, 12 == 12, direktori privat terhapus. Tes regresi negatif TIDAK diulang (driver negatif tidak berubah). |
+| 4 | `SSRF_PROPOSAL_F001_F005_V2319.md` (BARU) + matriks §2 F-001..F-005 | **Proposal implementation-ready F-001..F-005 — SELESAI (prioritas utama V12 §10 butir 4):** file/fungsi/baris terverifikasi pada main `cd96768` (read-only), pseudodiff, threat model, matriks tes dengan kasus negatif + hasil yang diharapkan (H-SSRF-21..26, H-RES-07..12, H-CAT-04..06, H-TEN-06..07, H-AUTH-04..06 — baru), dependensi staging, migrasi/rollback, risiko tersisa. Temuan baru saat verifikasi: RDAP memakai `redirect: "follow"` tanpa validasi hop (F-001f); tidak ada lease/rate limit di `actions.ts` (F-003c belum ada sama sekali). F-004 + F-018 dirancang sebagai SATU migrasi koheren (`0006`); F-005 memberi tiga opsi otorisasi tanpa asumsi SDK (default: nonaktifkan `addProject`). Status F-001..F-005 tetap OPEN/BLOCKED — proposal bukan implementasi dan bukan otorisasi tahap (b). |
+| 5 | §D.4.30 (baru) + matriks §2 (F-033/F-030/F-019/F-028) + `STAGING_READINESS_V2319.md` (BARU) | **F-033, F-030, F-019, F-028 — dipertahankan tanpa perubahan:** rasio 1,12–2,62× tetap HANYA bukti VM; F-029 TIDAK diulang; SU-T5 TIDAK direkonstruksi; F-030 tetap CONFIRMED BLOCKER dan F-009 tetap NOT REPRODUCIBLE; `checkLink` TIDAK di-invoke, tidak ada public share, tidak ada perubahan runtime; kontrol F-019 (a)–(e) tetap belum satu pun terpenuhi; LIVE VERSION / DEPLOYMENT APPROVAL tetap NOT VERIFIED (semua field manifest NOT PROVIDED). Staging owners/prereqs — tetap UNASSIGNED, dicatat sebagai BLOCKED (`STAGING_READINESS_V2319.md` carry-forward dari V2318). |
+| 6 | §D.4.30 (baru) + matriks §2 (carry-forward) + §G U-75/U-76/U-77 | **Carry-forward + risk register + gate:** F-001..F-005, F-006b/F-006c, F-016..F-019, F-028, U-38/U-33/U-41/U-43/U-44/U-45/U-46 dipertahankan tanpa perubahan status; log gagal SU-T5 TIDAK direkonstruksi; bukti VM dipisah ketat dari staging. Risiko baru **U-75** (F-036 — parser starttime 0), **U-76** (F-037 — tes regresi path tetap), **U-77** (F-035 — asumsi trust boundary UID-sama yang diterima). **U-70 DIPERBARUI** (jalur timeout kini memakai `verifyPidFile()` fail-fast + child writer fd-based), **U-72 DIPERBARUI** (tes seam ditulis ulang untuk F-037), **U-73 DIPERBARUI** (celah starttime 0 ditutup), **U-74 DIPERBARUI** (child writer fd-based + trust boundary diklarifikasi). Gate baru **G-K** (review proposal F-001..F-005 oleh ChatGPT + keputusan owner K-1..K-6 + otorisasi tahap (b)); gate G-A..G-J dipertahankan. Pemicu revisi v2.3.20 adalah audit independen V13, ATAU keputusan owner atas K-1..K-6/G-A/G-C/G-D/G-F/G-G, ATAU bukti runtime G-B, ATAU staging tersedia (G-E). |
 
 ## Perubahan di revisi v2.3.18 (8 November 2026)
 
@@ -6629,6 +6642,232 @@ OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..20 terhadap
 implementasi aktual di staging terisolasi + log mentah + review
 independen — hasil VM saja tidak cukup.
 
+### D.4.30 Jawaban atas audit independen V12 — F-036, F-037, trust boundary F-035, proposal F-001..F-005 (BARU, v2.3.19)
+
+Audit V12 (`SSRF_INDEPENDENT_AUDIT_V12.md`, commit `cd96768`,
+2026-11-08 11:36 WIB) meninjau v2.3.18 (commit `3f129fc`) dan
+menyatakan: F-035 ADDRESSED pada level harness VM (dengan F-037
+pada kode tes), U-72 ADDRESSED pada level harness lokal, F-034
+PARTIALLY ADDRESSED (parser menerima starttime 0 — F-036), dua
+masalah baru pada test harness (F-036, F-037), dan butir paling
+penting brief eksekusi — proposal remediasi implementation-ready
+F-001..F-005 — BELUM DIKERJAKAN. Revisi ini menjawab keenam butir
+Handoff V12 §10 satu per satu. Matriks respons lengkap:
+`SSRF_RESPONSE_MATRIX_V2319.md`. Proposal:
+`SSRF_PROPOSAL_F001_F005_V2319.md`.
+
+**F-036 — parser PID menolak starttime 0 (audit V12 §5).**
+Audit V12 benar: `pid-oracle.ts:82-95` v2.3.18 memeriksa
+`starttime < 0`, bukan `<= 0`, padahal kontrak komentar baris
+12-15 menyebut kedua nilai harus positive safe integers — record
+`<pid> 0` diterima dan `classifyLiveness()` dapat mengembalikan
+"dead" untuk child yang masih hidup (false-pass assertion
+terminasi). **DIPERBAIKI v2.3.19:** `parsePidFile()` dan
+`parseProcStat()` menolak `starttime <= 0`; `classifyLiveness()`
+memvalidasi input pid/recordedStarttime sendiri (invalid →
+"inconclusive", tidak pernah "dead", `kill()` tidak pernah
+dipanggil); helper baru `verifyPidFile()` gagal-cepat untuk
+SELURUH file bila ada parse error — tidak ada assertion liveness
+atas record parsial; driver E2E memakai `verifyPidFile()`.
+Tes regresi `test-pid-oracle.ts` (50 assert PASS, log
+`test-pid-oracle-v2319.txt`, Bun 1.4.4, uid 65534): starttime 0
+(kasus penerimaan audit `parsePidFile("1234 0\n")` harus error),
+negatif, non-integer, unsafe integer, sangat besar, valid+invalid
+campur, `parseProcStat` starttime 0 → null, 8 kasus validasi
+input oracle, 4 kasus fail-fast `verifyPidFile()`.
+
+**F-037 — keselamatan filesystem pada tes F-035 dan U-72
+(audit V12 §6).** Audit V12 benar: `test-f035-pidfile.ts`
+v2.3.18 menghapus `/tmp/f032-hang-child.pid` dan
+`/tmp/f035-sentinel-target.txt` dengan `rmSync(force)` lalu
+menulis ulang sentinel dengan `writeFileSync` (truncate/follow),
+dan `test-u72-seam.ts` v2.3.18 memakai nama tetap
+`/tmp/u72-evil-child.ts`, `/tmp/u72-link-to-hang-child.ts`,
+`/tmp/u72-pidfile.txt` dengan `writeFileSync` default — pada host
+bersama, symlink yang ditanam pihak lain dapat diikuti write dan
+file asing dapat terhapus; menjalankan tes sebagai root
+memperbesar dampak. **DIPERBAIKI v2.3.19:** kedua file tes
+ditulis ulang — semua fixture di SATU direktori privat per-run
+(`mkdtemp`, 0700); file dibuat EKSKLUSIF (`openSync "wx"`, 0600);
+symlink dibuat hanya setelah memastikan path tidak ada; bila
+path legacy SUDAH ADA saat tes mulai, tes GAGAL AMAN tanpa
+menyentuhnya; teardown hanya menghapus objek yang (dev,ino)-nya
+masih cocok dengan yang dicatat saat pembuatan; kedua tes
+MENOLAK berjalan sebagai root (uid 0). Tes regresi F-035 (log
+`test-f035-pidfile-v2319.txt`, 59 assert PASS, uid 65534): DUA
+skenario (legacy = symlink DAN regular file, masing-masing dua
+driver paralel) — file lama tidak pernah berubah/terhapus, set
+PID disjoint, cleanup terverifikasi, tidak ada leftover `/tmp`.
+Tes regresi U-72 (log `test-u72-seam-v2319.txt`, 25 assert PASS,
+uid 65534): 7 penolakan + 1 penerimaan + pemeriksaan direktori
+privat + cleanup terverifikasi. **Catatan eksekusi non-root:**
+repo tidak dapat dibaca `nobody` (mode 2770 pada mount yang
+menegakkan akses host-side); tes dijalankan dari salinan stage
+byte-identik di `/tmp/f036-stage` (sha256 tiap file `.ts`
+diverifikasi IDENTIK dengan repo sebelum run). **Hambatan yang
+dicatat:** run pertama tes F-035 v2.3.19 gagal 58 PASS + 1 FAIL
+karena bug urutan self-check di tes itu sendiri (cek leftover
+berjalan setelah `mkdtemp` sehingga menghitung direktorinya
+sendiri) — bukan cacat harness/driver; diperbaiki (cek dipindah
+sebelum `mkdtemp`), re-run → 59 PASS (lihat matriks §10 butir 2).
+
+**Trust boundary F-035 — child writer (audit V12 §4.2, §10
+butir 3).** Audit V12 mencatat child masih memakai `lstat` lalu
+`appendFileSync(path)` dan meminta klarifikasi apakah proses
+tidak tepercaya UID-sama termasuk threat model. **KEPUTUSAN
+v2.3.19 (asumsi yang diterima, dinyatakan eksplisit):** proses
+tidak tepercaya dengan UID YANG SAMA DI LUAR threat model
+harness — (1) harness berjalan single-user satu UID oleh desain;
+(2) proses same-UID sudah dapat ptrace driver (child adalah
+descendant), membaca `/proc/<driver-pid>/mem`, memberi signal/
+membunuh driver, dan menulis file apa pun yang dapat ditulis
+driver — tidak ada cek level-file yang dapat mengisolasi terhadap
+same-UID; (3) direktori run 0700 sudah mengecualikan UID lain;
+(4) child adalah kode TEPERCAYA (di-spawn via seam U-72 dari
+path yang di-allowlist). **Perbaikan yang tetap diterapkan
+(defense-in-depth):** pola `lstat`+`appendFileSync` DIGANTI open
+fd `O_WRONLY|O_APPEND|O_NOFOLLOW` (numerik; diverifikasi probe
+sebagai nobody: symlink → ELOOP, regular file → terbuka dan
+ter-append) + verifikasi `fstat` pada DESCRIPTOR (regular, uid
+sama, mode 0600, (dev,ino) sama dengan yang dicatat driver via
+`F032_PID_FILE_DEV`/`F032_PID_FILE_INO`) + satu `writeSync`;
+tanpa env pin, child exit 1. Skenario penggantian path di antara
+validasi dan write TIDAK DAPAT mengalihkan write ke target lain.
+Uji E2E diulang (log `run-f032-timeout-e2e-v2319.txt`, 12/12
+`dead` via ESRCH). Sisa risiko dicatat U-77: tinjau ulang asumsi
+ini bila harness kelak jalan di host bersama dengan same-UID tak
+tepercaya.
+
+**Proposal implementation-ready F-001..F-005 (audit V12 §10
+butir 4 — prioritas utama; brief butir 2).** **SELESAI
+v2.3.19:** `SSRF_PROPOSAL_F001_F005_V2319.md`. Untuk setiap
+finding: file/fungsi/baris diverifikasi pada current main
+(commit `cd96768`) — `fetchText` :147-168, `fetchTextOnce`
+:170-210, `lookupRdapOnce` :220-268, `analyze` :369 + deadline
+:378 + page cap :396 + script fetch :511-538, `addProject`
+:1103-1262, `checkLink` defineAction :1365, `addProject`
+defineAction :1486, `schema.ts` (67 baris, tanpa unique/index/
+owner), migrasi drizzle `0001..0005`. Temuan baru saat
+verifikasi: RDAP memakai `redirect: "follow"` tanpa validasi hop
+(F-001f — dimasukkan ke proposal §1); tidak ada lease/rate
+limit/429/503 di `actions.ts` (F-003c belum ada sama sekali).
+Proposal memberi: file list, pseudodiff, threat model, mitigasi,
+test IDs (H-SSRF-21..26, H-RES-07..12, H-CAT-04..06,
+H-TEN-06..07, H-AUTH-04..06 — baru), negative cases + expected
+PASS/FAIL, staging dependencies, migration/rollback, residual
+risk. SSRF mencakup redirect-by-redirect validation, DNS
+rebinding terikat destination koneksi aktual, IPv4/IPv6/mapped/
+private/link-local/metadata, bounded streaming, decompression,
+aggregate byte budget, total deadline/cancellation. F-004 dan
+tenancy/ownership F-018 dirancang sebagai SATU migrasi koheren
+(migrasi `0006`); F-005 menjelaskan auth dan tenant scoping
+tanpa mengasumsikan SDK behavior yang belum dibuktikan (tiga
+opsi A/B/C; default C — nonaktifkan `addProject`). **Status
+F-001..F-005 tetap OPEN/BLOCKED** — proposal bukan implementasi
+dan bukan otorisasi tahap (b). Keputusan owner yang masih
+terbuka: K-1..K-6 + G-A (proposal §7).
+
+**Staging readiness + blocker (audit V12 §10 butir 5).**
+`STAGING_READINESS_V2319.md` (carry-forward dari V2318): keenam
+peran tetap UNASSIGNED/BLOCKED; tidak ada nama yang dikarang;
+tidak ada staging yang tersedia; `checkLink` TIDAK di-invoke;
+tidak ada bukti runtime baru.
+
+**Rekonsiliasi historis + batas bukti (audit V12 §10 butir 6).**
+F-029 TIDAK diulang (tidak ada perubahan metodologi/runtime yang
+relevan). SU-T5 TIDAK direkonstruksi. Bukti VM dipisah ketat dari
+staging/produksi — semua log baru berlabel VM lokal, Bun 1.4.4,
+uid 65534. F-033, F-030/F-009, F-019/F-028 dipertahankan tanpa
+perubahan status (lihat matriks §2).
+
+**Carry-forward (handoff V12 butir 5–6).** F-001..F-005,
+F-006b/F-006c, F-016..F-019, F-028, U-38/U-33/U-41/U-43/U-44/
+U-45/U-46 hanya berubah status berdasarkan bukti atau keputusan
+owner yang dapat dilacak — proposal v2.3.19 mengubah status
+F-001..F-005 dari "proposal belum ditulis" menjadi "proposal
+implementation-ready tersedia untuk ditinjau", BUKAN menjadi
+closed. U-46 tetap keputusan owner yang belum ada (opsi (a)/(b)
+tetap terbuka; implementasi pensinyalan tetap DIBLOKIR). Log
+gagal awal SU-T5 TIDAK direkonstruksi (tetap NOT PRESERVED).
+Tidak ada detail narasi insiden atau data wallet apa pun di
+dokumen revisi ini.
+
+**Proposal terpisah (HOLD).** Tidak ada perubahan source/
+lockfile/DB/deployment yang diusulkan BARU di v2.3.19 di luar
+proposal F-001..F-005 itu sendiri. Proposal yang sudah ada
+(P-1/P-2/P-3 F-030 di matriks v2.3.16 §4 butir 8) dibawa utuh ke
+matriks v2.3.19 §4 butir 4 dan tetap HOLD — masing-masing butuh
+keputusan owner dan otorisasi tahap (b) terpisah sebelum
+dieksekusi.
+
+**Risiko baru v2.3.19 (§G):** U-75 (F-036 — parser PID menerima
+starttime 0), U-76 (F-037 — tes regresi memakai path tetap
+`/tmp`), U-77 (F-035 — asumsi trust boundary UID-sama yang
+diterima). **U-70 DIPERBARUI** (jalur timeout kini memakai
+`verifyPidFile()` fail-fast + child writer fd-based; sisa
+risikonya adalah seam yang kini diperketat dan ditulis ulang
+untuk F-037), **U-72 DIPERBARUI** (tes seam ditulis ulang:
+fixture privat, exclusive create, fail-safe, cleanup
+terverifikasi; sisa risiko: operator yang sengaja menyetel
+`F029_TEST_MODE=1` dengan fixture yang disetujui lalu mengklaim
+run itu sebagai run produksi — dimitigasi baris log `test-seam:`
+eksplisit), **U-73 DIPERBARUI** (celah starttime 0 ditutup
+v2.3.19), **U-74 DIPERBARUI** (child writer kini fd-based
+O_NOFOLLOW + pin (dev,ino); trust boundary UID-sama
+diklarifikasi — lihat U-77). U-38/U-33/U-41/U-43/U-44/U-45/U-46
+dipertahankan tanpa perubahan status.
+
+**Gate konkret berikutnya (v2.3.19 → v2.3.20).** Revisi ini
+bukan pengulangan status: ia menutup celah parser F-036,
+menulis ulang keselamatan filesystem tes F-037, mengklarifikasi
++ memperkeras trust boundary child writer F-035, dan
+menyelesaikan proposal implementation-ready F-001..F-005 yang
+ditunda di v2.3.18 — sambil mempertahankan F-030 sebagai
+CONFIRMED BLOCKER, LIVE VERSION / DEPLOYMENT APPROVAL =
+NOT VERIFIED (F-028) dan F-019 BLOCKED. Gate berikutnya dan
+prasyaratnya: **(G-A)** keputusan owner atas scope perubahan
+source (F-020); **(G-B)** bukti runtime F-019 (versi/digest +
+kontrol disabled (a)–(e)); **(G-C)** keputusan tenancy F-018
+(pernyataan resmi provider tentang scope `ctx.db`); **(G-D)**
+keputusan U-46; **(G-E)** staging tersedia + peran UNASSIGNED
+terisi; **(G-F)** keputusan cache F-022 — owner menerima cabang
+pilihan (rekomendasi) vs alternatif; **(G-G)** keputusan Bun
+F-009 — kanonik 1.3.10 vs 1.4.4 (rekomendasi Opsi A + SDK
+vendorkan vs fallback Opsi B, §D.4.27); **(G-H)** eksekusi
+harness H-RES-02/03/05 yang sudah dikoreksi — prasyarat:
+otorisasi implementasi tahap (b) (G-A) + staging tersedia
+(G-E) + verifikasi ulang perilaku Bun pada versi kanonik
+(U-62, bagian staging); **(G-I)** stress test memori
+H-RES-03/05 pada staging (chunk > cap, 3 script paralel,
+fixture batas 1.000.000 + varian cap−1/cap+1 + non-ASCII
+byte-matched terukur eksak, high-water RSS/VmHWM ≤ ambang
+pra-tes yang ditetapkan operator staging dari budget memori
+target, kedua mode GC) + proses deployment manifest terisi untuk
+setiap deployment (F-028); **(G-J)** keputusan
+reproducibilitas F-030 — prasyarat: keputusan owner G-G
+(Opsi A vs Opsi B) + penggantian SDK path (paket
+ter-publish/vendorkan/sumber resmi) + bukti clean-builder
+(frozen install + typecheck + build exit 0, lockfile tidak
+berubah, dependency digest tercatat, tanpa `/opt/hatch`).
+**(G-K) (BARU)** review + keputusan atas proposal F-001..F-005
+— prasyarat: tidak ada (proposal sudah tersedia untuk ditinjau);
+hasil: keputusan per K-item (K-1..K-6, proposal §7) + otorisasi
+tahap (b) per change set, atau penolakan dengan alasan.
+Pemicu revisi v2.3.20: audit independen V13, ATAU keputusan
+owner atas K-1..K-6/G-A/G-C/G-D/G-F/G-G (G-K), ATAU bukti
+runtime G-B, ATAU staging tersedia (G-E) — mana pun yang datang
+dulu. Tidak ada revisi baru yang hanya mengulang status v2.3.19.
+
+**Hard gates — ditegaskan kembali (v2.3.19):** no Link Scanner
+activation, no public deployment, no production build, no DB/catalog
+change, no source implementation tanpa owner approval terpisah
+(HOLD perubahan source mirror sampai klarifikasi F-020 tetap
+berlaku), no production testing (termasuk tidak memanggil
+`checkLink`). F-001..F-005, F-016/F-017/F-022, F-018 tetap
+OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..26 terhadap
+implementasi aktual di staging terisolasi + log mentah + review
+independen — hasil VM saja tidak cukup.
+
 ---
 
 ## E. Risiko regresi terhadap scanner yang sudah berjalan
@@ -6822,6 +7061,9 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | U-72 | **F-032 — test seam harness sebagai permukaan override baru (v2.3.17 — BARU)** | `run-f029.ts` v2.3.17 menambah env var test-only `F029_CHILD_SCRIPT` / `F029_CHILD_TIMEOUT_MS` untuk uji E2E timeout. Seseorang dapat menjalankan harness dengan seam aktif (child dummy / timeout pendek) lalu mengira outputnya run produksi — atau sebaliknya, mengklaim run produksi padahal child-nya diganti. | Bukti run tercemar diam-diam: log uji disajikan sebagai bukti produksi, atau run produksi yang sebenarnya memakai child pengganti | Seam TIDAK mengubah perilaku default (tanpa env var: script `exp-pattern.ts`, timeout 120.000 ms); bila aktif, parent mencetak baris `test-seam:` eksplisit di log; reviewer WAJIB memeriksa ada/tidaknya baris itu sebelum menerima log sebagai bukti produksi; seam hanya dipakai oleh driver E2E yang terdokumentasi. **DIPERBARUI v2.3.18 (U-72 diperketat): override kini hanya dihormati bila `F029_TEST_MODE=1` eksplisit; script child harus realpath ke fixture yang disetujui (`exp-pattern.ts` atau `hang-child.ts`); path yang diberikan tidak boleh berupa symlink; selain itu exit 2 sebelum child mana pun di-spawn (tes regresi `test-u72-seam.ts`, 15 assert PASS). Sisa risiko: operator yang SENGAJA menyetel `F029_TEST_MODE=1` dengan fixture yang disetujui lalu mengklaim run itu sebagai run produksi — dimitigasi baris log `test-seam:` eksplisit + reviewer wajib memeriksanya.** |
 | U-73 | **F-034 — oracle terminasi PID menerima semua exception sebagai "mati" (v2.3.18 — BARU)** | Audit V11 benar: driver E2E v2.3.17 memakai `catch { stillAlive = false; }` pada `process.kill(pid, 0)` tanpa memeriksa `error.code`, dan mem-parsing baris PID dengan `Number(...)` tanpa validasi — EPERM (proses hidup tetapi tidak bisa di-signal), EINVAL, atau PID malformed dapat false-pass assertion "semua child terminated". **DIPERBAIKI v2.3.18:** modul baru `pid-oracle.ts` — hanya ESRCH = mati; EPERM = hidup (FAIL); EINVAL/lainnya = inconclusive (FAIL); file PID di-parse ketat (`"<pid> <starttime>"`, positive safe integer, tanpa duplikat); identitas PID diverifikasi via starttime field 22 `/proc/<pid>/stat` (cocok = hidup; berbeda = PID dipakai ulang; Z/X = mati). Tes regresi `test-pid-oracle.ts` (30 assert PASS, log `test-pid-oracle-v2318.txt`): stub injeksi membuktikan EPERM/EINVAL tidak bisa PASS; proses hidup nyata membuktikan alive→SIGKILL terkontrol→dead. **Catatan jujur:** VM ini berjalan sebagai root sehingga EPERM hidup tidak dapat diproduksi di sini — aturan EPERM→FAIL dibuktikan stub, bukan proses hidup. | Klaim "semua child mati" yang bersandar pada oracle lama dapat false-pass bila pemeriksaan signal mengembalikan EPERM/EINVAL atau PID file malformed | Pakai oracle ketat `pid-oracle.ts` untuk semua klaim terminasi; log E2E v2.3.17 dipertahankan sebagai bukti historis, klaim yang mengikat bersandar pada log v2.3.18 |
 | U-74 | **F-035 — file PID E2E memakai path tetap di /tmp, rentan symlink/TOCTOU + concurrency (v2.3.18 — BARU)** | Audit V11 benar: driver v2.3.17 memakai `/tmp/f032-hang-child.pid` (cek lalu hapus, child `appendFileSync` mengikuti symlink) — pada host multi-user, symlink dapat ditanam di celah waktu setelah unlink dan sebelum child membuka file; dua invocation paralel dapat saling menghapus/mencampur PID. **DIPERBAIKI v2.3.18:** direktori privat per-run via `mkdtemp` (mode 0700, realpath + kepemilikan divalidasi) + file PID eksklusif (`openSync "wx"`, mode 0600, fstat-validated) + validasi `lstat` di child (file regular, bukan symlink, uid sama, mode 0600) + cleanup di `finally`. Tes regresi `test-f035-pidfile.ts` (25 assert PASS, log `test-f035-pidfile-v2318.txt`): symlink di path lama tidak pernah diikuti (sentinel byte-identik), dua driver paralel memakai direktori berbeda dengan set PID disjoint, cleanup terverifikasi. | PID file menunjuk target yang dikontrol pihak lain, atau dua run mencampur PID sehingga klaim terminasi didasarkan pada PID run lain | Pakai direktori privat per-run + file eksklusif untuk semua pengujian harness; jangan pernah memakai path tetap di direktori bersama |
+| U-75 | **F-036 — parser PID menerima starttime 0 (v2.3.19 — BARU)** | Audit V12 benar: parser v2.3.18 memeriksa `starttime < 0`, bukan `<= 0` — record `<pid> 0` diterima dan `classifyLiveness()` dapat mengembalikan "dead" untuk child yang masih hidup (false-pass assertion terminasi). **DIPERBAIKI v2.3.19:** tolak `starttime <= 0` di `parsePidFile()` + `parseProcStat()`; validasi input di `classifyLiveness()` (invalid → inconclusive, tidak pernah dead); helper `verifyPidFile()` gagal-cepat seluruh file bila ada parse error (tidak ada liveness atas record parsial); driver E2E memakai `verifyPidFile()`. Tes regresi `test-pid-oracle.ts` (50 assert PASS, log `test-pid-oracle-v2319.txt`, uid 65534). | Record PID korup/dimodifikasi dengan starttime 0 dapat membuat oracle menganggap child hidup sebagai mati | Pakai oracle + parser v2.3.19 untuk semua klaim terminasi; jangan pernah menerima starttime 0 |
+| U-76 | **F-037 — tes regresi memakai path tetap di /tmp (v2.3.19 — BARU)** | Audit V12 benar: tes v2.3.18 memakai path tetap `/tmp/u72-*` dan `/tmp/f032-hang-child.pid` dengan `writeFileSync` (truncate/follow) + `rmSync` tanpa verifikasi kepemilikan — pada host bersama dapat menimpa target symlink atau menghapus file asing; run sebagai root memperbesar dampak. **DIPERBAIKI v2.3.19:** kedua file tes ditulis ulang — direktori privat per-run (`mkdtemp`, 0700) + exclusive create (`openSync "wx"`, 0600) + fail-safe bila path legacy sudah ada + cleanup terverifikasi (dev,ino); kedua tes menolak berjalan sebagai root. Tes regresi `test-f035-pidfile.ts` (59 assert PASS, log `test-f035-pidfile-v2319.txt`, uid 65534) + `test-u72-seam.ts` (25 assert PASS, log `test-u72-seam-v2319.txt`, uid 65534). | Tes regresi merusak file asing / mengikuti symlink pada host bersama | Pakai direktori privat + exclusive create + fail-safe untuk semua pengujian harness; jangan pernah memakai path tetap di direktori bersama; jangan jalankan tes sebagai root |
+| U-77 | **F-035 — asumsi trust boundary UID-sama (v2.3.19 — BARU, asumsi yang diterima)** | Proses tidak tepercaya dengan UID YANG SAMA dinyatakan eksplisit DI LUAR threat model harness: (1) harness single-user satu UID oleh desain; (2) proses same-UID sudah dapat ptrace/signal/mem-baca driver — tidak ada cek level-file yang dapat mengisolasi terhadap same-UID; (3) direktori run 0700 sudah mengecualikan UID lain; (4) child adalah kode TEPERCAYA (seam U-72). **Penjepitan fd diterapkan sebagai defense-in-depth:** child writer kini open `O_NOFOLLOW` + verifikasi `fstat` pada descriptor + pin (dev,ino) — menutup jendela TOCTOU untuk swap path yang tidak disengaja / stale. | Bila harness kelak jalan di host bersama dengan same-UID tak tepercaya, asumsi ini tidak lagi berlaku dan file PID dapat dialihkan | Tinjau ulang asumsi ini sebelum menjalankan harness di host bersama (pemisahan UID per proses / supervisor pemilik file PID); sampai saat itu, catat sebagai asumsi yang diterima, bukan sebagai temuan yang ditutup |
 
 ## H. Rencana pengujian dan rollback FINAL (v2)
 

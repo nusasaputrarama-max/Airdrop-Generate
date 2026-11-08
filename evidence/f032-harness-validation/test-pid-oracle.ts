@@ -1,12 +1,21 @@
-// Regression tests for the strict PID liveness oracle (F-034, v2.3.18).
+// Regression tests for the strict PID liveness oracle (F-034, v2.3.18;
+// F-036, v2.3.19).
 //
-// Proves, per audit V11 §6 F-034 and §11 item 1:
+// Proves, per audit V11 §6 F-034 and §11 item 1, plus audit V12 §5
+// F-036 and §10 item 1:
 //   - ESRCH → dead (PASS for the caller: the child is gone);
 //   - EPERM → alive, NEVER dead (the process exists; the caller must FAIL);
 //   - EINVAL / ERR_INVALID_ARG_TYPE / other errors → inconclusive, NEVER dead;
 //   - a live PID → alive, with controlled SIGKILL cleanup afterwards;
 //   - malformed / empty / duplicate / out-of-range PID lines fail
 //     BEFORE any liveness assertion;
+//   - v2.3.19 (F-036): starttime 0, negative, non-integer, and unsafe
+//     starttimes are all rejected; a file mixing valid + invalid
+//     records fails the WHOLE file (verifyPidFile never runs a
+//     liveness assertion over partial records — the kill stub is
+//     never called); classifyLiveness() validates its own pid /
+//     recordedStarttime inputs and returns "inconclusive" (never
+//     "dead") for invalid ones;
 //   - the 12 PIDs tested by the E2E driver are the 12 children it
 //     launched (that identity check lives in run-f032-timeout-e2e.ts;
 //     this file proves the oracle primitives it relies on).
@@ -29,6 +38,7 @@ import {
   defaultDeps,
   parsePidFile,
   parseProcStat,
+  verifyPidFile,
   type Liveness,
 } from "./pid-oracle.ts";
 
@@ -113,6 +123,41 @@ const withState = (statText: string, value: string) => withStatField(statText, 0
 
   const whitespace = parsePidFile(" 3776 123456\n");
   check(whitespace.errors.length === 1, "leading space → malformed error");
+
+  // --- F-036 (v2.3.19): starttime must be a POSITIVE safe integer ---
+  const zeroStarttime = parsePidFile("1234 0\n");
+  check(
+    zeroStarttime.errors.length === 1 && zeroStarttime.records.length === 0,
+    'starttime 0 → error (audit V12 acceptance: parsePidFile("1234 0\\n") must error)',
+  );
+
+  const negativeStarttime = parsePidFile("3776 -5\n");
+  check(negativeStarttime.errors.length === 1, "negative starttime → error");
+
+  const floatStarttime = parsePidFile("3776 123.5\n");
+  check(floatStarttime.errors.length === 1, "non-integer starttime → error");
+
+  const unsafeStarttime = parsePidFile("3776 9007199254740993\n");
+  check(
+    unsafeStarttime.errors.length === 1,
+    "unsafe-integer starttime (2^53+1) → error",
+  );
+
+  const hugeStarttime = parsePidFile("3776 123456789012345678901234567890\n");
+  check(hugeStarttime.errors.length === 1, "huge starttime (not a safe integer) → error");
+
+  const mixedValidInvalid = parsePidFile("3776 123456\n3782 0\n3790 123458\n");
+  check(
+    mixedValidInvalid.errors.length === 1 && mixedValidInvalid.records.length === 2,
+    "valid + invalid records: the bad record errors (fail-fast at verifyPidFile level, below)",
+  );
+
+  // Field 22 (starttime) is token 19 after the comm field: 18 filler
+  // tokens (fields 4..21), then "0" as the starttime.
+  const zeroStarttimeProc = parseProcStat(
+    "(test) R 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 0 20 21",
+  );
+  check(zeroStarttimeProc === null, "parseProcStat with starttime 0 → null (not a valid live-process value)");
 }
 
 // --- classifyLiveness with injected errors (deterministic) ---
@@ -173,6 +218,99 @@ const withState = (statText: string, value: string) => withStatField(statText, 0
   check(vBadStat.verdict === "inconclusive", `kill ok + unparsable /proc stat → inconclusive [${vBadStat.reason}]`);
 }
 
+// --- F-036 (v2.3.19): classifyLiveness() validates its OWN inputs ---
+{
+  // A counting kill stub: invalid inputs must return BEFORE any
+  // probe is attempted — the stub must never be called.
+  let killCalls = 0;
+  const countingKill = () => {
+    killCalls++;
+  };
+  const countingDeps = { kill: countingKill, readStat: neverStat };
+
+  const badInputs: [number, number, string][] = [
+    [0, 999, "pid 0"],
+    [-5, 999, "negative pid"],
+    [1.5, 999, "non-integer pid"],
+    [9007199254740993, 999, "unsafe-integer pid (2^53+1)"],
+    [424242, 0, "recordedStarttime 0"],
+    [424242, -1, "negative recordedStarttime"],
+    [424242, 1.5, "non-integer recordedStarttime"],
+    [424242, 9007199254740993, "unsafe-integer recordedStarttime (2^53+1)"],
+  ];
+  for (const [pid, st, label] of badInputs) {
+    killCalls = 0;
+    const v: Liveness = classifyLiveness(pid, st, countingDeps);
+    check(
+      v.verdict === "inconclusive" && killCalls === 0,
+      `${label} → inconclusive, NEVER dead, kill() never called [${v.reason}]`,
+    );
+  }
+}
+
+// --- F-036 (v2.3.19): verifyPidFile() fails the WHOLE file fast ---
+{
+  let killCalls = 0;
+  const killEsrch = () => {
+    killCalls++;
+    const e: any = new Error("simulated ESRCH");
+    e.code = "ESRCH";
+    throw e;
+  };
+  const deadDeps = { kill: killEsrch, readStat: neverStat };
+
+  // 1. Valid + invalid record: parse error → ok=false, NO verdicts,
+  //    kill() NEVER called (no liveness assertion over partial records).
+  killCalls = 0;
+  const mixed = verifyPidFile("3776 123456\n3782 0\n3790 123458\n", 3, deadDeps);
+  check(
+    mixed.ok === false && mixed.verdicts.length === 0 && killCalls === 0,
+    `verifyPidFile valid+invalid mix → ok=false, 0 verdicts, kill() never called (errors: ${mixed.errors.join("; ")})`,
+  );
+
+  // 2. Record-count mismatch: kill() never called either.
+  killCalls = 0;
+  const short = verifyPidFile("3776 123456\n3782 123457\n", 3, deadDeps);
+  check(
+    short.ok === false && short.verdicts.length === 0 && killCalls === 0,
+    `verifyPidFile count mismatch (2 of 3) → ok=false, 0 verdicts, kill() never called`,
+  );
+
+  // 3. All records dead (ESRCH stubs) → ok=true, kill called once per record.
+  killCalls = 0;
+  const allDead = verifyPidFile("3776 123456\n3782 123457\n", 2, deadDeps);
+  check(
+    allDead.ok === true && allDead.verdicts.length === 2 && killCalls === 2,
+    `verifyPidFile all-dead → ok=true, 2 verdicts, kill() called 2x`,
+  );
+
+  // 4. One record alive → ok=false, verdicts present (driver must FAIL).
+  const selfStat = readFileSync("/proc/self/stat", "utf8");
+  const selfParsed = parseProcStat(selfStat);
+  if (selfParsed !== null) {
+    const aliveDeps = {
+      kill: () => {},
+      readStat: statFrom(selfStat),
+    };
+    const oneAlive = verifyPidFile(`${process.pid} ${selfParsed.starttime}\n3776 123456\n`, 2, {
+      kill: (pid: number) => {
+        if (pid === 3776) {
+          const e: any = new Error("simulated ESRCH");
+          e.code = "ESRCH";
+          throw e;
+        }
+      },
+      readStat: aliveDeps.readStat,
+    });
+    check(
+      oneAlive.ok === false && oneAlive.verdicts.length === 2,
+      `verifyPidFile one-alive + one-dead → ok=false, verdicts present for the driver to fail on`,
+    );
+  } else {
+    check(false, "verifyPidFile one-alive case needs a parseable /proc/self/stat");
+  }
+}
+
 // --- live-process checks with the REAL kill() and /proc ---
 async function liveChecks() {
   const deps = defaultDeps();
@@ -226,4 +364,4 @@ if (failures > 0) {
   console.log(`PID ORACLE TEST: FAIL — ${failures} assertion(s) failed`);
   process.exit(1);
 }
-console.log("PID ORACLE TEST: PASS — ESRCH-only death, EPERM/EINVAL can never PASS, strict PID-file parsing, live-process proof");
+console.log("PID ORACLE TEST: PASS — ESRCH-only death, EPERM/EINVAL can never PASS, strict PID-file parsing, F-036 starttime>0 + fail-fast, live-process proof");

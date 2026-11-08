@@ -1,0 +1,36 @@
+command: setpriv --reuid=nobody --regid=nogroup --clear-groups /opt/hatch-image/bin/bun test-u72-seam.ts
+cwd: /tmp/f036-stage/f029-memory-methodology
+uid: 65534 (nobody, non-root)
+bun: 1.4.4
+date: 2026-11-08 12:00:27 WIB / 2026-11-08T05:00:27Z
+staged files: byte-identical to repo (sha256 verified before run)
+---
+u72 test: uid=65534 bun=1.4.4
+u72 assert PASS: no stale /tmp/u72-* entries at start (found: none)
+u72 test dir: /tmp/u72-test-XWjgP8 (realpath=/tmp/u72-test-XWjgP8 mode=700 uid=65534)
+u72 assert PASS: test dir realpath matches (no symlink)
+u72 assert PASS: test dir mode is 700
+u72 assert PASS: test dir owned by our uid 65534
+u72 assert PASS: override without test mode → exit 2 (got 2)
+u72 assert PASS: override without test mode → error names F029_TEST_MODE=1
+u72 assert PASS: override without test mode → refused before preflight
+u72 assert PASS: F029_TEST_MODE=true + override → exit 2 (got 2)
+u72 assert PASS: timeout override without test mode → exit 2 (got 2)
+u72 assert PASS: arbitrary path in test mode → exit 2 (got 2)
+u72 assert PASS: arbitrary path → error says not an approved fixture
+u72 assert PASS: symlink to approved fixture in test mode → exit 2 (got 2)
+u72 assert PASS: symlink → error says must not be a symlink
+u72 assert PASS: nonexistent path in test mode → exit 2 (got 2)
+u72 assert PASS: non-script file in test mode → exit 2 (got 2)
+u72 assert PASS: approved fixture in test mode → proceeds (exit 1 from timeouts, got 1)
+u72 assert PASS: approved fixture run logs the test-seam line
+u72 assert PASS: approved fixture run: 12 timeout FAILs after 100 ms (got 12)
+u72 assert PASS: approved fixture run prints parent done: FAILED
+u72 assert PASS: evil fixture removed in teardown (was ours, dev/ino verified)
+u72 assert PASS: symlink fixture removed in teardown (was ours, dev/ino verified)
+u72 assert PASS: non-script fixture removed in teardown (was ours, dev/ino verified)
+u72 assert PASS: pidfile fixture removed in teardown (was ours, dev/ino verified)
+u72 assert PASS: private test dir removed in teardown (dev/ino verified)
+u72 assert PASS: no /tmp/u72-* leftovers at end (found: none)
+U-72 SEAM TEST: PASS — overrides refused without explicit test mode, arbitrary/symlink paths refused, approved fixture accepted; all fixtures in a private dir, exclusive create, dev/ino-verified cleanup
+exit code: 0

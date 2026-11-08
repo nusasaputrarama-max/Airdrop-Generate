@@ -1,8 +1,8 @@
 # Bukti F-032 — Validasi argumen harness F-029 (tidak ada lagi false green)
 
-**Revisi:** v2.3.18 — jawaban atas audit independen V11 (F-034, F-035, U-72)
+**Revisi:** v2.3.19 — jawaban atas audit independen V12 (F-036, F-037, trust boundary F-035, proposal F-001..F-005)
 **Tanggal:** 2026-11-08 (WIB)
-**Revisi sebelumnya:** v2.3.17 — jawaban atas audit independen V10 (F-032 timeout E2E)
+**Revisi sebelumnya:** v2.3.18 — jawaban atas audit independen V11 (F-034, F-035, U-72)
 **Lingkungan bukti: VM LOKAL SAJA — BUKAN staging, BUKAN produksi.**
 Tidak ada jaringan, tidak ada artifact live, `checkLink` TIDAK
 di-invoke. Paket ini hanya menguji parent harness
@@ -66,6 +66,96 @@ sebagai oracle penerimaan tidak dapat menghasilkan false green.
    `failures === 0` DAN jumlah record tepat DAN semua kombinasi
    lengkap; bila tidak, parent mencetak
    "parent done: FAILED — …" dan **exit 1**.
+
+## Perubahan v2.3.19 (F-036, F-037, trust boundary F-035 — jawaban atas audit V12)
+
+Audit V12 menerima perbaikan v2.3.18 tetapi menemukan satu celah
+parser (F-036), satu pola tidak aman pada KODE TES itu sendiri
+(F-037), dan meminta klarifikasi trust boundary child writer
+serta proposal implementation-ready F-001..F-005. Revisi ini
+menjawab semuanya; F-029 TIDAK diulang (metodologi tidak berubah).
+
+**F-036 — parser menolak starttime 0 (`pid-oracle.ts`).**
+Parser v2.3.18 memeriksa `starttime < 0`, bukan `<= 0` — record
+`"<pid> 0"` diterima dan dapat membuat child yang masih hidup
+dinilai "dead". Kini: `parsePidFile()` DAN `parseProcStat()`
+menolak starttime `<= 0`; `classifyLiveness()` memvalidasi input
+pid/recordedStarttime-nya sendiri (invalid → "inconclusive",
+tidak pernah "dead", `kill()` tidak pernah dipanggil); dan helper
+baru `verifyPidFile()` gagal-cepat untuk SELURUH file bila ada
+satu parse error — tidak ada assertion liveness atas record
+parsial. Driver E2E memakai `verifyPidFile()` (bukan loop inline).
+**Tes regresi — `test-pid-oracle.ts` (log
+`test-pid-oracle-v2319.txt`, 59 baris, Bun 1.4.4, uid 65534,
+50 assert PASS):** 7 kasus parsing baru (starttime 0 — kasus
+penerimaan audit `parsePidFile("1234 0\n")` harus error; negatif;
+non-integer; unsafe integer 2^53+1; sangat besar; valid+invalid
+campur; `parseProcStat` starttime 0 → null) + 8 kasus validasi
+input `classifyLiveness()` (pid 0/negatif/non-integer/unsafe dan
+recordedStarttime 0/negatif/non-integer/unsafe — semuanya
+inconclusive, `kill()` tidak pernah dipanggil) + 4 kasus
+`verifyPidFile()` (campur → ok=false, 0 verdict, `kill()` tidak
+pernah dipanggil; count mismatch → sama; semua dead → ok=true;
+satu alive → ok=false).
+
+**F-037 — keselamatan filesystem pada tes F-035 dan U-72.**
+Tes v2.3.18 memakai path tetap `/tmp/u72-*` dan
+`/tmp/f032-hang-child.pid` dengan `writeFileSync` (truncate/
+follow) + `rmSync` — dapat menimpa/menghapus file asing dan
+mengikuti symlink. Kini: semua fixture di dalam SATU direktori
+privat per-run (`mkdtemp`, 0700); file dibuat EKSKLUSIF
+(`openSync "wx"`, 0600); symlink dibuat hanya setelah memastikan
+path tidak ada; bila path legacy SUDAH ADA saat tes mulai, tes
+GAGAL AMAN tanpa menyentuhnya (bukan menghapusnya); teardown
+hanya menghapus objek yang (dev,ino)-nya masih cocok dengan yang
+dicatat saat pembuatan. **Tes regresi F-035 —
+`test-f035-pidfile.ts` (log `test-f035-pidfile-v2319.txt`,
+75 baris, Bun 1.4.4, uid 65534, 59 assert PASS):** DUA skenario
+(path legacy berupa symlink DAN berupa regular file, masing-masing
+dua driver paralel) — file/symlink lama tidak pernah berubah
+atau terhapus, set PID disjoint, direktori privat terhapus, tidak
+ada leftover di `/tmp`. **Tes regresi U-72 —
+`test-u72-seam.ts` (log `test-u72-seam-v2319.txt`, 36 baris,
+Bun 1.4.4, uid 65534, 25 assert PASS):** 7 penolakan + 1
+penerimaan seperti v2.3.18, kini dengan semua fixture di direktori
+privat + exclusive create + cleanup terverifikasi (dev,ino).
+**Non-root:** kedua tes MENOLAK berjalan sebagai root (uid 0) —
+bukti kanonik direkam sebagai uid 65534. Alasan root tidak dapat
+membaca repo dari tempatnya (mode 2770 pada mount yang
+menegakkan akses host-side) didokumentasikan di matriks v2.3.19:
+tes dijalankan dari salinan stage byte-identik (sha256
+terverifikasi) di `/tmp/f036-stage`.
+
+**Trust boundary F-035 — child writer (`hang-child.ts`).**
+Pola `lstat` lalu `appendFileSync` DIGANTI: child membuka file
+dengan `O_WRONLY|O_APPEND|O_NOFOLLOW` (numerik; symlink saat open
+→ ELOOP), memverifikasi DESCRIPTOR via `fstat` (regular, uid
+sama, mode 0600, (dev,ino) sama dengan yang dicatat driver dan
+diteruskan via `F032_PID_FILE_DEV`/`F032_PID_FILE_INO`), lalu
+satu `writeSync`. Keputusan trust boundary yang dinyatakan
+eksplisit: proses tidak tepercaya dengan UID YANG SAMA secara
+eksplisit DI LUAR threat model harness (alasan: same-UID dapat
+ptrace/signal/mem-baca driver — tidak ada cek file yang dapat
+mengisolasi terhadap same-UID; direktori 0700 sudah mengecualikan
+UID lain; child adalah kode tepercaya via seam U-72). Penjepitan
+fd adalah defense-in-depth terhadap swap path yang tidak
+disengaja / stale — dan tetap menutup jendela TOCTOU sepenuhnya
+untuk kasus itu. Bila harness kelak jalan di host bersama dengan
+same-UID tak tepercaya, asumsi ini harus ditinjau ulang (risiko
+U-77). **Tes end-to-end diulang pada driver baru (log
+`run-f032-timeout-e2e-v2319.txt`, 191 baris, Bun 1.4.4, uid 65534):**
+12 FAIL timeout, ke-12 PID `dead` via ESRCH, 12 == 12, direktori
+privat terhapus, driver PASS. Tes regresi negatif TIDAK diulang
+(driver negatif tidak berubah — tanpa perubahan metodologi/
+runtime, pengulangan dilarang protokol).
+
+**Proposal F-001..F-005** ada di `SSRF_PROPOSAL_F001_F005_V2319.md`
+(bukan di paket ini): file/fungsi/baris terverifikasi pada main
+`cd96768`, pseudodiff, threat model, matriks tes H-SSRF-21..26 /
+H-RES-07..12 / H-CAT-04..06 / H-TEN-06..07 / H-AUTH-04..06,
+migrasi 0006 gabungan F-004+F-018, tiga opsi otorisasi F-005.
+Status F-001..F-005 tetap OPEN/BLOCKED — proposal bukan
+implementasi dan bukan otorisasi.
 
 ## Perubahan v2.3.18 (F-034, F-035, U-72 — jawaban atas audit V11)
 
@@ -305,6 +395,14 @@ mencetak "all child runs ok".
 | `test-pid-oracle-v2318.txt` | `4cc0d407c90dbb2900ca35be46afc6c0c68413f849de6dd123f2d749f529b300` |
 | `test-f035-pidfile-v2318.txt` | `937ed44521d09a8c218130ac97f3faf9344e982c15b730c97bc733cd86e539df` |
 | `run-f032-negative-v2318.txt` | `0028237b23af9e93a160ed8c2883e08242775c1d2c969ad7107b90e6889e68dc` |
+| `pid-oracle.ts` (v2.3.19) | `fe6dd20672d5b16f72e51e63429d50ff176e65c3f855210d2463599f39069f10` |
+| `hang-child.ts` (v2.3.19) | `f66ea8ee632d727f6ad4fb5cd4188fbcc4a6db288a0a9a18c87cad261b9aa3c8` |
+| `run-f032-timeout-e2e.ts` (v2.3.19) | `1039cf1352b4d0bba7eebc94e92890682576114f6110eb68444c16046b266b2f` |
+| `test-pid-oracle.ts` (v2.3.19) | `71925f3a57204394348e7e7d9fa7ff19e60dcb06567428259acea89d410dc2d8` |
+| `test-f035-pidfile.ts` (v2.3.19) | `1fcf20a9a8cf284b515533837817de2777f31b383cb11aba366a7a77c10fd158` |
+| `run-f032-timeout-e2e-v2319.txt` | `eed1b660a57caf7c6f2dbaf3b4cd4f30c306c114a1a54b51457aab249efe1aab` |
+| `test-pid-oracle-v2319.txt` | `338838506803b0f758a9d4ca21ddb2972739b21de60a657e135c81acdffb0c66` |
+| `test-f035-pidfile-v2319.txt` | `b95e1a3d893361f47734b7d93f6e20cea98f54d962039c3a4f7621c7ccc536fa` |
 
 ## Batasan (dicatat jujur)
 
@@ -354,3 +452,16 @@ mencetak "all child runs ok".
   itu sendiri (hanya pemilik yang bisa menulis di dalamnya);
   pemeriksaan `lstat` adalah lapis pertahanan tambahan, bukan
   satu-satunya kontrol.
+- **[PEMBARUAN v2.3.19 (F-035 trust boundary + F-037):]** pola
+  `lstat` lalu `appendFileSync` di `hang-child.ts` DIGANTI
+  open fd `O_NOFOLLOW` + verifikasi `fstat` pada descriptor +
+  penjepitan (dev,ino) ke file yang dibuat driver; proses tidak
+  tepercaya UID-sama dinyatakan eksplisit DI LUAR threat model
+  harness (alasan di header `hang-child.ts` + matriks v2.3.19) —
+  penjepitan fd adalah defense-in-depth terhadap swap path yang
+  tidak disengaja. Tes F-035/U-72 sendiri ditulis ulang agar
+  tidak memakai path tetap `/tmp` (F-037): semua fixture di
+  direktori privat, exclusive create, fail-safe bila path legacy
+  sudah ada, cleanup terverifikasi (dev,ino). Kedua tes MENOLAK
+  berjalan sebagai root; bukti kanonik uid 65534 dari salinan
+  stage byte-identik (sha256 terverifikasi).

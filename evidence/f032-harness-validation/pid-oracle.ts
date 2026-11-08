@@ -1,14 +1,27 @@
-// Strict PID liveness oracle + PID-file parser (v2.3.18, F-034/F-035).
+// Strict PID liveness oracle + PID-file parser (v2.3.19, F-034/F-035/F-036).
 //
-// This module is the fix for audit V11 finding F-034: the v2.3.17
-// E2E driver treated EVERY exception from `process.kill(pid, 0)` as
-// "process is dead" (`catch { stillAlive = false; }`), so an EPERM
+// This module is the fix for audit V11 finding F-034 and audit V12
+// finding F-036: the v2.3.17 E2E driver treated EVERY exception from
+// `process.kill(pid, 0)` as "process is dead" (`catch { stillAlive = false; }`), so an EPERM
 // (process alive but not signallable), an EINVAL, or a malformed PID
 // could all false-pass the "all children terminated" assertion. The
 // v2.3.17 driver also parsed the PID file with a bare `Number(...)`
 // per line — no validation of shape, range, or duplicates.
 //
-// Rules enforced here (acceptance criteria of V11 §11 item 1):
+// v2.3.19 (F-036): the v2.3.18 parser still accepted `starttime = 0`
+// (it checked `< 0`, not `<= 0`) although its contract required
+// positive safe integers. A corrupted/tampered record `<pid> 0`
+// made `classifyLiveness()` compare against a starttime that can
+// never match a live process and return "dead" for a LIVE child —
+// a false-pass of the termination assertion. The parser now rejects
+// starttime <= 0 in BOTH `parsePidFile()` and `parseProcStat()`;
+// `classifyLiveness()` validates its own inputs (never trusts the
+// caller); and `verifyPidFile()` fails the WHOLE file fast on any
+// parse error — no liveness assertion is ever run over partial
+// records.
+//
+// Rules enforced here (acceptance criteria of V11 §11 item 1 and
+// V12 §10 item 1):
 //   1. A PID file line must be exactly "<pid> <starttime>" with
 //      both fields positive safe integers; pid in 1..2^31-1.
 //      Empty, malformed, out-of-range, or duplicate lines are
@@ -56,7 +69,10 @@ export function parseProcStat(statText: string): ProcStat | null {
   // rest[0] = field 3 (state); field 22 (starttime) = rest[19].
   if (rest.length < 20) return null;
   const starttime = Number(rest[19]);
-  if (!Number.isSafeInteger(starttime) || starttime < 0) return null;
+  // F-036: starttime is clock ticks since boot for a live process —
+  // 0 is not a valid value (a record claiming 0 can never match a
+  // live process and would false-report "dead"). Reject <= 0.
+  if (!Number.isSafeInteger(starttime) || starttime <= 0) return null;
   return { state: rest[0], starttime };
 }
 
@@ -90,8 +106,8 @@ export function parsePidFile(text: string): { records: PidRecord[]; errors: stri
       errors.push(`${label}: pid out of range: ${m[1]}`);
       continue;
     }
-    if (!Number.isSafeInteger(starttime) || starttime < 0) {
-      errors.push(`${label}: starttime out of range: ${m[2]}`);
+    if (!Number.isSafeInteger(starttime) || starttime <= 0) {
+      errors.push(`${label}: starttime out of range (must be a positive safe integer): ${m[2]}`);
       continue;
     }
     if (seen.has(pid)) {
@@ -120,6 +136,22 @@ export function classifyLiveness(
   recordedStarttime: number,
   deps: { kill: KillFn; readStat: ReadStatFn },
 ): Liveness {
+  // F-036: validate our OWN inputs — never trust the caller to have
+  // run parsePidFile() first. An invalid pid or starttime can never
+  // yield "dead" (that would false-pass a termination assertion);
+  // it yields "inconclusive" so the caller FAILS.
+  if (!Number.isSafeInteger(pid) || pid < 1 || pid > MAX_PID) {
+    return {
+      verdict: "inconclusive",
+      reason: `invalid oracle input: pid must be a safe integer in 1..${MAX_PID}, got ${String(pid)}`,
+    };
+  }
+  if (!Number.isSafeInteger(recordedStarttime) || recordedStarttime <= 0) {
+    return {
+      verdict: "inconclusive",
+      reason: `invalid oracle input: recordedStarttime must be a positive safe integer, got ${String(recordedStarttime)}`,
+    };
+  }
   try {
     deps.kill(pid);
   } catch (e: any) {
@@ -172,4 +204,66 @@ export function defaultDeps(): { kill: KillFn; readStat: ReadStatFn } {
     kill: (pid: number) => process.kill(pid, 0),
     readStat: (pid: number) => readFileSync(`/proc/${pid}/stat`, "utf8"),
   };
+}
+
+export type PidFileVerdict = {
+  ok: boolean;
+  errors: string[];
+  /** One liveness verdict per record — EMPTY when the file failed
+   *  to parse (fail-fast: no liveness assertion is ever run over
+   *  partial records). */
+  verdicts: { pid: number; starttime: number; liveness: Liveness }[];
+};
+
+/** Verify a whole PID file end to end (F-036 fail-fast gate).
+ *
+ *  1. Strict-parse the file. ANY parse error → return
+ *     `{ ok: false, errors, verdicts: [] }` WITHOUT calling
+ *     `classifyLiveness()` on any record — a file with one bad
+ *     record cannot partially prove termination.
+ *  2. Require exactly `expectedCount` records (the caller knows
+ *     how many children it launched); a short/long file is an
+ *     error, not a partial pass.
+ *  3. Classify every record. `ok` is true only when EVERY record
+ *     is verdict "dead". "alive" or "inconclusive" on any record
+ *     fails the whole file.
+ *
+ *  The E2E driver (run-f032-timeout-e2e.ts) must use this helper
+ *  instead of inlining the parse-then-classify loop, so the
+ *  fail-fast rule is enforced in exactly one place and is covered
+ *  by the regression tests in test-pid-oracle.ts. */
+export function verifyPidFile(
+  text: string,
+  expectedCount: number,
+  deps: { kill: KillFn; readStat: ReadStatFn },
+): PidFileVerdict {
+  const { records, errors } = parsePidFile(text);
+  if (errors.length > 0) {
+    return { ok: false, errors, verdicts: [] };
+  }
+  if (records.length !== expectedCount) {
+    return {
+      ok: false,
+      errors: [
+        `record count mismatch: expected ${expectedCount} record(s), got ${records.length}`,
+      ],
+      verdicts: [],
+    };
+  }
+  const verdicts = records.map((rec) => ({
+    pid: rec.pid,
+    starttime: rec.starttime,
+    liveness: classifyLiveness(rec.pid, rec.starttime, deps),
+  }));
+  const failures = verdicts.filter((v) => v.liveness.verdict !== "dead");
+  if (failures.length > 0) {
+    return {
+      ok: false,
+      errors: failures.map(
+        (v) => `pid ${v.pid}: not dead (${v.liveness.verdict}: ${v.liveness.reason})`,
+      ),
+      verdicts,
+    };
+  }
+  return { ok: true, errors: [], verdicts };
 }

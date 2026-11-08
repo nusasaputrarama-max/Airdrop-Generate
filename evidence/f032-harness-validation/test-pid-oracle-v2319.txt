@@ -1,0 +1,59 @@
+command: setpriv --reuid=nobody --regid=nogroup --clear-groups /opt/hatch-image/bin/bun test-pid-oracle.ts
+cwd: /tmp/f036-stage/f032-harness-validation
+uid: 65534 (nobody, non-root)
+bun: 1.4.4
+date: 2026-11-08 12:00:27 WIB / 2026-11-08T05:00:27Z
+staged files: byte-identical to repo (sha256 verified before run)
+---
+oracle assert PASS: valid file: 3 records, 0 errors
+oracle assert PASS: valid file: first record parses to pid=3776 starttime=123456
+oracle assert PASS: no trailing newline: still 1 record, 0 errors
+oracle assert PASS: empty file: 0 records, 0 errors (driver rejects it separately by count)
+oracle assert PASS: empty line in the middle → error
+oracle assert PASS: line without starttime → malformed error, 0 records
+oracle assert PASS: non-numeric pid → error
+oracle assert PASS: extra field → malformed error
+oracle assert PASS: pid 0 → out-of-range error
+oracle assert PASS: pid > 2^31-1 → out-of-range error
+oracle assert PASS: float pid → malformed error
+oracle assert PASS: negative pid → malformed error
+oracle assert PASS: duplicate pid → error
+oracle assert PASS: same starttime on two pids is allowed (children spawned in the same tick)
+oracle assert PASS: leading space → malformed error
+oracle assert PASS: starttime 0 → error (audit V12 acceptance: parsePidFile("1234 0\n") must error)
+oracle assert PASS: negative starttime → error
+oracle assert PASS: non-integer starttime → error
+oracle assert PASS: unsafe-integer starttime (2^53+1) → error
+oracle assert PASS: huge starttime (not a safe integer) → error
+oracle assert PASS: valid + invalid records: the bad record errors (fail-fast at verifyPidFile level, below)
+oracle assert PASS: parseProcStat with starttime 0 → null (not a valid live-process value)
+oracle assert PASS: ESRCH → dead (PASS) [kill(pid,0) threw ESRCH — no such process]
+oracle assert PASS: EPERM → alive, NEVER dead [kill(pid,0) threw EPERM — process exists but cannot be signalled]
+oracle assert PASS: EINVAL → inconclusive, NEVER dead [kill(pid,0) threw EINVAL — oracle cannot decide]
+oracle assert PASS: ERR_INVALID_ARG_TYPE → inconclusive, NEVER dead [kill(pid,0) threw ERR_INVALID_ARG_TYPE — oracle cannot decide]
+oracle assert PASS: parseProcStat parses our own /proc/self/stat
+oracle assert PASS: live pid + matching starttime → alive [starttime 514413 matches the recorded child — still alive]
+oracle assert PASS: live pid + DIFFERENT starttime → dead (PID reused) [starttime 515413 != recorded 514413 — PID reused by a different process; the original child is dead]
+oracle assert PASS: state Z (zombie) → dead [process state is Z (zombie/dead) — terminated]
+oracle assert PASS: kill ok + /proc ENOENT → dead (exited between probes) [process exited between signal probe and /proc read (ENOENT)]
+oracle assert PASS: kill ok + /proc EPERM → inconclusive [/proc/<pid>/stat unreadable (EPERM) — identity cannot be verified]
+oracle assert PASS: kill ok + unparsable /proc stat → inconclusive [/proc/<pid>/stat unparsable — identity cannot be verified]
+oracle assert PASS: pid 0 → inconclusive, NEVER dead, kill() never called [invalid oracle input: pid must be a safe integer in 1..2147483647, got 0]
+oracle assert PASS: negative pid → inconclusive, NEVER dead, kill() never called [invalid oracle input: pid must be a safe integer in 1..2147483647, got -5]
+oracle assert PASS: non-integer pid → inconclusive, NEVER dead, kill() never called [invalid oracle input: pid must be a safe integer in 1..2147483647, got 1.5]
+oracle assert PASS: unsafe-integer pid (2^53+1) → inconclusive, NEVER dead, kill() never called [invalid oracle input: pid must be a safe integer in 1..2147483647, got 9007199254740992]
+oracle assert PASS: recordedStarttime 0 → inconclusive, NEVER dead, kill() never called [invalid oracle input: recordedStarttime must be a positive safe integer, got 0]
+oracle assert PASS: negative recordedStarttime → inconclusive, NEVER dead, kill() never called [invalid oracle input: recordedStarttime must be a positive safe integer, got -1]
+oracle assert PASS: non-integer recordedStarttime → inconclusive, NEVER dead, kill() never called [invalid oracle input: recordedStarttime must be a positive safe integer, got 1.5]
+oracle assert PASS: unsafe-integer recordedStarttime (2^53+1) → inconclusive, NEVER dead, kill() never called [invalid oracle input: recordedStarttime must be a positive safe integer, got 9007199254740992]
+oracle assert PASS: verifyPidFile valid+invalid mix → ok=false, 0 verdicts, kill() never called (errors: line 2: starttime out of range (must be a positive safe integer): 0)
+oracle assert PASS: verifyPidFile count mismatch (2 of 3) → ok=false, 0 verdicts, kill() never called
+oracle assert PASS: verifyPidFile all-dead → ok=true, 2 verdicts, kill() called 2x
+oracle assert PASS: verifyPidFile one-alive + one-dead → ok=false, verdicts present for the driver to fail on
+oracle assert PASS: exited child pid=11165 → dead via real ESRCH [kill(pid,0) threw ESRCH — no such process]
+oracle assert PASS: live child /proc stat parses (pid=11166)
+oracle assert PASS: live child pid=11166 → alive via real kill + starttime [starttime 514422 matches the recorded child — still alive]
+oracle assert PASS: SIGKILLed child pid=11166 → dead after controlled cleanup [kill(pid,0) threw ESRCH — no such process]
+oracle assert PASS: kill(1,0) threw EPERM — oracle verdict for pid 1 is alive, never dead
+PID ORACLE TEST: PASS — ESRCH-only death, EPERM/EINVAL can never PASS, strict PID-file parsing, F-036 starttime>0 + fail-fast, live-process proof
+exit code: 0

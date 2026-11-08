@@ -1,7 +1,8 @@
 # Bukti F-029 — Metodologi perbandingan memori pola incremental yang dikoreksi
 
-**Revisi:** v2.3.17 — jawaban atas audit independen V10 (F-033, F-032 E2E)
+**Revisi:** v2.3.19 — jawaban atas audit independen V12 (F-037 pada tes seam; F-036/F-035 di paket F-032)
 **Tanggal:** 2026-11-08 (WIB)
+**Revisi sebelumnya:** v2.3.17 — jawaban atas audit independen V10 (F-033, F-032 E2E)
 **Lingkungan bukti: VM LOKAL SAJA — BUKAN staging, BUKAN produksi.**
 Tidak ada jaringan, tidak ada artifact live, `checkLink` TIDAK
 di-invoke. Eksperimen ini mensimulasikan pola kode dari
@@ -84,6 +85,28 @@ kontrol positif `--runs 1` pada harness baru membuktikan jalur
 default tetap bekerja end-to-end. TIDAK ADA workflow CI yang
 ditambahkan (sesuai audit V11 — tanpa threat model, tidak ada
 workflow yang mengeksekusi input PR tak tepercaya).
+
+**v2.3.19 (F-037 — tes seam ditulis ulang agar aman; F-036/F-035
+di paket F-032).** `test-u72-seam.ts` v2.3.18 memakai path tetap
+`/tmp/u72-evil-child.ts`, `/tmp/u72-link-to-hang-child.ts`, dan
+`/tmp/u72-pidfile.txt` dengan `writeFileSync` (truncate/follow)
++ `rmSync` — audit V12 (F-037) benar: pola itu dapat menimpa
+target symlink atau menghapus file asing. Kini SEMUA fixture
+berada di SATU direktori privat per-run (`mkdtemp`, 0700);
+file dibuat EKSKLUSIF (`openSync "wx"`, 0600); symlink dibuat
+hanya setelah memastikan path tidak ada; bila ada entri
+`/tmp/u72-*` sisa dari run lama saat tes mulai, tes GAGAL AMAN
+tanpa menyentuhnya; teardown hanya menghapus objek yang
+(dev,ino)-nya masih cocok dengan yang dicatat saat pembuatan;
+kasus penerimaan kini juga meneruskan (dev,ino) file PID ke
+`hang-child.ts` v2.3.19 (penjepitan fd, lihat README F-032).
+Tes MENOLAK berjalan sebagai root (uid 0). Log
+`test-u72-seam-v2319.txt` (36 baris, Bun 1.4.4, uid 65534,
+25 assert PASS): 7 penolakan + 1 penerimaan seperti v2.3.18,
+ditambah pemeriksaan direktori privat + cleanup terverifikasi.
+Eksperimen memori F-029 TIDAK diulang di v2.3.19: tidak ada
+perubahan metodologi/runtime yang relevan (yang berubah hanya
+kode tes + oracle/file PID pada jalur uji).
 
 ## Hasil v2.3.17 (harness de-confounded, preflight terpisah)
 
@@ -552,6 +575,13 @@ File v2.3.17 (harness de-confounded — F-033/F-032 E2E):
 | `run-1310-f033.txt` | `bd6860baaad15fd1aef5572ba8a0db77a73ac4ffa407143b6bf2f6f2a2b171fd` |
 | `run-144-f033.txt` | `44d76ae0b566c13eea49571bce80cefcb84bd4cce884f5d86859ee470ec445f8` |
 | `run-144-f033-byte-variants.txt` | `bb3acc16807c627ee35f08cd5a2c859884c52f68caf886fa0c113dc372f57a36` |
+
+File v2.3.19 (tes seam ditulis ulang — F-037):
+
+| File | SHA-256 |
+| --- | --- |
+| `test-u72-seam.ts` (v2.3.19) | `8fc4aa6e7f247fa5b9c24d60cf84976504866dd7a341728f5b9870a87d68b968` |
+| `test-u72-seam-v2319.txt` | `f01b78093d33b3cc839261319f4bd5fba3f82d989100e243a5629fcb423ef866` |
 
 File v2.3.16 (harness yang sudah diperbaiki — F-031/F-032):
 
