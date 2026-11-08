@@ -1,0 +1,7 @@
+[PASS] H-KILL-01 disabled (default): checkLink handler throws the kill-switch error, 0 side effects (2 ms)
+[PASS] H-KILL-02 enabled: runCheck performs the full scan hermetically and stores the row (32 ms)
+[PASS] H-KILL-03 enabled: guard-blocked URL (non-standard port) still stores a row (scan ran, page null) (4 ms)
+[PASS] H-KILL-04 flag is dynamic: re-disable makes the handler throw again (0 ms)
+[PASS] H-KILL-05 enabled: handler with an empty URL throws the normalize error (not the disabled error) (0 ms)
+
+PASS 5 / FAIL 0 (total 5)

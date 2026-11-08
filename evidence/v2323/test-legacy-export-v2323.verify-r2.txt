@@ -1,0 +1,10 @@
+[PASS] H-LEG-01 owner (local, isOwner true) gets exactly the 2 legacy NULL rows (8 ms)
+[PASS] H-LEG-02 non-owner principal (isOwner false) gets [] (fail-closed) (1 ms)
+[PASS] H-LEG-03 anonymous (no viewer) gets [] (fail-closed) (0 ms)
+[PASS] H-LEG-04 owner export contains NO owned rows (only NULL-owner rows) (2 ms)
+[PASS] H-LEG-05 exportLegacyChecks is NOT in the Actions map (not invocable) (0 ms)
+[PASS] H-LEG-06 owner via cloudflare share (isOwner true) also gets the legacy rows (4 ms)
+[PASS] H-LEG-07 cloudflare non-owner (isOwner false) gets [] (fail-closed) (0 ms)
+[PASS] H-LEG-08 export is read-only: row counts unchanged after all exports (2 ms)
+
+PASS 8 / FAIL 0 (total 8)

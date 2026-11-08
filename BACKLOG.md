@@ -24,7 +24,7 @@ di isolated branch + visible backlog) dan `MUSE_IMPLEMENTATION_FIRST_DIRECTIVE.m
    pekerjaan development-branch yang sudah diotorisasi. U-98 DITUTUP oleh
    perintah eksplisit owner 2026-11-08 ~15:10 WIB: branch di-rename `dev` →
    `development` (lokal + origin @ `31c3db3`, origin/dev dihapus).
-   D-01..D-04 SELESAI di v2.3.23 (DONE, bukti VM — staging pending); D-05 SELESAI (DONE, bukti VM — staging pending); D-06 masih PLANNED.
+   D-01..D-04 SELESAI di v2.3.23 (DONE, bukti VM — staging pending); D-05 SELESAI (DONE, bukti VM — staging pending); D-06 IN PROGRESS (prototipe stub + clean-clone run 2). Putaran implementasi 2 SELESAI 2026-11-08: D-05 sisa (H-CACHE 12/12), F-005 gate §5 (H-LEG 8/8), F-019 kill-switch (H-KILL 5/5), D-06 stub + clean-clone, nit D-03. Regresi penuh round 2: tsc server+client exit 0; 312/312 PASS (232+32+15+8+12+8+5), log `evidence/v2323/*.verify-r2.txt`, SHA `evidence/v2323/verify-r2.sha256`.
    Batas keras tetap: HANYA branch `development`; JANGAN PERNAH ubah `main`,
    produksi, live artifact, deployment config, atau database/katalog
    live; Link Scanner tetap tidak diaktifkan.
