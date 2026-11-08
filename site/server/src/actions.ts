@@ -165,6 +165,14 @@ interface FetchResult {
   status: number;
   /** Hostname of every request in order — the redirect chain, as evidence. */
   chain: string[];
+  /**
+   * Freshness (H-CACHE-02): epoch ms when this text was fetched from the
+   * network. Preserved from the cached entry on a cache hit, so a display
+   * can show how old the served copy is. `fromCache` tells whether this
+   * result came from the in-memory cache (true) or a fresh fetch (false).
+   */
+  fetchedAt: number;
+  fromCache: boolean;
 }
 
 /**
@@ -250,6 +258,15 @@ interface FetchTestHooks {
  * is never cached, so a re-check retries the network instead of replaying
  * a stale "unreachable" for the TTL — same policy as lookupRdap.
  *
+ * Freshness (H-CACHE-02): the returned result carries `fetchedAt` (epoch
+ * ms of the network fetch) and `fromCache` (true when served from cache),
+ * so a display can show how old the served copy is.
+ *
+ * Re-check bypass (H-CACHE-04): `opts.forceFresh` skips the cache READ —
+ * the guard preflight above still runs, and the fresh result still
+ * refreshes the cache entry. It does NOT skip the guard, the caps, the
+ * budget, or the deadline.
+ *
  * Exported for harness verification (H-CACHE) — it is NOT an action; the
  * Actions map is the only invocable surface. `testHooks` is a test-only
  * injection point for a stub resolver/connector; production callers omit
@@ -261,6 +278,7 @@ export async function fetchText(
   deadline?: AbortSignal,
   budget?: ScanBudget,
   testHooks?: FetchTestHooks,
+  opts?: { forceFresh?: boolean },
 ): Promise<FetchResult | null> {
   const preflight = await validateUrlForFetch(
     url,
@@ -268,8 +286,12 @@ export async function fetchText(
   );
   if (!preflight.ok) return null;
   const key = fetchCacheKey(url, cap);
-  const cached = cacheGet(FETCH_CACHE, key);
-  if (cached !== undefined) return cached;
+  if (opts?.forceFresh !== true) {
+    const cached = cacheGet(FETCH_CACHE, key);
+    // H-CACHE-02: the cached entry keeps its original fetchedAt; only the
+    // fromCache flag flips, so the caller can tell a cached copy apart.
+    if (cached !== undefined) return { ...cached, fromCache: true };
+  }
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -356,7 +378,7 @@ async function fetchTextOnce(
         budget: scanBudget,
         signal: deadline ?? AbortSignal.timeout(TOTAL_DEADLINE_MS),
       });
-      return { text, finalUrl: current, status: guarded.status, chain };
+      return { text, finalUrl: current, status: guarded.status, chain, fetchedAt: Date.now(), fromCache: false };
     }
     return null; // redirect loop or too many hops — treat as unreachable
   } catch {
@@ -374,7 +396,7 @@ interface RdapInfo {
  * di-cache; kegagalan tidak di-cache supaya cek ulang langsung mencoba
  * lagi. `deadline` sama seperti di `fetchText`.
  */
-async function lookupRdap(domain: string, deadline?: AbortSignal): Promise<RdapInfo> {
+async function lookupRdap(domain: string, deadline?: AbortSignal, testHooks?: FetchTestHooks): Promise<RdapInfo> {
   const cached = cacheGet(RDAP_CACHE, domain);
   if (cached !== undefined) return cached;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -382,7 +404,7 @@ async function lookupRdap(domain: string, deadline?: AbortSignal): Promise<RdapI
       await new Promise((resolve) => setTimeout(resolve, 500));
       if (deadline?.aborted) break;
     }
-    const result = await lookupRdapOnce(domain, deadline);
+    const result = await lookupRdapOnce(domain, deadline, testHooks);
     if (result.registeredAt !== null || result.registrar !== null) {
       cacheSet(RDAP_CACHE, domain, result, RDAP_CACHE_TTL_MS, RDAP_CACHE_MAX);
       return result;
@@ -392,7 +414,7 @@ async function lookupRdap(domain: string, deadline?: AbortSignal): Promise<RdapI
   return { registeredAt: null, registrar: null };
 }
 
-async function lookupRdapOnce(domain: string, deadline?: AbortSignal): Promise<RdapInfo> {
+async function lookupRdapOnce(domain: string, deadline?: AbortSignal, testHooks?: FetchTestHooks): Promise<RdapInfo> {
   // F-001f: RDAP goes through the SAME guard as pages — manual redirect
   // loop, every hop re-validated. The old `redirect: "follow"` followed
   // redirects to ANY host without validation. Body is read capped
@@ -405,6 +427,8 @@ async function lookupRdapOnce(domain: string, deadline?: AbortSignal): Promise<R
       const guarded = await fetchGuardedOnce(current, {
         deadline,
         accept: GUARD_ACCEPT_RDAP,
+        resolver: testHooks?.resolver,
+        connector: testHooks?.connector,
       });
       if (guarded === null) return { registeredAt: null, registrar: null };
       if ([301, 302, 303, 307, 308].includes(guarded.status)) {
@@ -555,7 +579,7 @@ interface Analysis {
   domainAgeDays: number | null;
 }
 
-async function analyze(input: URL): Promise<Analysis> {
+async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: FetchTestHooks }): Promise<Analysis> {
   const hostname = input.hostname.toLowerCase();
   const domain = registrableDomain(hostname);
   const signals: Signal[] = [];
@@ -590,8 +614,10 @@ async function analyze(input: URL): Promise<Analysis> {
   }
 
   const [rdap, page] = await Promise.all([
-    lookupRdap(domain, deadline),
-    fetchText(input.toString(), PAGE_DECODED_CAP, deadline, budget),
+    lookupRdap(domain, deadline, opts?.testHooks),
+    fetchText(input.toString(), PAGE_DECODED_CAP, deadline, budget, opts?.testHooks, {
+      forceFresh: opts?.forceFresh ?? false,
+    }),
   ]);
 
   // --- Domain age (RDAP) ---
@@ -960,7 +986,20 @@ function rowToCheck(row: typeof schema.checks.$inferSelect): Check {
   };
 }
 
-async function runCheck(ctx: Ctx, rawUrl: string): Promise<Check> {
+/**
+ * Runs one full link check and stores the result row.
+ *
+ * Exported for harness verification (H-KILL/H-CACHE) — it is NOT an
+ * action; the Actions map is the only invocable surface. `opts.testHooks`
+ * is a test-only injection point for a stub resolver/connector (used by
+ * hermetic harnesses so no real network is touched); production callers
+ * omit it. `opts.forceFresh` is the re-check bypass (H-CACHE-04).
+ */
+export async function runCheck(
+  ctx: Ctx,
+  rawUrl: string,
+  opts?: { forceFresh?: boolean; testHooks?: FetchTestHooks },
+): Promise<Check> {
   const input = normalizeUrl(rawUrl);
   const domain = registrableDomain(input.hostname.toLowerCase());
   const db = ctx.db<typeof schema>();
@@ -981,7 +1020,7 @@ async function runCheck(ctx: Ctx, rawUrl: string): Promise<Check> {
     throw new Error("Server sedang sibuk — coba lagi sebentar lagi.");
   }
   try {
-    const result = await analyze(input);
+    const result = await analyze(input, opts);
     const inserted = await db
       .insert(schema.checks)
       .values({
@@ -1650,9 +1689,18 @@ export const Actions = {
   checkLink: defineAction({
     description:
       "Live-checks a pasted airdrop/claim link: fetches the page, scans it for wallet-connect requests, signing code, contract addresses, bait language and obfuscation, looks up the domain age via RDAP, saves the result to history, and returns the verdict with per-signal evidence.",
-    request: z.object({ url: z.string().min(1).max(2048) }),
+    request: z.object({
+      url: z.string().min(1).max(2048),
+      // H-CACHE-04 (re-check bypass): when true, the page fetch skips the
+      // in-memory cache read and re-fetches fresh (guard, caps, budget and
+      // deadline still apply). Optional — omitted means false; the handler
+      // normalizes undefined to false. Kept optional (no .default) so
+      // existing callers passing only { url } keep typechecking.
+      forceFresh: z.boolean().optional(),
+    }),
     response: checkSchema,
-    handler: async (ctx, args): Promise<Check> => runCheck(ctx, args.url),
+    handler: async (ctx, args): Promise<Check> =>
+      runCheck(ctx, args.url, { forceFresh: args.forceFresh }),
   }),
 
   listChecks: defineAction({

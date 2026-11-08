@@ -36,21 +36,36 @@
 //               body): connector fails twice (both in-call retries),
 //               fetchText -> null; then connector recovers, fetchText
 //               -> body. Bug (null cached): second call returned null.
+//   H-CACHE-01  (round 2) benign -> malicious within TTL: the guard
+//               preflight runs BEFORE the cache on every call, so a
+//               cached URL whose host now resolves to a BLOCKED IP is
+//               DENIED, not served from cache. Content-change staleness
+//               (same IP, different body) is NOT detected within the
+//               TTL — documented residual, pending the remove-cache
+//               branch (owner decision K-1 / G-F, NOT authorized here).
+//   H-CACHE-02  (round 2) freshness display: FetchResult carries
+//               `fetchedAt` (epoch ms of the network fetch) and
+//               `fromCache` (true on a cache hit, original fetchedAt
+//               preserved), so a display can show how old the copy is.
+//   H-CACHE-04  (round 2) re-check bypass / force-fresh: fetchText
+//               `forceFresh` skips the cache READ (guard still runs,
+//               fresh result refreshes the cache); threaded through
+//               analyze/runCheck and the checkLink request contract
+//               (optional `forceFresh`, default false).
 //
 // NOT covered here (remain open, F-016 partially addressed):
-//   H-CACHE-01  benign -> malicious within TTL (needs the remove-cache
-//               branch — design recommendation awaiting owner decision
-//               K-1 / G-F, NOT authorized for implementation here).
-//   H-CACHE-02  freshness display (fetchedAt/cacheHit) — UI + response
-//               shape change, out of scope for this fix.
-//   H-CACHE-04  re-check bypass / force-fresh flag — needs a contract
-//               change through checkLink/runCheck/analyze, out of scope.
+//   H-CACHE-01 remove-cache branch (purge a cached entry when its host
+//               turns malicious) — design recommendation awaiting owner
+//               decision K-1 / G-F, NOT authorized for implementation
+//               here. What IS covered: preflight re-validation on every
+//               cache access (01a) + TTL-bounded staleness documented
+//               as the accepted residual (01b).
 //
 // Run:  bun evidence/v2323/test-cache-v2323.ts   (from worktree root)
 // Exit 0 = all PASS; exit 1 = any FAIL. VM evidence only — not staging.
 
 import { Readable } from "node:stream";
-import { fetchText } from "../../site/server/src/actions";
+import { Actions, fetchText } from "../../site/server/src/actions";
 import type { Connector } from "../../site/server/src/ssrf-guard";
 
 // ---------------------------------------------------------------------------
@@ -83,7 +98,12 @@ function eq<T>(actual: T, expected: T, msg: string): void {
 const PUBLIC_IP = "93.184.216.34";
 const resolver = async (_hostname: string): Promise<string[]> => [PUBLIC_IP];
 
-function makeConnector(opts: { body: string; failTimes?: number; calls: string[] }): Connector {
+function makeConnector(opts: {
+  body: string;
+  bodyFn?: () => string;
+  failTimes?: number;
+  calls: string[];
+}): Connector {
   let remainingFails = opts.failTimes ?? 0;
   return async (req) => {
     opts.calls.push(req.url);
@@ -91,13 +111,14 @@ function makeConnector(opts: { body: string; failTimes?: number; calls: string[]
       remainingFails -= 1;
       throw new Error("stub connection failure");
     }
+    const body = opts.bodyFn ? opts.bodyFn() : opts.body;
     return {
       status: 200,
       headers: {
         get: (name: string) =>
           name.toLowerCase() === "content-type" ? "text/html; charset=utf-8" : null,
       },
-      body: Readable.from([Buffer.from(opts.body)]),
+      body: Readable.from([Buffer.from(body)]),
     };
   };
 }
@@ -170,6 +191,156 @@ test("H-CACHE-03", "F-016 failure -> recovery: failed fetch is NOT cached as nul
   assert(recovered !== null, "second fetch must succeed after recovery (null must not be cached)");
   eq(recovered!.text.length, 100_000, "recovered fetch text length");
   eq(calls.length, 3, "connector calls: 2 failed attempts + 1 recovery (no cached-null shortcut)");
+});
+
+// ---------------------------------------------------------------------------
+// Round 2 (D-05 remainder): H-CACHE-01/02/04.
+// ---------------------------------------------------------------------------
+
+// Mutable resolver: the stub hostname's IP can be flipped mid-test to
+// simulate a host turning malicious (benign public IP -> blocked IP).
+let mutableIp = PUBLIC_IP;
+const mutableResolver = async (_hostname: string): Promise<string[]> => [mutableIp];
+
+test("H-CACHE-01a", "F-016 guard-before-cache: cached URL whose IP turns BLOCKED is DENIED, not served", async () => {
+  const calls: string[] = [];
+  const hooks = { resolver: mutableResolver, connector: makeConnector({ body: BODY_100K, calls }) };
+  const url = "http://cache.test/c01a";
+  mutableIp = PUBLIC_IP;
+  const first = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(first !== null, "first fetch (benign IP) must succeed");
+  eq(calls.length, 1, "connector called once for the first fetch");
+  // Host turns malicious: same hostname now resolves to a blocked IP.
+  mutableIp = "10.0.0.5";
+  try {
+    const denied = await fetchText(url, 400_000, undefined, undefined, hooks);
+    assert(
+      denied === null,
+      `cached URL with blocked IP must be DENIED (got ${denied === null ? "null" : `${denied.text.length} chars from cache`})`,
+    );
+    eq(calls.length, 1, "denied fetch must NOT call the connector (preflight runs before cache)");
+  } finally {
+    mutableIp = PUBLIC_IP;
+  }
+  // The cached entry itself survives the deny (not poisoned): good IP again
+  // serves the cached copy.
+  const again = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(again !== null, "good IP again must serve the cached copy");
+  eq(again!.fromCache, true, "third fetch must be a cache hit");
+  eq(calls.length, 1, "no new connector call for the cache hit");
+});
+
+test("H-CACHE-01b", "DOCUMENTED RESIDUAL (pending K-1): content change within TTL is NOT picked up", async () => {
+  const calls: string[] = [];
+  let bodyVersion = 1;
+  const hooks = {
+    resolver,
+    connector: makeConnector({ body: "", bodyFn: () => `V${bodyVersion}`.repeat(25_000), calls }),
+  };
+  const url = "http://cache.test/c01b";
+  const first = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(first !== null && first.text.startsWith("V1"), "first fetch must return V1 body");
+  bodyVersion = 2;
+  const second = await fetchText(url, 400_000, undefined, undefined, hooks);
+  // With the cache retained (K-1 undecided), the stale V1 copy is served
+  // until the 10-minute TTL expires. This is the ACCEPTED residual: the
+  // remove-cache branch (purge on content/IP change) needs owner decision
+  // K-1 and is NOT implemented here. The guard preflight (01a) still
+  // protects against IP-level turn-malicious.
+  assert(second !== null && second.text.startsWith("V1"), "within TTL the stale V1 copy is served (documented)");
+  eq(second!.fromCache, true, "second fetch must be a cache hit");
+  eq(calls.length, 1, "no re-fetch within TTL");
+});
+
+test("H-CACHE-02a", "freshness display: first fetch fromCache=false + fetchedAt in window; hit preserves fetchedAt", async () => {
+  const calls: string[] = [];
+  const hooks = { resolver, connector: makeConnector({ body: BODY_100K, calls }) };
+  const url = "http://cache.test/c02a";
+  const before = Date.now();
+  const first = await fetchText(url, 400_000, undefined, undefined, hooks);
+  const after = Date.now();
+  assert(first !== null, "first fetch must succeed");
+  eq(first!.fromCache, false, "first fetch must NOT be from cache");
+  assert(
+    first!.fetchedAt >= before && first!.fetchedAt <= after,
+    `fetchedAt must be within the fetch window [${before}, ${after}], got ${first!.fetchedAt}`,
+  );
+  const second = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(second !== null, "second fetch must succeed");
+  eq(second!.fromCache, true, "second fetch must be from cache");
+  eq(second!.fetchedAt, first!.fetchedAt, "cache hit must preserve the original fetchedAt");
+  eq(second!.text, first!.text, "cache hit text must equal the fetched text");
+});
+
+test("H-CACHE-02b", "freshness display: separate cap keys carry separate fetchedAt", async () => {
+  const calls: string[] = [];
+  const hooks = { resolver, connector: makeConnector({ body: BODY_100K, calls }) };
+  const url = "http://cache.test/c02b";
+  const big = await fetchText(url, 400_000, undefined, undefined, hooks);
+  const small = await fetchText(url, 300_000, undefined, undefined, hooks);
+  assert(big !== null && small !== null, "both cap fetches must succeed (100 KB fits both caps)");
+  eq(big!.fromCache, false, "400 KB fetch must be fresh");
+  eq(small!.fromCache, false, "300 KB fetch must be fresh (separate cache key)");
+  assert(big!.fetchedAt > 0 && small!.fetchedAt > 0, "both results must carry fetchedAt");
+  eq(calls.length, 2, "two connector calls (one per cap key)");
+});
+
+test("H-CACHE-04a", "forceFresh: bypasses cache read, returns fresh body, refreshes the entry", async () => {
+  const calls: string[] = [];
+  let bodyVersion = 1;
+  const hooks = {
+    resolver,
+    connector: makeConnector({ body: "", bodyFn: () => `V${bodyVersion}`.repeat(25_000), calls }),
+  };
+  const url = "http://cache.test/c04a";
+  const first = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(first !== null && first.text.startsWith("V1"), "first fetch must return V1 body");
+  eq(first!.fromCache, false, "first fetch must be fresh");
+  bodyVersion = 2;
+  const fresh = await fetchText(url, 400_000, undefined, undefined, hooks, { forceFresh: true });
+  assert(fresh !== null && fresh.text.startsWith("V2"), "forceFresh must return the fresh V2 body");
+  eq(fresh!.fromCache, false, "forceFresh result must NOT be from cache");
+  // The fresh result refreshes the cache: a normal fetch now serves V2.
+  const after = await fetchText(url, 400_000, undefined, undefined, hooks);
+  assert(after !== null && after.text.startsWith("V2"), "after forceFresh the cache must hold V2");
+  eq(after!.fromCache, true, "fetch after forceFresh must be a cache hit");
+  eq(calls.length, 2, "connector calls: 1 initial + 1 forceFresh (no call for the final hit)");
+});
+
+test("H-CACHE-04b", "forceFresh still runs the guard: blocked IP -> null", async () => {
+  const calls: string[] = [];
+  const hooks = { resolver: mutableResolver, connector: makeConnector({ body: BODY_100K, calls }) };
+  const url = "http://cache.test/c04b";
+  mutableIp = "10.0.0.5";
+  try {
+    const denied = await fetchText(url, 400_000, undefined, undefined, hooks, { forceFresh: true });
+    assert(denied === null, "forceFresh with blocked IP must be denied");
+    eq(calls.length, 0, "denied forceFresh must NOT call the connector");
+  } finally {
+    mutableIp = PUBLIC_IP;
+  }
+});
+
+test("H-CACHE-04c", "forceFresh on an uncached URL behaves like a normal fetch", async () => {
+  const calls: string[] = [];
+  const hooks = { resolver, connector: makeConnector({ body: BODY_100K, calls }) };
+  const url = "http://cache.test/c04c";
+  const fresh = await fetchText(url, 400_000, undefined, undefined, hooks, { forceFresh: true });
+  assert(fresh !== null, "forceFresh on uncached URL must succeed");
+  eq(fresh!.fromCache, false, "forceFresh result must NOT be from cache");
+  eq(fresh!.text.length, 100_000, "forceFresh text length");
+  eq(calls.length, 1, "exactly one connector call");
+});
+
+test("H-CACHE-04d", "checkLink contract accepts optional forceFresh (omitted = undefined, treated as false)", async () => {
+  const withFlag: any = (Actions.checkLink as any).request.parse({
+    url: "http://cache.test/x",
+    forceFresh: true,
+  });
+  eq(withFlag.forceFresh, true, "forceFresh:true must parse through");
+  const withoutFlag: any = (Actions.checkLink as any).request.parse({ url: "http://cache.test/x" });
+  eq(withoutFlag.forceFresh, undefined, "forceFresh omitted must parse as undefined (handler treats it as false)");
+  eq(withoutFlag.url, "http://cache.test/x", "url must parse through unchanged");
 });
 
 // ---------------------------------------------------------------------------
