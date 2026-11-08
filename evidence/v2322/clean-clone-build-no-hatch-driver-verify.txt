@@ -1,0 +1,23 @@
+--- sanity: /opt/hatch contents (must be empty) ---
+(empty)
+--- bun version ---
+1.4.4
+--- node version ---
+v24.22.1
+=== bun install --frozen-lockfile ===
+bun install v1.4.4 (38afee6c8)
+error: ENOENT extracting tarball from @hatch/space-sdk
+INSTALL_EXIT=1
+=== bun run build ===
+$ bun run build:server && bun run build:client
+$ cd server && bun build ./src/actions.ts --target=bun --outfile=./dist/actions.js
+13 | import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk";
+                                                                   ^
+error: Could not resolve: "@hatch/space-sdk". Maybe you need to "bun install"?
+    at /tmp/v2322-clean-clone/site/server/src/actions.ts:13:63
+error: script "build:server" exited with code 1
+error: script "build" exited with code 1
+BUILD_EXIT=1
+=== build outputs ===
+ls: cannot access 'server/dist/': No such file or directory
+ls: cannot access 'client/dist/': No such file or directory
