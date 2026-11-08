@@ -1,0 +1,57 @@
+F-032 negative tests — run-f029.ts argument validation
+Bun 1.4.4, 2026-11-08T01:56:59Z, cwd: evidence/f029-memory-methodology/
+Expected: every case exits non-zero and NEVER prints 'all child runs ok'.
+
+$ bun run-f029.ts --runs 0
+run-f029: ERROR: --runs out of approved range 1..10, got 0
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts --runs abc
+run-f029: ERROR: --runs must be a positive integer, got "abc"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts --runs -1
+run-f029: ERROR: --runs must be a positive integer, got "-1"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts --runs
+run-f029: ERROR: --runs requires a value
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts 
+run-f029: ERROR: --runs is required (no default — a missing argument must not silently run)
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts --runs 11
+run-f029: ERROR: --runs out of approved range 1..10, got 11
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+$ bun run-f029.ts --runs 1.5
+run-f029: ERROR: --runs must be a positive integer, got "1.5"
+usage: bun run-f029.ts --runs N   (N = integer, 1..10; required)
+exit=2
+CHECK: ok — did not print 'all child runs ok'
+CHECK: ok — exit non-zero (2)
+
+positive control (valid invocation, 1 run per combination = 12 child runs):
+exit=0
+parent done: all child runs ok
+12

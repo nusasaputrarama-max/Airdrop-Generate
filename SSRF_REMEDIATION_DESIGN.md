@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.15 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.15 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8:** `SSRF_RESPONSE_MATRIX_V2315.md` (F-029, F-030, koreksi rasio F-027, matriks kompatibilitas Bun/lockfile, jawaban Handoff V8 §9 8 butir) — lihat §D.4.26. Matriks v2.3.14 (`SSRF_RESPONSE_MATRIX_V2314.md`) dipertahankan utuh sebagai catatan sejarah. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.16 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.16 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9:** `SSRF_RESPONSE_MATRIX_V2316.md` (F-031, F-032, rekomendasi keputusan F-030 yang dapat diputuskan, jawaban Handoff V9 §9 8 butir) — lihat §D.4.27. Matriks v2.3.15 (`SSRF_RESPONSE_MATRIX_V2315.md`) dipertahankan utuh sebagai catatan sejarah. **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -77,6 +77,29 @@
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
 
+## Perubahan di revisi v2.3.16 (8 November 2026)
+
+Revisi respons atas audit independen V9 ChatGPT
+(`SSRF_INDEPENDENT_AUDIT_V9.md`, commit `619f320`, 2026-11-08 —
+F-031, F-032 + Handoff §9 8 butir). Tidak ada keputusan D-1 s.d. D-8
+yang diubah. Status tetap: **DESIGN ACCEPTED WITH CONDITIONS —
+IMPLEMENTATION NOT APPROVED**. Tidak ada kode aplikasi yang diubah,
+tidak ada perubahan database/katalog, tidak ada production build, Link
+Scanner tetap nonaktif, public tester tetap ON HOLD (Rama, 2026-11-08
+00:28 WIB). F-001..F-005 TETAP blocked. Dokumen respons lengkap:
+`SSRF_RESPONSE_MATRIX_V2316.md` (file baru; matriks v2.3.15
+`SSRF_RESPONSE_MATRIX_V2315.md` dipertahankan utuh sebagai catatan
+sejarah).
+
+| # | Lokasi | Perubahan |
+| --- | --- | --- |
+| 1 | §D.4.27 (baru) + matriks §2 F-031 + `evidence/f029-memory-methodology/` (diperbarui) | **F-031 — fixture exact-byte DIPERBAIKI:** `exp-pattern.ts` kini mengukur SETIAP segmen dengan `TextEncoder().encode(segment).byteLength`, membangun filler dari panjang marker yang TERUKUR (33 / 15 / 13 byte, total 61 — bukan perkiraan 40/20/20), dan melakukan assert total byte SEBELUM scan. Fixture ASCII dan non-ASCII byte-matched kini TEPAT 1.000.000 byte (sebelumnya 999.981 / 999.901); non-ASCII char-matched terukur 1.999.939 byte (bukan ~2.000.000). Varian cap−1 (999.999) dan cap+1 (1.000.001) terukur via argumen `--bytes` baru (log `run-144-f031-byte-variants.txt`, 14 run, semua tepat). Rerun penuh dibenarkan karena harness berubah: 60 run anak per versi Bun (1.3.10 DAN 1.4.4), 0 gagal, 60 PID berbeda, `asksConnect = true` pada semua 120 run (log baru `run-1310-f031-f032.txt`, `run-144-f031-f032.txt`). **Rasio A/B terukur ulang 1,13–1,84× (median VmHWM)** — rentang v2.3.15 (1,18–1,88×) dinyatakan SUPERSEDED (tidak direproduksi eksak; perbedaan kecil, dalam sebaran antar-run); pola B tetap lebih rendah dari pola A pada SEMUA 12 kombinasi di kedua versi; forced-GC 1,51–1,84× vs natural-GC 1,13–1,28×. Karakter hidup 3,60× dipertahankan sebagai character accounting. Dua draf harness yang salah urutan (fixture sebelum baseline; semua segmen di muka untuk pola B) tertangkap saat pengembangan, log trial-nya DIBUANG tanpa di-commit dan dicatat di README F-029 — bukan disembunyikan. |
+| 2 | §D.4.27 (baru) + matriks §2 F-032 + `evidence/f032-harness-validation/` (baru) | **F-032 — validasi harness DIPERBAIKI, false green DITUTUP:** `run-f029.ts` kini mewajibkan `--runs` (integer 1..10, tanpa default diam-diam); assertion `records.length === EXPECTED_RUNS` + tiap kombinasi tepat RUNS record; validasi setiap RESULT terhadap pattern/fixture/GC/bun yang diminta dan total byte terukur yang diharapkan; timeout child 120 detik + FAIL bila timeout/signal; baris "all child runs ok" hanya bila semua pemeriksaan lolos. Tes regresi (log `run-f032-negative.txt`): `--runs 0`, `--runs abc`, `--runs -1`, nilai hilang, flag hilang, `--runs 11`, `--runs 1.5` — ketujuh kasus exit 2 tanpa mencetak sukses; kontrol positif `--runs 1` exit 0 dengan 12 RESULT. |
+| 3 | §D.4.27 (baru) + matriks §2 F-030 + §G U-68/U-70 | **F-030 — proposal keputusan DISELESAIKAN sebagai paket yang dapat diputuskan (TANPA implementasi):** rekomendasi teknis disampaikan sebagai keputusan yang dapat diambil owner tanpa mengubah file apa pun: **Opsi A (naikkan Bun kanonik ke 1.4.4) + penggantian SDK path via artefak SDK berversi yang di-vendor ke repo dengan digest SHA-256 tercatat** sebagai rekomendasi utama; Opsi B (regenerasi lockfile v1 di bawah 1.3.10) sebagai fallback; masing-masing dengan provenance/digest yang dibutuhkan, prasyarat clean-builder, rencana rollback, dan dampak terhadap bukti runtime (semua bukti VM 1.3.10 harus dibaca ulang sebagai bukti versi lama bila Opsi A dipilih). TIDAK ADA digest yang dikarang: digest SDK yang tercatat (`f2cb7b25…`) adalah hasil ukur VM yang provenance-nya tetap NOT VERIFIED; digest rilis resmi Bun 1.4.4 dan atestasi provider atas SDK harus diisi owner/provider pada saat keputusan (saat ini NOT PROVIDED). F-030 tetap CONFIRMED BLOCKER; F-009 tetap NOT REPRODUCIBLE; tidak ada klaim reproducible sebelum frozen install + typecheck + build pada clean external builder berhasil. |
+| 4 | §D.4.27 (baru) + matriks §2 F-019/F-028 | **F-019 dan F-028 — dipertahankan tanpa perubahan:** `checkLink` TIDAK di-invoke, tidak ada public share, tidak ada perubahan runtime; kontrol F-019 (a)–(e) tetap belum satu pun terpenuhi; LIVE VERSION / DEPLOYMENT APPROVAL tetap NOT VERIFIED (semua field manifest NOT PROVIDED). |
+| 5 | §D.4.27 (baru) + matriks §2 (staging owners) | **Staging owners/prereqs — tetap UNASSIGNED:** tabel STAGE-P01..P12 dipertahankan lengkap dengan peran yang dibutuhkan; tidak ada nama owner yang dikarang; ST-12 tetap tidak PASS tanpa alert yang benar-benar diterima operator (kriteria ST-12-LAT-01..03 dipertahankan). |
+| 6 | §D.4.27 (baru) + matriks §2 (carry-forward) + §G U-69/U-70 | **Carry-forward + risk register + gate:** F-001..F-005, F-006b/F-006c, F-016..F-018, U-38/U-33/U-41/U-43/U-44/U-45/U-46 dipertahankan tanpa perubahan status; log gagal SU-T5 TIDAK direkonstruksi; bukti VM dipisah ketat dari staging. Risiko baru **U-69** (F-031 — klaim batas byte fixture tidak tepat; rasio v2.3.15 superseded) dan **U-70** (F-032 — harness dapat melaporkan sukses dengan nol run). **U-67 DIPERBARUI** (rasio terukur ulang 1,13–1,84×; manfaat tetap bergantung GC) dan **U-68 DIPERBARUI** (proposal keputusan F-030 selesai sebagai paket yang dapat diputuskan; blocker tetap CONFIRMED). Gate berikutnya tetap G-A..G-J; tidak ada gate baru — pemicu revisi v2.3.17 adalah keputusan owner atas G-A/G-C/G-D/G-F/G-G, ATAU bukti runtime G-B, ATAU staging tersedia (G-E), ATAU audit independen V10. |
+
 ## Perubahan di revisi v2.3.15 (8 November 2026)
 
 Revisi respons atas audit independen V8 ChatGPT
@@ -93,7 +116,7 @@ sejarah).
 
 | # | Lokasi | Perubahan |
 | --- | --- | --- |
-| 1 | §D.4.26 (baru) + matriks §2 F-029 + `evidence/f029-memory-methodology/` (baru) | **F-029 — metodologi perbandingan memori F-027 DIPERBAIKI dan rasio v2.3.14 DIKOREKSI:** parent harness baru menjalankan pola A dan B sebagai **proses terpisah** (PID baru, baseline bersih, 60 run anak per versi Bun, 0 gagal, 60 PID berbeda terverifikasi), metrik utama **VmHWM** (OS high-water RSS dari `/proc/self/status`), forced-GC dan natural-GC dilaporkan terpisah, 5 run per kombinasi dengan median + rentang, fixture non-ASCII char-matched DAN byte-matched (500.000 karakter U+00E9 = 1.000.000 byte UTF-8). Hasil apa adanya: rasio A/B terkoreksi **1,18–1,88×** (median VmHWM) — forced-GC 1,57–1,88×, natural-GC 1,18–1,32×. **Rasio 4,5–5,4× v2.3.14 TIDAK TERKONFIRMASI dan DICABUT sebagai klaim kuantitatif** (artefak baseline B yang tercemar); angka itu dinyatakan NOT VERIFIED dan tidak boleh dipakai sebagai sizing/cgroup acceptance. Karakter hidup 3,60× dipertahankan hanya sebagai character accounting. Aturan desain (L2 = input-body budget, larangan materialisasi bersamaan, pemindaian incremental) TETAP berlaku — manfaat incremental nyata tetapi lebih kecil, dan larangan itu membatasi worst-case, bukan bergantung pada rasio lama. |
+| 1 | §D.4.26 (baru) + matriks §2 F-029 + `evidence/f029-memory-methodology/` (baru) | **F-029 — metodologi perbandingan memori F-027 DIPERBAIKI dan rasio v2.3.14 DIKOREKSI:** parent harness baru menjalankan pola A dan B sebagai **proses terpisah** (PID baru, baseline bersih, 60 run anak per versi Bun, 0 gagal, 60 PID berbeda terverifikasi), metrik utama **VmHWM** (OS high-water RSS dari `/proc/self/status`), forced-GC dan natural-GC dilaporkan terpisah, 5 run per kombinasi dengan median + rentang, fixture non-ASCII char-matched DAN byte-matched (500.000 karakter U+00E9 = 1.000.000 byte UTF-8) **[KOREKSI v2.3.16 (F-031): klaim byte itu TIDAK TEPAT — fixture lama terukur 999.901 byte (non-ASCII byte-matched) dan 999.981 byte (ASCII); fixture v2.3.16 adalah 500.032 karakter = tepat 1.000.000 byte terukur. Lihat §D.4.27.]**. Hasil apa adanya: rasio A/B terkoreksi **1,18–1,88×** (median VmHWM) — forced-GC 1,57–1,88×, natural-GC 1,18–1,32×. **Rasio 4,5–5,4× v2.3.14 TIDAK TERKONFIRMASI dan DICABUT sebagai klaim kuantitatif** (artefak baseline B yang tercemar); angka itu dinyatakan NOT VERIFIED dan tidak boleh dipakai sebagai sizing/cgroup acceptance. **[PEMBARUAN v2.3.16: rentang 1,18–1,88× dinyatakan SUPERSEDED oleh pengukuran ulang exact-byte 1,13–1,84×. Lihat §D.4.27.]** Karakter hidup 3,60× dipertahankan hanya sebagai character accounting. Aturan desain (L2 = input-body budget, larangan materialisasi bersamaan, pemindaian incremental) TETAP berlaku — manfaat incremental nyata tetapi lebih kecil, dan larangan itu membatasi worst-case, bukan bergantung pada rasio lama. |
 | 2 | §D.4.26 (baru) + matriks §2 F-030 + `evidence/f030-bun-compatibility/` (baru) | **F-030 — matriks kompatibilitas Bun/lockfile/SDK path + trade-off Opsi A vs Opsi B (keduanya PROPOSAL — HOLD):** terverifikasi: Bun 1.3.10 MENOLAK lockfile v2 (frozen install exit 1, log F-009 — tidak diulang); Bun 1.4.4 MENERIMA lockfile v2 — frozen install exit 0 (79 paket, lockfile tidak berubah, hash tetap `a7e1457e…`) + typecheck exit 0 terhadap lockfile ter-commit (log baru `run-144-frozen-install-typecheck.txt`); SDK tarball ada di VM ini (SHA-256 `f2cb7b25…`, sama dengan v2.3.9) tetapi provenance NOT VERIFIED; clean external builder tanpa `/opt/hatch` TIDAK DAPAT install pada versi Bun mana pun (SDK path absolut). Opsi A (naikkan kanonik ke 1.4.4) vs Opsi B (regenerasi lockfile v1 di bawah 1.3.10) + penggantian SDK path dijelaskan trade-off-nya; versi Bun minimum yang menerima lockfile v2 NOT VERIFIED. Build penuh NOT RUN pada kedua versi. F-009 tetap NOT REPRODUCIBLE; F-030 tetap CONFIRMED BLOCKER. |
 | 3 | §D.4.26 (baru) + matriks §2 F-028/F-019 | **F-028 dan F-019 — dipertahankan tanpa perubahan:** LIVE VERSION / DEPLOYMENT APPROVAL tetap NOT VERIFIED (semua field manifest NOT PROVIDED, tidak ada tebakan); `checkLink` TIDAK di-invoke, tidak ada public share, tidak ada perubahan runtime; kontrol F-019 (a)–(e) tetap belum satu pun terpenuhi. |
 | 4 | §D.4.26 (baru) + matriks §2 (staging owners) + §D.4.19a | **Staging owners/prereqs — tetap UNASSIGNED, dilengkapi prasyarat/prosedur/oracle/bukti per STAGE-P01..P12:** tidak ada nama owner yang dikarang; tiap STAGE-P mendapat prasyarat, prosedur aman, PASS/FAIL oracle, dan bukti yang harus dihasilkan; ST-12 tetap tidak PASS tanpa alert yang benar-benar diterima operator (kriteria ST-12-LAT-01..03 dipertahankan). |
@@ -5430,6 +5453,9 @@ metodologi sesuai mitigasi V8 butir demi butir:
 | 1.4.4 | nonascii-bytes | natural | 2.854.912 | 2.420.736 | 1,18× |
 
 **Rasio terkoreksi keseluruhan: 1,18–1,88× (median VmHWM).**
+**[PEMBARUAN v2.3.16 (F-031): rentang ini dinyatakan SUPERSEDED
+oleh pengukuran ulang exact-byte 1,13–1,84× — lihat §D.4.27.
+Angka di bagian ini adalah catatan sejarah v2.3.15.]**
 Rasio 4,5–5,4× v2.3.14 **TIDAK TERKONFIRMASI** — angka itu adalah
 artefak baseline B yang tercemar, bukan efek pola incremental.
 Angka lama dinyatakan **NOT VERIFIED** dan **TIDAK BOLEH** dipakai
@@ -5676,6 +5702,334 @@ OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..20 terhadap
 implementasi aktual di staging terisolasi + log mentah + review
 independen — hasil VM saja tidak cukup.
 
+### D.4.27 Jawaban atas audit independen V9 — F-031, F-032 + Handoff §9 (BARU, v2.3.16)
+
+**F-031 — fixture F-029 tidak tepat pada batas byte yang
+dinyatakan (Low, test-fixture accuracy defect).** Audit V9 benar:
+skrip v2.3.15 mengurangi filler 40 karakter (halaman) dan 20
+karakter (tiap script), padahal marker ASCII sebenarnya 33 / 15 /
+13 byte — ASCII terukur 999.981 byte, non-ASCII byte-matched
+999.901 byte, non-ASCII char-matched 1.999.901 byte (bukan
+~2.000.000). Klaim "tepat di batas 1 MB" tidak akurat; fixture
+itu tidak menguji kondisi tepat cap maupun cap+1.
+
+Perbaikan v2.3.16 (`evidence/f029-memory-methodology/` —
+`exp-pattern.ts` ditulis ulang, `run-f029.ts` diperbarui;
+README paket diperbarui):
+
+- **Pengukuran TextEncoder per segmen:** setiap segmen diukur
+  dengan `TextEncoder().encode(segment).byteLength`; filler
+  dibangun dari panjang marker yang TERUKUR (33 / 15 / 13,
+  total 61 byte); total byte di-assert SEBELUM scan
+  (assert per segmen + assert total). Tidak ada perkiraan
+  jumlah karakter yang dipakai sebagai klaim byte.
+- **Kompensasi byte ganjil:** filler U+00E9 = 2 byte dan target
+  filler per segmen bisa ganjil — kekurangan 0–1 byte per
+  segmen ditutup dengan SATU karakter pad ASCII `'A'` (1 byte,
+  filler inert). Pada target default, `nonascii-bytes` =
+  499.968 karakter U+00E9 + 3 pad ASCII + 61 marker =
+  **500.032 karakter, tepat 1.000.000 byte**.
+- **Varian cap−1 / cap+1:** argumen baru `--bytes N`
+  (1..2.000.000) menggeser target agregat; halaman =
+  N−600.000, tiap script = 300.000.
+- **Urutan metodologi dipertahankan dari v2.3.15:** baseline
+  bersih diambil SEBELUM segmen dibangun; segmen dibangun
+  LAZILY per pola (pola A ketiganya sekaligus; pola B satu
+  per satu, dilepas sebelum berikutnya). Dua draf yang
+  melanggar urutan ini tertangkap saat pengembangan (fixture
+  sebelum baseline → delta menyusut ke 0 dan rasio
+  "Infinityx"; semua segmen di muka untuk pola B → B melebihi
+  A pada satu kombinasi, rasio 0,93×); log trial keduanya
+  DIBUANG tanpa di-commit dan dicatat di README F-029.
+- **Overhead pengukuran (dicatat jujur):** tiap segmen
+  di-encode satu kali untuk mengukurnya; salinan Uint8Array
+  transien (maks. satu segmen, ≤ 400.000 byte) ikut terhitung
+  dalam VmHWM dan berlaku sama untuk kedua pola. Delta absolut
+  v2.3.16 sedikit lebih besar dari v2.3.15 karena overhead
+  ini; rasio yang dibandingkan tetap dalam pita yang sama.
+
+**Bukti baru v2.3.16 (rerun DIBENARKAN — harness berubah,
+protokol butir 6):**
+
+- Rerun penuh: `run-1310-f031-f032.txt` dan
+  `run-144-f031-f032.txt` (839 baris masing-masing) — 60 run
+  anak per versi Bun (1.3.10 `1.3.10+30e609e08`, diunduh ulang
+  dari rilis resmi oven-sh/bun `bun-v1.3.10`, zip 39.328.732
+  byte; 1.4.4 `1.4.4+38afee6c8`), 0 gagal, 60 PID berbeda
+  terverifikasi per versi, `asksConnect = true` pada SEMUA
+  120 run anak, `utf8Bytes` terukur 1.000.000 pada 40 RESULT
+  dan 1.999.939 pada 20 RESULT per log.
+- Varian byte: `run-144-f031-byte-variants.txt` (14 run, Bun
+  1.4.4, gc natural) — pola A dan B × `ascii` dan
+  `nonascii-bytes` × `--bytes` 999.999 / 1.000.000 /
+  1.000.001, plus pola A dan B × `nonascii` default; semua
+  exit 0 dan total byte TEPAT sama dengan target.
+- Log v2.3.15 DIPERTAHANKAN sebagai bukti historis; klaim
+  batas-byte-nya TIDAK dibawa ulang.
+
+**Hasil terukur ulang (median VmHWM delta):**
+
+| Bun | Fixture | GC | A median | B median | Rasio A/B |
+| --- | --- | --- | --- | --- | --- |
+| 1.3.10 | ascii | forced | 6.336.512 | 3.899.392 | 1,63× |
+| 1.3.10 | ascii | natural | 5.865.472 | 4.739.072 | 1,24× |
+| 1.3.10 | nonascii | forced | 8.073.216 | 4.849.664 | 1,66× |
+| 1.3.10 | nonascii | natural | 8.138.752 | 6.615.040 | 1,23× |
+| 1.3.10 | nonascii-bytes | forced | 4.685.824 | 2.543.616 | 1,84× |
+| 1.3.10 | nonascii-bytes | natural | 4.575.232 | 3.837.952 | 1,19× |
+| 1.4.4 | ascii | forced | 5.300.224 | 3.379.200 | 1,57× |
+| 1.4.4 | ascii | natural | 5.804.032 | 5.140.480 | 1,13× |
+| 1.4.4 | nonascii | forced | 5.349.376 | 3.149.824 | 1,70× |
+| 1.4.4 | nonascii | natural | 7.897.088 | 6.176.768 | 1,28× |
+| 1.4.4 | nonascii-bytes | forced | 3.063.808 | 2.031.616 | 1,51× |
+| 1.4.4 | nonascii-bytes | natural | 4.603.904 | 3.739.648 | 1,23× |
+
+**Rasio terukur ulang keseluruhan: 1,13–1,84× (median VmHWM).**
+Rentang v2.3.15 (1,18–1,88×) TIDAK direproduksi secara eksak
+dan dinyatakan **SUPERSEDED** — ujung bawah kini 1,13×
+(1.4.4 ascii natural), ujung atas 1,84× (1.3.10
+nonascii-bytes forced). Perbedaan ini kecil dan dalam
+sebaran antar-run, tetapi dilaporkan apa adanya, bukan
+dibulatkan agar cocok. Yang TIDAK berubah: pola B lebih
+rendah dari pola A pada SEMUA 12 kombinasi di kedua versi;
+forced-GC 1,51–1,84× vs natural-GC 1,13–1,28× (manfaat
+incremental tetap bergantung GC — angka forced-GC BUKAN
+perilaku runtime natural). Karakter hidup 3,60×
+dipertahankan sebagai character accounting (ascii:
+3.600.005; nonascii-bytes: 1.800.116 / 500.032). `heapUsed`
+tetap bukan oracle di Bun 1.3.10 (delta = 0 pada SEMUA 60
+run anak 1.3.10 — direproduksi v2.3.16). Rasio ini tetap
+HANYA bukti VM atas pola simulasi — BUKAN sizing/cgroup
+acceptance, BUKAN acceptance staging.
+
+**Kriteria penerimaan F-031 (audit V9 §9 butir 1) — terpenuhi:**
+fixture ASCII dan non-ASCII byte-matched tepat 1.000.000
+byte (terukur, di-assert); varian cap−1 dan cap+1 terukur
+(999.999 / 1.000.001); marker ASCII diperhitungkan (33/15/13);
+raw output mencatat byte aktual per segmen dan total (baris
+`bytes:` di setiap child + `segmentBytes` di RESULT).
+
+**F-032 — harness dapat melaporkan sukses dengan nol run (Low,
+harness false-success path).** Audit V9 benar: `RUNS`
+v2.3.15 diparsing `Number(...)` tanpa validasi; `--runs 0`
+atau non-numerik menghasilkan nol child run tetapi parent
+tetap mencetak "all child runs ok" dan keluar 0.
+
+Perbaikan v2.3.16 (`run-f029.ts` ditulis ulang; paket bukti
+baru `evidence/f032-harness-validation/`):
+
+- `--runs` WAJIB (tidak ada default diam-diam); bentuk
+  `--runs N` atau `--runs=N`; nilai harus cocok `/^\d+$/`
+  dan integer dalam rentang yang disetujui **1..10**
+  (`MAX_RUNS = 10`). Nilai 0, negatif, NaN, non-numerik,
+  desimal, terlalu besar, nilai hilang, atau flag hilang →
+  error + usage + **exit 2**, tanpa child dijalankan.
+- Assertion `records.length === EXPECTED_RUNS` (12 kombinasi
+  × RUNS) + tiap kombinasi tepat RUNS record; ketidakcocokan
+  dicetak `COUNT MISMATCH` dan menggagalkan run.
+- Validasi setiap RESULT terhadap parameter yang diminta
+  (pattern/fixture/gc/bun parent), `asksConnect === true`,
+  `utf8Bytes` terukur sama dengan yang diharapkan per fixture
+  (1.000.000 / 1.999.939), `segmentBytes` berjumlah sama
+  dengan `utf8Bytes`, `vmHwmDelta` non-negatif.
+- Timeout child 120 detik (`spawnSync` `timeout`); timeout /
+  signal / exit non-zero / RESULT hilang → FAIL dengan alasan
+  yang dicetak. Mekanisme timeout diverifikasi terpisah
+  (`sleep 30`, timeout 200 ms → `ETIMEDOUT`, `status: null`,
+  `signal: SIGTERM`); uji end-to-end dengan child yang
+  sengaja menggantung TIDAK dibuat di revisi ini (dicatat
+  sebagai batasan).
+- Baris "parent done: all child runs ok" HANYA bila
+  `failures === 0` DAN jumlah record tepat DAN semua
+  kombinasi lengkap; bila tidak, parent mencetak
+  "parent done: FAILED — …" dan exit 1.
+
+**Tes regresi F-032 (log `run-f032-negative.txt`, Bun 1.4.4,
+2026-11-08T01:56:59Z):** `--runs 0`, `--runs abc`,
+`--runs -1`, `--runs` (nilai hilang), tanpa argumen (flag
+hilang), `--runs 11`, `--runs 1.5` — ketujuh kasus exit 2
+tanpa mencetak "all child runs ok"; kontrol positif
+`--runs 1` exit 0 dengan 12 RESULT dan "all child runs ok".
+Kriteria penerimaan F-032 (audit V9 §9 butir 2) terpenuhi
+pada level harness; log v2.3.15 tetap tidak dibatalkan
+(F-032 tidak mengubah isi log lama yang sudah terverifikasi
+berisi 60 RESULT per versi).
+
+**Dokumentasi harness diselaraskan (handoff V9 butir 3).**
+README F-029 v2.3.15 salah menyebut `Bun.spawnSync`; yang
+benar **`node:child_process.spawnSync`** dengan
+`process.execPath`. Command yang benar:
+`bun run-f029.ts --runs 5` dari direktori
+`evidence/f029-memory-methodology/` (cwd). Versi Bun yang
+dipakai: 1.3.10 (`1.3.10+30e609e08`) dan 1.4.4
+(`1.4.4+38afee6c8`). Batasan dinyatakan eksplisit: skrip
+hanya simulasi pola string (bukan implementasi, bukan
+staging, bukan produksi); konkurensi multi-scan tidak
+diukur; fixture supplementary-plane (U+1F600) tetap varian
+staging (H-RES-02 B).
+
+**Rasio F-027 dipertahankan terkoreksi (handoff V9 butir 4).**
+Klaim 4,5–5,4× TIDAK dikembalikan. Rasio yang dipakai di
+semua dokumen aktif kini **1,13–1,84×** (pengukuran ulang
+v2.3.16, fixture exact-byte) — hanya hasil eksperimen VM;
+TIDAK dipakai untuk cgroup sizing atau acceptance staging.
+Koreksi dicatat pada §D.4.25 (F-027), §D.4.26 (F-029),
+tabel perubahan v2.3.14/v2.3.15, README F-029, dan paragraf
+penutup — bukan dihapus diam-diam.
+
+**Proposal F-030 diselesaikan tanpa implementasi (handoff V9
+butir 5).** Paket keputusan yang dapat diputuskan owner
+tanpa mengubah file apa pun:
+
+**Rekomendasi utama — Opsi A + SDK vendorkan (P-1 + P-3b):**
+
+| Aspek | Isi rekomendasi |
+| --- | --- |
+| Bun kanonik | **1.4.4** (`1.4.4+38afee6c8`, rilis resmi oven-sh/bun `bun-v1.4.4`) — versi yang terverifikasi menerima lockfile v2 (frozen install + typecheck exit 0, log F-030). `packageManager` diubah `bun@1.3.10` → `bun@1.4.4` (satu baris + dokumentasi versi kanonik). |
+| Lockfile | Tetap v2 ter-commit (sudah kompatibel dengan 1.4.4); resolusi dependensi tidak berubah; tidak ada regenerasi. |
+| SDK | **Vendorkan artefak SDK berversi ke dalam repo** dengan digest SHA-256 tercatat dan diverifikasi saat install (opsi 2 dari matriks v2.3.15). Tarball yang ada di VM ini (`@hatch/space-sdk` 0.14.0, 2.051.070 byte, SHA-256 `f2cb7b25d35a7ade70a59ddbc5a3b7aefc727306d570d2356eaeb91d120ad49e` — diukur di VM, SAMA dengan v2.3.9) adalah kandidat artefaknya; provenance tarball itu sendiri tetap NOT VERIFIED sampai runtime provider menyatakan sumber resminya secara tertulis. |
+| Provenance / digest yang DIBUTUHKAN pada saat keputusan (saat ini NOT PROVIDED — tidak dikarang) | (a) Digest resmi rilis Bun 1.4.4 dari oven-sh/bun (SHA-256 rilis + rujukan URL rilis); (b) atestasi tertulis runtime provider atas asal tarball SDK (URL/sumber resmi + digest yang dinyatakan provider, dicocokkan dengan `f2cb7b25…` hasil ukur VM); (c) dependency digest dari lockfile v2 ter-commit (dicatat dari hasil frozen install clean-builder). |
+| Prasyarat clean-builder | Builder eksternal bersih TANPA `/opt/hatch`, TANPA akses jaringan ke path lokal VM; Bun 1.4.4 terpasang dari rilis resmi (digest terverifikasi); repo berisi `package.json` (kanonik 1.4.4) + `bun.lock` v2 + artefak SDK vendorkan berdigest; registry publik dapat dijangkau untuk 79 paket. |
+| Prosedur pembuktian (setelah keputusan + otorisasi tahap b) | Salinan bersih repo → `bun install --frozen-lockfile` (exit 0, lockfile tidak berubah, hash tercatat) → `bun run typecheck` (exit 0, client + server) → `bun run build` (exit 0 — house rules saat ini melarang build dari `site/`; build adalah bagian acceptance G-J setelah keputusan owner) → raw log + environment manifest disimpan sebagai bukti clean-builder. |
+| Rollback | Kembalikan `packageManager` ke `bun@1.3.10` dan hapus artefak SDK vendorkan (kembali ke lockfile v2 ter-commit + path `file:/opt/hatch/...` yang hanya berlaku di VM ini); rollback mengembalikan status ke NOT REPRODUCIBLE — dicatat sebagai rollback ke keadaan blocked, bukan ke keadaan baik. |
+| Dampak terhadap bukti runtime | SEMUA bukti VM yang memakai 1.3.10 sebagai "kanonik" harus dibaca ulang sebagai bukti versi LAMA (perilaku chunk/dekompresi/GC 1.4.4 terbukti berbeda dari 1.3.10 di F-026/F-029 — mis. `heapUsed` bergerak di 1.4.4 tetapi 0 di 1.3.10; chunk maksimum berbeda); H-RES-03/05 staging harus dijalankan pada 1.4.4; runtime artifact staging harus memakai versi 1.4.4 itu. Keputusan ini TIDAK mengubah satu pun angka VM yang sudah diterbitkan — hanya cara membacanya. |
+
+**Fallback — Opsi B (P-2, regenerasi lockfile v1):** bila
+owner menolak perubahan runtime, kanonik tetap 1.3.10 dan
+`bun.lock` diregenerasi ke v1 di bawah 1.3.10; prasyarat
+tambahan: diff resolusi dependensi v1 vs v2 diperiksa
+paket-per-paket (perbedaan versi transitif belum diperiksa);
+frozen install + typecheck + build dari lockfile hasil
+regenerasi dibuktikan sebagai satu alur bersih pada clean
+builder. Penggantian SDK path tetap wajib (sama seperti
+Opsi A). Opsi B mempertahankan validitas semua bukti VM
+1.3.10 tetapi memakai format lockfile lama yang dukungan
+masa depannya tidak dijamin.
+
+**Yang TIDAK diputuskan di sini:** pilihan Opsi A vs B
+tetap keputusan owner (G-G); penggantian SDK path tetap
+butuh persetujuan owner + runtime provider; TIDAK ADA
+perubahan `site/package.json`, `site/bun.lock`, atau file
+apa pun di revisi ini. **Acceptance F-030 tetap belum satu
+pun terpenuhi** (clean external builder tanpa `/opt/hatch`;
+frozen install + typecheck + build exit 0; digest tercatat;
+lockfile tidak berubah) — **F-030 tetap CONFIRMED BLOCKER**
+dan **F-009 tetap NOT REPRODUCIBLE**. Tidak ada klaim
+reproducible sebelum pembuktian clean-builder berhasil.
+
+**F-019 — tetap BLOCKED / NOT VERIFIED (handoff V9 butir 6).**
+Tidak ada fakta baru. `checkLink` TIDAK di-invoke, tidak ada
+public share, tidak ada perubahan runtime state. Hanya bukti
+read-only yang tersedia (paket F-021 v2.3.12, tidak ada
+capture baru — tidak ada perubahan status yang membenarkan
+capture ulang): `checklink` MASIH TERDAFTAR; tidak ada
+versi/digest artifact yang terekspos tool; kontrol (a)–(e)
+(versi/digest, dispatch denial, UI gate, public invocation
+denial, egress observation) tetap NOT PROVIDED / NOT
+VERIFIED — masing-masing dinyatakan demikian, bukan ditebak.
+Deployment tetap BLOCKED.
+
+**F-028 — tetap NOT VERIFIED.** Tidak ada fakta baru. LIVE
+VERSION / DEPLOYMENT APPROVAL tetap NOT VERIFIED; semua field
+manifest tetap NOT PROVIDED; tidak ada tebakan versi live,
+tidak ada perubahan live, tidak ada klaim approval baru.
+
+**F-001..F-005 — tetap blocker implementasi.** Tidak ada
+perubahan status; requirement implementasi dipertahankan dari
+§D.4.25. Handoff V9 BUKAN izin mengubah source. Satu
+pembaruan spesifikasi (F-031): H-RES-05 kini mensyaratkan
+fixture batas byte yang TERUKUR eksak (cap / cap−1 / cap+1)
+pada kedua mode GC — lihat F-031 di atas.
+
+**Staging owners/prereqs — tetap UNASSIGNED (handoff V9
+butir 7).** Tabel STAGE-P01..P12 di §D.4.26 dipertahankan
+lengkap dengan peran yang dibutuhkan, prasyarat, prosedur
+aman, PASS/FAIL oracle, dan bukti yang harus dihasilkan.
+Tidak satu pun peran terisi dan tidak ada nama owner yang
+dikarang. ST-12 tetap tidak PASS tanpa alert yang
+benar-benar diterima operator (kriteria ST-12-LAT-01..03
+dipertahankan). STAGE-P01..P12 tetap BLOCKED; tidak ada gate
+READY.
+
+**Provenance suite lama — dipertahankan (handoff V9 butir 7).**
+Klaim bundle asli 9/9 × 4 TIDAK diubah: bundle asli hanya
+membuktikan 1 log lengkap + duplikat + tail; bundle suplemen
+RUN=1..4 tetap menjadi empat log lengkap yang tersedia; log
+gagal awal SU-T5 TIDAK direkonstruksi (tetap NOT PRESERVED).
+Semua bukti VM baru v2.3.16 dilabeli VM dan dipisah ketat
+dari staging — tidak ada bukti VM yang diklaim sebagai bukti
+staging. Tidak ada pengulangan SU-T1..SU-T9 di revisi ini
+(tidak ada perubahan implementasi/harness suite lama yang
+membenarkan rerun).
+
+**Carry-forward (handoff V9 butir 7).** F-018, F-006b/F-006c,
+U-38/U-33/U-41/U-43/U-44/U-45/U-46 hanya berubah status
+berdasarkan bukti atau keputusan owner yang dapat dilacak —
+tidak ada perubahan status di v2.3.16. U-46 tetap keputusan
+owner yang belum ada (opsi (a)/(b) tetap terbuka;
+implementasi pensinyalan tetap DIBLOKIR). Tidak ada detail
+narasi insiden atau data wallet apa pun di dokumen revisi
+ini.
+
+**Risiko baru v2.3.16 (§G):** U-69 (F-031 — klaim batas byte
+fixture tidak tepat; rasio v2.3.15 superseded) dan U-70
+(F-032 — harness dapat melaporkan sukses dengan nol run;
+jalur timeout belum diuji end-to-end). **U-67 DIPERBARUI**
+(rasio terukur ulang 1,13–1,84×; manfaat tetap bergantung
+GC) dan **U-68 DIPERBARUI** (proposal keputusan F-030 selesai
+sebagai paket yang dapat diputuskan; blocker tetap
+CONFIRMED). U-38/U-33/U-41/U-43/U-44/U-45/U-46 dipertahankan
+tanpa perubahan status.
+
+**Gate konkret berikutnya (v2.3.16 → v2.3.17).** Revisi ini
+bukan pengulangan status: ia memperbaiki fixture exact-byte
+F-029 dengan bukti eksperimen VM baru pada Bun kanonik 1.3.10
+DAN 1.4.4 (F-031) dan mengukur ulang rasio menjadi
+1,13–1,84×, menutup jalur false green harness (F-032)
+dengan tes regresi negatif, menyelaraskan dokumentasi
+harness, dan menyelesaikan proposal keputusan F-030 sebagai
+paket yang dapat diputuskan tanpa mengubah file apa pun,
+sambil mempertahankan LIVE VERSION / DEPLOYMENT APPROVAL =
+NOT VERIFIED (F-028) dan F-019 BLOCKED. Gate berikutnya dan
+prasyaratnya: **(G-A)** keputusan owner atas scope perubahan
+source (F-020); **(G-B)** bukti runtime F-019 (versi/digest +
+kontrol disabled (a)–(e)); **(G-C)** keputusan tenancy
+F-018 (pernyataan resmi provider tentang scope `ctx.db`);
+**(G-D)** keputusan U-46; **(G-E)** staging tersedia + peran
+UNASSIGNED terisi; **(G-F)** keputusan cache F-022 — owner
+menerima cabang pilihan (rekomendasi) vs alternatif;
+**(G-G)** keputusan Bun F-009 — kanonik 1.3.10 vs 1.4.4
+(kini dengan rekomendasi Opsi A + SDK vendorkan vs fallback
+Opsi B, §D.4.27); **(G-H)** eksekusi harness H-RES-02/03/05
+yang sudah dikoreksi — prasyarat: otorisasi implementasi
+tahap (b) (G-A) + staging tersedia (G-E) + verifikasi ulang
+perilaku Bun pada versi kanonik (U-62, bagian staging);
+**(G-I)** stress test memori H-RES-03/05 pada staging
+(chunk > cap, 3 script paralel, fixture batas 1.000.000 +
+varian cap−1/cap+1 + non-ASCII byte-matched terukur eksak,
+high-water RSS ≤ ambang pra-tes, kedua mode GC) + proses
+deployment manifest terisi untuk setiap deployment (F-028);
+**(G-J)** keputusan reproduksibilitas F-030 — prasyarat:
+keputusan owner G-G (Opsi A vs Opsi B) + penggantian SDK
+path (paket ter-publish/vendorkan/sumber resmi) + bukti
+clean-builder (frozen install + typecheck + build exit 0,
+lockfile tidak berubah, dependency digest tercatat, tanpa
+`/opt/hatch`). Pemicu revisi v2.3.17: keputusan owner atas
+G-A/G-C/G-D/G-F/G-G, ATAU bukti runtime G-B, ATAU staging
+tersedia (G-E), ATAU audit independen V10 — mana pun yang
+datang dulu. Tidak ada revisi baru yang hanya mengulang
+status v2.3.16.
+
+**Hard gates — ditegaskan kembali (v2.3.16):** no Link Scanner
+activation, no public deployment, no production build, no DB/catalog
+change, no source implementation tanpa owner approval terpisah
+(HOLD perubahan source mirror sampai klarifikasi F-020 tetap
+berlaku), no production testing (termasuk tidak memanggil
+`checkLink`). F-001..F-005, F-016/F-017/F-022, F-018 tetap
+OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..20 terhadap
+implementasi aktual di staging terisolasi + log mentah + review
+independen — hasil VM saja tidak cukup.
+
 ---
 
 ## E. Risiko regresi terhadap scanner yang sudah berjalan
@@ -5861,8 +6215,10 @@ dan harus diterima secara eksplisit atau ditangani di luar rancangan ini.
 | U-64 | **F-027 — L2 bukan batas peak memory: salinan string turunan (v2.3.14 — BARU — DIPERBARUI v2.3.15)** | Audit V7 benar: L2 hanya menghitung decoded-body bytes; source (`actions.ts:520-533`) membentuk `join` + `haystack` + `lower` yang hidup bersamaan. Eksperimen VM v2.3.14 (`evidence/f027-derived-strings/`): pada input batas 1.000.000 karakter, karakter hidup 3.599.936 = 3,60× input; peak RSS +4,98× input (1.3.10) / +4,33× (1.4.4); peak heapUsed +3,61× (1.4.4). L2 DINYATAKAN sebagai input-body budget. Aturan baru: LARANGAN materialisasi bersamaan + pemindaian incremental (alternatif terukur ~4,5–5,4× lebih hemat; tetap mendeteksi sinyal pada kasus uji). `heapUsed` pada 1.3.10 tidak bergerak — ambang acceptance wajib memakai RSS + external per versi runtime. **DIPERBARUI v2.3.15 (F-029): angka ~4,5–5,4× TIDAK TERKONFIRMASI dan DICABUT sebagai klaim kuantitatif — eksperimen terkoreksi `evidence/f029-memory-methodology/` (proses terpisah + VmHWM, median 5 run) memberi rasio A/B 1,18–1,88× (forced-GC 1,57–1,88×; natural-GC 1,18–1,32×). Aturan desain (larangan materialisasi + incremental) TETAP berlaku; karakter hidup 3,60× dipertahankan hanya sebagai character accounting.** | Scan pada budget penuh memakai ~4–5× memori dari angka L2; ambang berbasis `heapUsed` saja memberi false confidence pada 1.3.10 | Implementasi pemindaian incremental + stress test H-RES-05 diperbarui (fixture batas + varian non-ASCII byte-matched, high-water RSS/VmHWM ≤ ambang pra-tes, kedua mode GC dilaporkan terpisah) PASS di staging (gate G-I) |
 | U-65 | **F-028 — provenance deployment live tidak dapat diaudit (v2.3.14 — BARU)** | Audit V7 benar: klaim "live sudah v15, d85a1e2 disetujui Rama 2026-11-08 ~02:09 WIB" tidak disertai deployment manifest, artifact digest, release/workflow ID, atau approval artifact yang dapat diaudit. Status LIVE VERSION / DEPLOYMENT APPROVAL = NOT VERIFIED (dipertahankan v2.3.14). Template manifest non-secret dipublikasikan (`DEPLOYMENT_MANIFEST_TEMPLATE.md`) — manifest itu sendiri tetap KOSONG sampai operator menyediakannya. | Auditor tidak dapat menentukan source commit yang benar-benar berjalan di live, waktu penerapannya, atau bukti otorisasi; status ini tidak boleh dipakai sebagai dasar menyetujui deployment lain | Operator + owner menyediakan manifest terisi per deployment (field 2, 4, 6, 8, 12 minimal); sampai ada, jangan simpulkan versi live |
 | U-66 | **Lockfile v2 tidak dapat dibaca Bun kanonik 1.3.10 — frozen install gagal (v2.3.14 — BARU — DIPERBARUI v2.3.15)** | Bukti VM v2.3.14 (`evidence/f009-bun1310-install-typecheck/`, salinan scratch): `bun install --frozen-lockfile` pada Bun 1.3.10 GAGAL exit 1 — `Unknown lockfile version` (`bun.lock` ter-commit memakai `"lockfileVersion": 2`). Install non-frozen berhasil (79 paket) tetapi menulis ulang lockfile ke v1 di scratch; typecheck exit 0 hanya berlaku terhadap lockfile hasil regenerasi itu. Kanonik 1.3.10 dan lockfile ter-commit tidak kompatibel; F-009 tetap NOT REPRODUCIBLE untuk clean external builder. Absolute local SDK path (`file:/opt/hatch/...`) tetap blocker clean-builder terpisah. **DIPERBARUI v2.3.15 (F-030): matriks kompatibilitas `evidence/f030-bun-compatibility/` — Bun 1.4.4 MENERIMA lockfile v2 (frozen install exit 0, 79 paket, lockfile tidak berubah; typecheck exit 0 terhadap lockfile ter-commit); clean external builder tanpa `/opt/hatch` tetap TIDAK DAPAT install pada versi Bun mana pun (SDK path absolut); trade-off Opsi A (naikkan kanonik ke 1.4.4) vs Opsi B (regenerasi lockfile v1) + penggantian SDK path dirumuskan — keduanya PROPOSAL, HOLD sampai otorisasi tahap (b).** | Clean builder pada 1.3.10 tidak dapat mereproduksi install; klaim reproduksibilitas berbasis bukti 1.4.4 tidak berlaku untuk kanonik | Keputusan owner G-G: (a) adopsi Bun lebih baru sebagai kanonik, ATAU (b) regenerasi lockfile di bawah 1.3.10 + verifikasi ulang resolusi — keduanya perubahan source, butuh otorisasi tahap (b); rencana penggantian SDK path di §D.4.25 + matriks/trade-off di §D.4.26 (gate G-J) |
-| U-67 | **F-029 — rasio penghematan incremental v2.3.14 tidak valid; manfaat terkoreksi bergantung GC (v2.3.15 — BARU)** | Audit V8 benar: perbandingan A/B v2.3.14 satu proses dengan baseline B tercemar; rasio 4,5–5,4× tidak didukung. Eksperimen terkoreksi v2.3.15 (`evidence/f029-memory-methodology/` — proses terpisah + VmHWM, 5 run/kombinasi, median + rentang, Bun 1.3.10 DAN 1.4.4, fixture non-ASCII char-matched + byte-matched): rasio A/B **1,18–1,88×** (forced-GC 1,57–1,88×; natural-GC 1,18–1,32×). Rasio lama DICABUT sebagai klaim kuantitatif (NOT VERIFIED). Manfaat incremental nyata tetapi lebih kecil dan bergantung pada GC benar-benar mereklamasi segmen yang dilepas. | Keputusan sizing/cgroup/acceptance dapat didasarkan pada rasio yang terlalu optimistis bila angka lama dipakai; angka forced-GC disalahartikan sebagai perilaku runtime natural | Jangan pakai angka 4,5–5,4× untuk kapasitas apa pun; H-RES-05 staging memakai high-water RSS/VmHWM ≤ ambang pra-tes pada kedua mode GC (gate G-I); rasio 1,18–1,88× sendiri BUKAN acceptance staging — hanya bukti VM |
-| U-68 | **F-030 — lockfile v2 vs Bun kanonik + SDK path absolut: keputusan reproduksibilitas belum ada (v2.3.15 — BARU)** | Audit V8 benar: `packageManager` bun@1.3.10 vs lockfile v2 tidak kompatibel (frozen install gagal, log F-009); SDK path absolut `file:/opt/hatch/...` tidak ada pada clean builder. Matriks v2.3.15 (`evidence/f030-bun-compatibility/`): 1.4.4 menerima lockfile v2 (frozen install + typecheck exit 0, log baru); clean builder tetap gagal pada kedua versi karena SDK path; versi Bun minimum yang menerima lockfile v2 NOT VERIFIED; build penuh NOT RUN pada kedua versi; dependency digest NOT VERIFIED. Opsi A vs Opsi B + penggantian SDK path dirumuskan sebagai PROPOSAL — HOLD. | Clean builder/CI tidak dapat mereproduksi install dari pohon ter-commit; artifact yang dibangun tidak dapat dibuktikan berasal dari dependency graph yang disetujui; keputusan yang tertunda memblokir reproducible build | Keputusan owner G-G (Opsi A vs B) + penggantian SDK path + bukti clean-builder (frozen install + typecheck exit 0, lockfile tidak berubah, digest tercatat, tanpa `/opt/hatch`) — gate G-J; sampai selesai, F-009 tetap NOT REPRODUCIBLE dan F-030 tetap CONFIRMED BLOCKER |
+| U-67 | **F-029 — rasio penghematan incremental v2.3.14 tidak valid; manfaat terkoreksi bergantung GC (v2.3.15 — BARU — DIPERBARUI v2.3.16)** | Audit V8 benar: perbandingan A/B v2.3.14 satu proses dengan baseline B tercemar; rasio 4,5–5,4× tidak didukung. Eksperimen terkoreksi v2.3.15 (`evidence/f029-memory-methodology/` — proses terpisah + VmHWM, 5 run/kombinasi, median + rentang, Bun 1.3.10 DAN 1.4.4, fixture non-ASCII char-matched + byte-matched): rasio A/B **1,18–1,88×** (forced-GC 1,57–1,88×; natural-GC 1,18–1,32×). Rasio lama DICABUT sebagai klaim kuantitatif (NOT VERIFIED). Manfaat incremental nyata tetapi lebih kecil dan bergantung pada GC benar-benar mereklamasi segmen yang dilepas. **DIPERBARUI v2.3.16 (F-031): rerun dengan fixture exact-byte memberi rasio 1,13–1,84× (median VmHWM) — forced-GC 1,51–1,84×, natural-GC 1,13–1,28×; rentang 1,18–1,88× dinyatakan SUPERSEDED (tidak direproduksi eksak); pola B tetap lebih rendah dari pola A pada semua 12 kombinasi di kedua versi; karakter hidup 3,60× dipertahankan sebagai character accounting.** | Keputusan sizing/cgroup/acceptance dapat didasarkan pada rasio yang terlalu optimistis bila angka lama dipakai; angka forced-GC disalahartikan sebagai perilaku runtime natural | Jangan pakai angka 4,5–5,4× untuk kapasitas apa pun; H-RES-05 staging memakai high-water RSS/VmHWM ≤ ambang pra-tes pada kedua mode GC (gate G-I); rasio 1,13–1,84× sendiri BUKAN acceptance staging — hanya bukti VM |
+| U-68 | **F-030 — lockfile v2 vs Bun kanonik + SDK path absolut: keputusan reproduksibilitas belum ada (v2.3.15 — BARU — DIPERBARUI v2.3.16)** | Audit V8 benar: `packageManager` bun@1.3.10 vs lockfile v2 tidak kompatibel (frozen install gagal, log F-009); SDK path absolut `file:/opt/hatch/...` tidak ada pada clean builder. Matriks v2.3.15 (`evidence/f030-bun-compatibility/`): 1.4.4 menerima lockfile v2 (frozen install + typecheck exit 0, log baru); clean builder tetap gagal pada kedua versi karena SDK path; versi Bun minimum yang menerima lockfile v2 NOT VERIFIED; build penuh NOT RUN pada kedua versi; dependency digest NOT VERIFIED. Opsi A vs Opsi B + penggantian SDK path dirumuskan sebagai PROPOSAL — HOLD. **DIPERBARUI v2.3.16: proposal keputusan DISELESAIKAN sebagai paket yang dapat diputuskan (§D.4.27) — rekomendasi utama Opsi A (Bun kanonik 1.4.4) + SDK vendorkan berdigest, fallback Opsi B (regenerasi lockfile v1); provenance/digest yang dibutuhkan, prasyarat clean-builder, rollback, dan dampak bukti runtime dirumuskan; digest rilis Bun 1.4.4 dan atestasi provider atas SDK tetap NOT PROVIDED (tidak dikarang); TIDAK ADA perubahan file; F-030 tetap CONFIRMED BLOCKER, F-009 tetap NOT REPRODUCIBLE.** | Clean builder/CI tidak dapat mereproduksi install dari pohon ter-commit; artifact yang dibangun tidak dapat dibuktikan berasal dari dependency graph yang disetujui; keputusan yang tertunda memblokir reproducible build | Keputusan owner G-G (Opsi A vs B) + penggantian SDK path + bukti clean-builder (frozen install + typecheck exit 0, lockfile tidak berubah, digest tercatat, tanpa `/opt/hatch`) — gate G-J; sampai selesai, F-009 tetap NOT REPRODUCIBLE dan F-030 tetap CONFIRMED BLOCKER |
+| U-69 | **F-031 — klaim batas byte fixture F-029 tidak tepat; rasio v2.3.15 superseded (v2.3.16 — BARU)** | Audit V9 benar: fixture v2.3.15 mengurangi filler 40/20 karakter padahal marker ASCII 33/15/13 byte — ASCII terukur 999.981 byte, non-ASCII byte-matched 999.901 byte (99 byte di bawah L2), non-ASCII char-matched 1.999.901 byte (bukan ~2.000.000). H-RES-05 tidak boleh memakai fixture itu sebagai bukti byte-boundary. **DIPERBAIKI v2.3.16:** `exp-pattern.ts` mengukur tiap segmen dengan TextEncoder, filler dari panjang marker terukur, assert total sebelum scan; ASCII dan non-ASCII byte-matched kini TEPAT 1.000.000 byte; varian cap−1/cap+1 terukur (999.999/1.000.001); rerun penuh 120 run anak, 0 gagal; rasio terukur ulang 1,13–1,84× — rentang 1,18–1,88× v2.3.15 dinyatakan SUPERSEDED. | Fixture yang tidak tepat batas dapat membuat H-RES-05 staging menguji kasus yang salah (di bawah cap) dan mengklaim lolos batas yang tidak pernah diuji | Pakai fixture v2.3.16 (exact-byte, cap/cap−1/cap+1) untuk H-RES-05 staging (gate G-I); jangan kutip angka v2.3.15 sebagai pengukuran batas eksak |
+| U-70 | **F-032 — parent harness F-029 dapat melaporkan sukses dengan nol run (v2.3.16 — BARU)** | Audit V9 benar: `run-f029.ts` v2.3.15 mem-parsing `--runs` tanpa validasi — nilai 0/non-numerik menghasilkan nol child run tetapi parent mencetak "all child runs ok" dan keluar 0 (false green). Log v2.3.15 sendiri tetap valid (60 RESULT, 60 PID unik per versi — F-032 tidak membatalkannya). **DIPERBAIKI v2.3.16:** `--runs` wajib integer 1..10; assertion jumlah record + validasi RESULT + timeout child 120 detik; tes regresi negatif 7 kasus exit 2 tanpa mencetak sukses (log `run-f032-negative.txt`); kontrol positif `--runs 1` exit 0. Jalur timeout end-to-end dengan child yang sengaja menggantung TIDAK diuji (mekanisme `spawnSync` `ETIMEDOUT` diverifikasi terpisah). | Pemakaian ulang harness sebagai oracle penerimaan dapat menghasilkan artefak kosong/parsial yang tampak sukses | Pakai harness v2.3.16 untuk rerun apa pun; rerun lama v2.3.15 tidak perlu diulang (log-nya sudah terverifikasi berisi data) |
 
 ## H. Rencana pengujian dan rollback FINAL (v2)
 
@@ -5995,4 +6351,4 @@ wajib evaluasi ChatGPT atas v2.3.1 (aturan startup parent baru pada
 §A.5.5: NOT_READY yang tidak dapat dinegosiasi, validasi identitas
 proses sebelum SIGKILL, pidfile atomik, startup lock) tanpa mengubah
 satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN
-ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.8 adalah respons atas DUA audit independen ChatGPT terhadap kode sumber mirror (V1 `SSRF_CODE_SECURITY_AUDIT_V1.md`, commit 52724d6 — F-001..F-006; V2 `SSRF_INDEPENDENT_AUDIT_V2.md`, commit 789797e — F-007..F-009, B-01..B-12): matriks respons F-001..F-009 (`SSRF_RESPONSE_MATRIX_V238.md`), publikasi bundle bukti mentah v2.3.6 (`evidence/v236/` + `MANIFEST.md`), koreksi penjelasan SU-T5 (F-008) dan caveat bukti su-run4, redaksi `site/DATA-PLAN.md` di mirror (F-006), `site/bun.lock` di-mirror + manifest reproduksibilitas (`SSRF_REPRODUCIBILITY_V238.md`), desain remediasi F-001..F-005 + harness diperketat H-SSRF-01..20 (§D.4.18), persyaratan DG-1..DG-3 (§G U-47..U-49), definisi lengkap U-46 tanpa keputusan (§G, §D.4.19 inventaris staging ST-01..ST-16) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik. Revisi v2.3.9 mempersempit celah bukti tanpa otorisasi implementasi (bundle suplemen F-007 — 4 run SU lengkap + OPS-T7 run ke-3; verifikasi F-005 dari kode — auth di dalam kode TERBUKTI TIDAK ADA; verifikasi F-009 di salinan scratch — SDK tarball ada, frozen install + typecheck exit 0) atas perintah pemilik; public tester DITAHAN oleh pemilik dan tidak dikerjakan di v2.3.9 — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.10 menjawab audit independen V3 (F-010..F-015 + Handoff §8 7 butir): koreksi akuntansi bukti SU asli + checker manifest, koreksi matriks fitur tester, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 lengkap dengan UNASSIGNED/BLOCKED eksplisit, rekonsiliasi reproduksibilitas dengan output mentah, koreksi DATA-PLAN F-015, dan pemetaan dependensi U-46 yang presisi — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.11 menjawab audit independen V4 (F-016..F-020 + Handoff §9 8 butir): keputusan desain freshness cache (hapus cache untuk security scan sebagai rekomendasi utama) dan cap-aware cache key, bukti tenancy SDK read-only (permukaan API `viewer`/`db` ditemukan, semantik per-user vs shared tetap NOT VERIFIED), bukti runtime read-only bahwa action `checklink` masih ter-publish (F-019 NOT VERIFIED / BLOCKED), klarifikasi scope commit d85a1e2 berbasis git dengan HOLD perubahan source lanjutan sampai owner memutuskan, pemetaan ulang rencana F-001..F-005 ke harness + keterkaitan cache/migrasi/otorisasi, serta risiko baru U-50..U-54 dan gate konkret G-A..G-E — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.12 menjawab audit independen V5 (F-021, F-022 + Handoff §8 9 butir): paket bukti artifact-state read-only yang dapat diaudit (`evidence/f021-artifact-state-20261108/`, digest SHA-256 per respons; version/digest tetap NOT PROVIDED karena tidak diekspos tool), cabang implementasi cache yang dinyatakan eksplisit (pilihan: hapus cache dari semua jalur security-scan; F-017 + H-CACHE-05/06 NOT APPLICABLE pada cabang itu), koreksi oracle tes cap ke raw bytes di lapisan stream (H-RES-02..05 baru: multibyte UTF-8, compressed/decompressed, redirect chains, aggregate per-scan limit; `res.text().slice()` bukan bukti byte cap), kutipan `.d.ts` minimal `PortableCtx`/`Viewer`/`LocalViewer`/`CloudflareViewer` yang dipublikasikan, keputusan Bun kanonik 1.3.10, koreksi lokasi F-006b (baris 52, 483, 1245), kriteria latensi alert ST-12-LAT-01..03, risiko baru U-55..U-58, dan gate baru G-F (keputusan cache) + G-G (keputusan Bun) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.13 menjawab audit independen V6 (F-023, F-024, F-025 + Handoff §10 11 butir): arah fixture H-RES-02 yang mustahil dihapus dan tiga fixture feasible dipublikasikan dengan angka yang diverifikasi dua alat independen (`evidence/f023-h-res02-fixtures/`), tiga lapisan byte H-RES-03 didefinisikan terpisah dengan bukti eksperimen VM atas perilaku dekompresi transparan Bun (`evidence/f024-h-res03-bun-fetch/`, gzip 551→500.000 byte, br 51→500.000 byte, Bun 1.4.4 — perilaku pada kanonik 1.3.10 NOT VERIFIED, U-62), angka aggregate H-RES-05 ditetapkan 1.000.000 decoded byte per scan beserta overhead 0, kebijakan redirect-body, dan cancel concurrency-safe fail-closed, semantik kepemilikan G-F diklarifikasi (cabang pilihan adalah rekomendasi yang menunggu penerimaan owner, bukan otorisasi implementasi), catatan "live untouched" v2.3.12 dikoreksi sebagai basi (live sudah v15, d85a1e2, disetujui Rama 2026-11-08 ~02:09 WIB — berdasarkan catatan repo, tanpa verifikasi live baru), risiko baru U-59..U-62, dan gate baru G-H (eksekusi harness H-RES-02/03/05 yang sudah dikoreksi) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.14 menjawab audit independen V7 (F-026, F-027, F-028 + Handoff §10 9 butir): klaim "overhead 0 byte" dicabut sebagai pernyataan umum dan dibatasi hanya pada accepted/retained bytes di accumulator aplikasi, dengan anggaran transient/in-flight (A2) dipisah eksplisit dan dibuktikan eksperimen VM pada Bun kanonik 1.3.10 DAN 1.4.4 (`evidence/f026-chunk-accounting/` — max chunk teramati 528.384 byte, satu chunk 500.000 byte = seluruh body; chunking server 64 KiB tidak membatasi chunk klien); L2 dinyatakan sebagai input-body budget, bukan peak-memory budget, dengan larangan materialisasi bersamaan dan pemindaian incremental **[KOREKSI v2.3.15 (F-029): klaim kuantitatif v2.3.14 "terukur ~4,5–5,4× lebih hemat memori" TIDAK TERKONFIRMASI; rasio terkoreksi 1,18–1,88× (median VmHWM) — lihat §D.4.26]**; LIVE VERSION / DEPLOYMENT APPROVAL dipertahankan NOT VERIFIED dengan template manifest deployment non-secret yang tetap kosong (`DEPLOYMENT_MANIFEST_TEMPLATE.md`); dekompresi transparan terkonfirmasi pada Bun 1.3.10 (re-run skrip F-024 tanpa perubahan) sekaligus frozen install 1.3.10 terbukti GAGAL karena lockfile v2 (`evidence/f009-bun1310-install-typecheck/` — temuan baru U-66; keputusan G-G kini punya bukti konkret); risiko baru U-63..U-66, U-62 dipersempit (bagian VM terjawab, staging tetap NOT VERIFIED), dan gate baru G-I (stress test memori H-RES-03/05 pada staging Bun 1.3.10 + proses deployment manifest) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.15 menjawab audit independen V8 (F-029, F-030 + Handoff §9 8 butir): metodologi perbandingan memori pola incremental diperbaiki dengan parent harness proses-terpisah + VmHWM OS (`evidence/f029-memory-methodology/` — 60 run anak per versi Bun, 0 gagal, 60 PID berbeda; rasio A/B terkoreksi 1,18–1,88× median VmHWM, forced-GC 1,57–1,88× vs natural-GC 1,18–1,32×) dan klaim kuantitatif v2.3.14 sebesar 4,5–5,4× DICABUT (NOT VERIFIED — artefak baseline B yang tercemar; karakter hidup 3,60× dipertahankan hanya sebagai character accounting); matriks kompatibilitas Bun/lockfile/SDK path disajikan (`evidence/f030-bun-compatibility/` — 1.3.10 menolak lockfile v2, 1.4.4 menerima dengan frozen install + typecheck exit 0, clean builder tanpa `/opt/hatch` tetap gagal pada kedua versi) dengan trade-off Opsi A vs Opsi B yang keduanya tetap PROPOSAL — HOLD; F-028 tetap NOT VERIFIED dan F-019 tetap BLOCKED; prasyarat/prosedur/oracle/bukti STAGE-P01..P12 dilengkapi tanpa mengarang owner; risiko baru U-67/U-68, U-64/U-66 diperbarui, dan gate baru G-J (keputusan reproduksibilitas F-030) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED.*
+ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.3 menjawab empat hal evaluasi ChatGPT atas v2.3.2 (konsistensi jumlah pengujian — koreksi klaim 3× dengan RUN=3 yang sesungguhnya, reklamasi startup lock yang diperkeras, pengujian STARTUP-10, dan durabilitas pidfile) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. **Koreksi v2.3.5:** paragraf ini sebelumnya salah mengatribusikan keempat klarifikasi tersebut kepada v2.3.4; v2.3.4 sebenarnya menjawab SATU keberatan teknis evaluasi ChatGPT atas v2.3.3 (race condition pada reklamasi startup lock — §A.5.5.4) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.5 menjawab LIMA BAGIAN permintaan pemilik atas v2.3.4 (otoritas kepemilikan flock, keamanan mixed-version, uji adversarial, kompatibilitas runtime/filesystem) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.6 menjawab TIGA KEBERATAN evaluasi ChatGPT atas v2.3.5 (PID reuse saat SIGKILL — pidfd terikat identitas, never-unlink dan kontrol operasional — katalog OS-enforced vs runbook-only + prosedur deployment/rollback/maintenance + runbook pemulihan, dan matriks prasyarat staging STAGE-P01..P12 dengan kriteria PASS/FAIL) tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.7 adalah rekonsiliasi bukti atas evaluasi ChatGPT terhadap v2.3.6 (`SSRF_EVALUATION_V235.md`, commit 39ea4ef) — memetakan ST-01..ST-12, SU-T1..SU-T9, dan U-38/U-33 ke bukti v2.3.6 yang sudah ada tanpa mengulang satu pun pengujian, menetapkan penomoran kanonik ST-01..ST-16, dan mencatat daftar kekurangan yang benar-benar tersisa (20 butir, `SSRF_RECONCILIATION_V237.md` §5) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.8 adalah respons atas DUA audit independen ChatGPT terhadap kode sumber mirror (V1 `SSRF_CODE_SECURITY_AUDIT_V1.md`, commit 52724d6 — F-001..F-006; V2 `SSRF_INDEPENDENT_AUDIT_V2.md`, commit 789797e — F-007..F-009, B-01..B-12): matriks respons F-001..F-009 (`SSRF_RESPONSE_MATRIX_V238.md`), publikasi bundle bukti mentah v2.3.6 (`evidence/v236/` + `MANIFEST.md`), koreksi penjelasan SU-T5 (F-008) dan caveat bukti su-run4, redaksi `site/DATA-PLAN.md` di mirror (F-006), `site/bun.lock` di-mirror + manifest reproduksibilitas (`SSRF_REPRODUCIBILITY_V238.md`), desain remediasi F-001..F-005 + harness diperketat H-SSRF-01..20 (§D.4.18), persyaratan DG-1..DG-3 (§G U-47..U-49), definisi lengkap U-46 tanpa keputusan (§G, §D.4.19 inventaris staging ST-01..ST-16) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Setelah klarifikasi ini, dokumen desain dapat dianggap final untuk masuk tahap keputusan implementasi terpisah — keputusan implementasi itu sendiri tetap menunggu pemilik. Revisi v2.3.9 mempersempit celah bukti tanpa otorisasi implementasi (bundle suplemen F-007 — 4 run SU lengkap + OPS-T7 run ke-3; verifikasi F-005 dari kode — auth di dalam kode TERBUKTI TIDAK ADA; verifikasi F-009 di salinan scratch — SDK tarball ada, frozen install + typecheck exit 0) atas perintah pemilik; public tester DITAHAN oleh pemilik dan tidak dikerjakan di v2.3.9 — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.10 menjawab audit independen V3 (F-010..F-015 + Handoff §8 7 butir): koreksi akuntansi bukti SU asli + checker manifest, koreksi matriks fitur tester, pemisahan F-006a/b/c, kepemilikan staging ST-01..ST-16 lengkap dengan UNASSIGNED/BLOCKED eksplisit, rekonsiliasi reproduksibilitas dengan output mentah, koreksi DATA-PLAN F-015, dan pemetaan dependensi U-46 yang presisi — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.11 menjawab audit independen V4 (F-016..F-020 + Handoff §9 8 butir): keputusan desain freshness cache (hapus cache untuk security scan sebagai rekomendasi utama) dan cap-aware cache key, bukti tenancy SDK read-only (permukaan API `viewer`/`db` ditemukan, semantik per-user vs shared tetap NOT VERIFIED), bukti runtime read-only bahwa action `checklink` masih ter-publish (F-019 NOT VERIFIED / BLOCKED), klarifikasi scope commit d85a1e2 berbasis git dengan HOLD perubahan source lanjutan sampai owner memutuskan, pemetaan ulang rencana F-001..F-005 ke harness + keterkaitan cache/migrasi/otorisasi, serta risiko baru U-50..U-54 dan gate konkret G-A..G-E — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.12 menjawab audit independen V5 (F-021, F-022 + Handoff §8 9 butir): paket bukti artifact-state read-only yang dapat diaudit (`evidence/f021-artifact-state-20261108/`, digest SHA-256 per respons; version/digest tetap NOT PROVIDED karena tidak diekspos tool), cabang implementasi cache yang dinyatakan eksplisit (pilihan: hapus cache dari semua jalur security-scan; F-017 + H-CACHE-05/06 NOT APPLICABLE pada cabang itu), koreksi oracle tes cap ke raw bytes di lapisan stream (H-RES-02..05 baru: multibyte UTF-8, compressed/decompressed, redirect chains, aggregate per-scan limit; `res.text().slice()` bukan bukti byte cap), kutipan `.d.ts` minimal `PortableCtx`/`Viewer`/`LocalViewer`/`CloudflareViewer` yang dipublikasikan, keputusan Bun kanonik 1.3.10, koreksi lokasi F-006b (baris 52, 483, 1245), kriteria latensi alert ST-12-LAT-01..03, risiko baru U-55..U-58, dan gate baru G-F (keputusan cache) + G-G (keputusan Bun) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.13 menjawab audit independen V6 (F-023, F-024, F-025 + Handoff §10 11 butir): arah fixture H-RES-02 yang mustahil dihapus dan tiga fixture feasible dipublikasikan dengan angka yang diverifikasi dua alat independen (`evidence/f023-h-res02-fixtures/`), tiga lapisan byte H-RES-03 didefinisikan terpisah dengan bukti eksperimen VM atas perilaku dekompresi transparan Bun (`evidence/f024-h-res03-bun-fetch/`, gzip 551→500.000 byte, br 51→500.000 byte, Bun 1.4.4 — perilaku pada kanonik 1.3.10 NOT VERIFIED, U-62), angka aggregate H-RES-05 ditetapkan 1.000.000 decoded byte per scan beserta overhead 0, kebijakan redirect-body, dan cancel concurrency-safe fail-closed, semantik kepemilikan G-F diklarifikasi (cabang pilihan adalah rekomendasi yang menunggu penerimaan owner, bukan otorisasi implementasi), catatan "live untouched" v2.3.12 dikoreksi sebagai basi (live sudah v15, d85a1e2, disetujui Rama 2026-11-08 ~02:09 WIB — berdasarkan catatan repo, tanpa verifikasi live baru), risiko baru U-59..U-62, dan gate baru G-H (eksekusi harness H-RES-02/03/05 yang sudah dikoreksi) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.14 menjawab audit independen V7 (F-026, F-027, F-028 + Handoff §10 9 butir): klaim "overhead 0 byte" dicabut sebagai pernyataan umum dan dibatasi hanya pada accepted/retained bytes di accumulator aplikasi, dengan anggaran transient/in-flight (A2) dipisah eksplisit dan dibuktikan eksperimen VM pada Bun kanonik 1.3.10 DAN 1.4.4 (`evidence/f026-chunk-accounting/` — max chunk teramati 528.384 byte, satu chunk 500.000 byte = seluruh body; chunking server 64 KiB tidak membatasi chunk klien); L2 dinyatakan sebagai input-body budget, bukan peak-memory budget, dengan larangan materialisasi bersamaan dan pemindaian incremental **[KOREKSI v2.3.15 (F-029): klaim kuantitatif v2.3.14 "terukur ~4,5–5,4× lebih hemat memori" TIDAK TERKONFIRMASI; rasio terkoreksi 1,18–1,88× (median VmHWM) — lihat §D.4.26]**; LIVE VERSION / DEPLOYMENT APPROVAL dipertahankan NOT VERIFIED dengan template manifest deployment non-secret yang tetap kosong (`DEPLOYMENT_MANIFEST_TEMPLATE.md`); dekompresi transparan terkonfirmasi pada Bun 1.3.10 (re-run skrip F-024 tanpa perubahan) sekaligus frozen install 1.3.10 terbukti GAGAL karena lockfile v2 (`evidence/f009-bun1310-install-typecheck/` — temuan baru U-66; keputusan G-G kini punya bukti konkret); risiko baru U-63..U-66, U-62 dipersempit (bagian VM terjawab, staging tetap NOT VERIFIED), dan gate baru G-I (stress test memori H-RES-03/05 pada staging Bun 1.3.10 + proses deployment manifest) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED. Revisi v2.3.15 menjawab audit independen V8 (F-029, F-030 + Handoff §9 8 butir): metodologi perbandingan memori pola incremental diperbaiki dengan parent harness proses-terpisah + VmHWM OS (`evidence/f029-memory-methodology/` — 60 run anak per versi Bun, 0 gagal, 60 PID berbeda; rasio A/B terkoreksi 1,18–1,88× median VmHWM, forced-GC 1,57–1,88× vs natural-GC 1,18–1,32×) dan klaim kuantitatif v2.3.14 sebesar 4,5–5,4× DICABUT (NOT VERIFIED — artefak baseline B yang tercemar; karakter hidup 3,60× dipertahankan hanya sebagai character accounting); matriks kompatibilitas Bun/lockfile/SDK path disajikan (`evidence/f030-bun-compatibility/` — 1.3.10 menolak lockfile v2, 1.4.4 menerima dengan frozen install + typecheck exit 0, clean builder tanpa `/opt/hatch` tetap gagal pada kedua versi) dengan trade-off Opsi A vs Opsi B yang keduanya tetap PROPOSAL — HOLD; F-028 tetap NOT VERIFIED dan F-019 tetap BLOCKED; prasyarat/prosedur/oracle/bukti STAGE-P01..P12 dilengkapi tanpa mengarang owner; risiko baru U-67/U-68, U-64/U-66 diperbarui, dan gate baru G-J (keputusan reproduksibilitas F-030) — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED Revisi v2.3.16 menjawab audit independen V9 (F-031, F-032 + Handoff §9 8 butir): fixture exact-byte diperbaiki dengan pengukuran TextEncoder + assert sebelum scan (ASCII dan non-ASCII byte-matched tepat 1.000.000 byte; varian cap−1/cap+1 terukur; rerun penuh 120 run anak, 0 gagal; rasio terukur ulang 1,13–1,84× dan rentang 1,18–1,88× dinyatakan superseded), jalur false green harness ditutup dengan validasi `--runs` + assertion jumlah record + validasi RESULT + timeout child dan tes regresi negatif 7 kasus, dokumentasi harness diselaraskan (`node:child_process.spawnSync`), proposal keputusan F-030 diselesaikan sebagai paket yang dapat diputuskan (rekomendasi Opsi A + SDK vendorkan, fallback Opsi B) tanpa mengubah file apa pun, serta risiko baru U-69/U-70 dan pembaruan U-67/U-68 — tanpa mengubah satu pun keputusan D-1 s.d. D-8 dan tanpa mengubah status DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED.

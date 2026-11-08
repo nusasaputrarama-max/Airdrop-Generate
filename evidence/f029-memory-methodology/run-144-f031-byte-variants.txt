@@ -1,0 +1,108 @@
+byte-variant verification — Bun 1.4.4 (1.4.4), 2026-11-08T01:56:35Z
+exp-pattern.ts: --bytes 999999 (cap-1), 1000000 (cap), 1000001 (cap+1); fixtures ascii + nonascii-bytes; patterns A,B; gc natural
+
+$ bun exp-pattern.ts --pattern A --fixture ascii --gc natural --bytes 999999
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+input: page=399999 chars + 2 scripts x 300000/300000 chars = 999999 accepted input chars; utf8Bytes=999999
+A6 live string chars at peak analysis point: 3600002 (input 999999; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture ascii --gc natural --bytes 1000000
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture ascii --gc natural --bytes 1000001
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+input: page=400001 chars + 2 scripts x 300000/300000 chars = 1000001 accepted input chars; utf8Bytes=1000001
+A6 live string chars at peak analysis point: 3600008 (input 1000001; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture nonascii-bytes --gc natural --bytes 999999
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+input: page=200016 chars + 2 scripts x 150008/150007 chars = 500031 accepted input chars; utf8Bytes=999999
+A6 live string chars at peak analysis point: 1800113 (input 500031; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture nonascii-bytes --gc natural --bytes 1000000
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+A6 live string chars at peak analysis point: 1800116 (input 500032; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture nonascii-bytes --gc natural --bytes 1000001
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000001
+A6 live string chars at peak analysis point: 1800116 (input 500032; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture ascii --gc natural --bytes 999999
+bytes: segment 0 = 399999 (expected 399999)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+input: page=399999 chars + 2 scripts x 300000/300000 chars = 999999 accepted input chars; utf8Bytes=999999
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture ascii --gc natural --bytes 1000000
+bytes: segment 0 = 400000 (expected 400000)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture ascii --gc natural --bytes 1000001
+bytes: segment 0 = 400001 (expected 400001)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+input: page=400001 chars + 2 scripts x 300000/300000 chars = 1000001 accepted input chars; utf8Bytes=1000001
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture nonascii-bytes --gc natural --bytes 999999
+bytes: segment 0 = 399999 (expected 399999)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=399999 script1=300000 script2=300000 total=999999 target=999999
+input: page=200016 chars + 2 scripts x 150008/150007 chars = 500031 accepted input chars; utf8Bytes=999999
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture nonascii-bytes --gc natural --bytes 1000000
+bytes: segment 0 = 400000 (expected 400000)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400000 script1=300000 script2=300000 total=1000000 target=1000000
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000000
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture nonascii-bytes --gc natural --bytes 1000001
+bytes: segment 0 = 400001 (expected 400001)
+bytes: segment 1 = 300000 (expected 300000)
+bytes: segment 2 = 300000 (expected 300000)
+bytes: page=400001 script1=300000 script2=300000 total=1000001 target=1000001
+input: page=200017 chars + 2 scripts x 150008/150007 chars = 500032 accepted input chars; utf8Bytes=1000001
+B1 checks ran, asksConnect=true
+exit=0
+
+$ bun exp-pattern.ts --pattern A --fixture nonascii --gc natural
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+A6 live string chars at peak analysis point: 3600005 (input 1000000; ratio 3.60x)
+exit=0
+
+$ bun exp-pattern.ts --pattern B --fixture nonascii --gc natural
+bytes: segment 0 = 799967 (expected 799967)
+bytes: segment 1 = 599985 (expected 599985)
+bytes: segment 2 = 599987 (expected 599987)
+bytes: page=799967 script1=599985 script2=599987 total=1999939 target=n/a (char-matched)
+input: page=400000 chars + 2 scripts x 300000/300000 chars = 1000000 accepted input chars; utf8Bytes=1999939
+B1 checks ran, asksConnect=true
+exit=0
+

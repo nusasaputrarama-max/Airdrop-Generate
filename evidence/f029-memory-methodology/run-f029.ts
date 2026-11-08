@@ -1,22 +1,84 @@
-// F-029 parent harness: runs pattern A and pattern B as SEPARATE PROCESSES
-// (one child per run, new PID, clean baseline each time) and aggregates
-// the OS high-water mark (VmHWM) deltas.
+// F-029 parent harness (v2.3.16, F-032 fix): runs pattern A and pattern
+// B as SEPARATE PROCESSES (one child per run, new PID, clean baseline
+// each time) and aggregates the OS high-water mark (VmHWM) deltas.
+//
+// Spawning uses node:child_process.spawnSync with process.execPath
+// (the SAME Bun binary as the parent) — NOT Bun.spawnSync. Run from
+// the evidence/f029-memory-methodology/ directory (cwd) so the child
+// script resolves as ./exp-pattern.ts.
 //
 // Usage (run once per Bun version; the parent spawns children with the
 // SAME Bun binary via process.execPath, identical flags/env, identical
 // input):
 //   bun run-f029.ts --runs 5
 //
-// Output: full raw log on stdout (redirect to run-<version>-f029.txt) +
-// a summary table with median + range per combination. Forced-GC and
+//   --runs N is REQUIRED and must be an integer in the approved range
+//   1..10 (F-032). 0, negative, NaN, non-numeric, missing value, or a
+//   missing flag all exit non-zero WITHOUT printing
+//   "all child runs ok" — a zero-run invocation can never look like
+//   success. Each child has a 120 s timeout; a child that times out or
+//   dies by signal counts as a failure.
+//
+// Output: full raw log on stdout (redirect to run-<version>-f031-f032.txt)
+// + a summary table with median + range per combination. Forced-GC and
 // natural-GC runs are reported separately and never mixed.
+//
+// v2.3.16 (F-032): the parent now asserts records.length ===
+// expectedRuns, asserts every combination has exactly RUNS records,
+// validates every RESULT against the requested pattern/fixture/GC,
+// validates the measured byte totals (ascii and nonascii-bytes must be
+// exactly 1,000,000 UTF-8 bytes; nonascii must be exactly 1,999,939),
+// and fails on child timeout/signal instead of silently skipping.
 
 import { spawnSync } from "node:child_process";
 
-const RUNS = Number(process.argv.slice(2).find((a, i, arr) => arr[i - 1] === "--runs") ?? 5);
+const MAX_RUNS = 10; // approved range for --runs: 1..10
+const CHILD_TIMEOUT_MS = 120_000;
+
+function usageFail(msg: string): never {
+  console.error(`run-f029: ERROR: ${msg}`);
+  console.error(`usage: bun run-f029.ts --runs N   (N = integer, ${1}..${MAX_RUNS}; required)`);
+  process.exit(2);
+}
+
+function parseRuns(): number {
+  const argv = process.argv.slice(2);
+  let raw: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--runs") {
+      if (i + 1 >= argv.length) usageFail("--runs requires a value");
+      raw = argv[i + 1];
+      break;
+    }
+    if (argv[i].startsWith("--runs=")) {
+      raw = argv[i].slice("--runs=".length);
+      break;
+    }
+  }
+  if (raw === undefined) usageFail("--runs is required (no default — a missing argument must not silently run)");
+  if (!/^\d+$/.test(raw)) usageFail(`--runs must be a positive integer, got ${JSON.stringify(raw)}`);
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < 1 || n > MAX_RUNS) {
+    usageFail(`--runs out of approved range 1..${MAX_RUNS}, got ${n}`);
+  }
+  return n;
+}
+
+const RUNS = parseRuns();
 const PATTERNS = ["A", "B"];
 const FIXTURES = ["ascii", "nonascii", "nonascii-bytes"];
 const GCS = ["forced", "natural"];
+const EXPECTED_RUNS = PATTERNS.length * FIXTURES.length * GCS.length * RUNS;
+
+// Expected MEASURED UTF-8 byte totals per fixture at the default
+// 1,000,000-byte target (F-031): ascii and nonascii-bytes are exactly
+// 1,000,000; nonascii (char-matched, 1,000,000 chars of U+00E9 plus
+// 61 ASCII marker bytes) is exactly 1,999,939.
+const EXPECTED_BYTES: Record<string, number> = {
+  ascii: 1_000_000,
+  "nonascii": 1_999_939,
+  "nonascii-bytes": 1_000_000,
+};
 
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
@@ -29,7 +91,7 @@ function fmt(n: number): string {
 
 console.log(`parent pid=${process.pid} bun=${Bun.version} execPath=${process.execPath}`);
 console.log(`matrix: patterns=${PATTERNS.join(",")} fixtures=${FIXTURES.join(",")} gc=${GCS.join(",")} runs=${RUNS} per combination`);
-console.log(`total child runs: ${PATTERNS.length * FIXTURES.length * GCS.length * RUNS}`);
+console.log(`total child runs: ${EXPECTED_RUNS}`);
 
 type Rec = { pattern: string; fixture: string; gc: string; run: number; pid: number; result: any };
 const records: Rec[] = [];
@@ -41,18 +103,55 @@ for (const pattern of PATTERNS) {
     for (const gc of GCS) {
       for (let run = 1; run <= RUNS; run++) {
         const args = ["exp-pattern.ts", "--pattern", pattern, "--fixture", fixture, "--gc", gc];
-        const child = spawnSync(process.execPath, args, { encoding: "utf8" });
+        const child = spawnSync(process.execPath, args, { encoding: "utf8", timeout: CHILD_TIMEOUT_MS });
         const out = (child.stdout ?? "") as string;
         const err = (child.stderr ?? "") as string;
         const resultLine = out.split("\n").find((l) => l.startsWith("RESULT "));
-        if (child.status !== 0 || !resultLine) {
+        // F-032: timeout / signal / non-zero exit / missing RESULT are
+        // all failures — never a silent skip.
+        if ((child as any).error || child.status === null || child.status !== 0 || !resultLine) {
           failures++;
-          console.log(`FAIL pattern=${pattern} fixture=${fixture} gc=${gc} run=${run} status=${child.status}`);
+          const reason = (child as any).error?.code === "ETIMEDOUT"
+            ? `timeout after ${CHILD_TIMEOUT_MS} ms`
+            : child.signal
+              ? `killed by signal ${child.signal}`
+              : `status=${child.status}`;
+          console.log(`FAIL pattern=${pattern} fixture=${fixture} gc=${gc} run=${run} reason=${reason}`);
           console.log(out);
           console.log(err);
           continue;
         }
-        const result = JSON.parse(resultLine.slice("RESULT ".length));
+        let result: any;
+        try {
+          result = JSON.parse(resultLine.slice("RESULT ".length));
+        } catch (e) {
+          failures++;
+          console.log(`FAIL pattern=${pattern} fixture=${fixture} gc=${gc} run=${run} reason=unparsable RESULT`);
+          console.log(out);
+          continue;
+        }
+        // F-032: validate the RESULT against the requested parameters.
+        const mismatch: string[] = [];
+        if (result.pattern !== pattern) mismatch.push(`pattern ${result.pattern} != ${pattern}`);
+        if (result.fixture !== fixture) mismatch.push(`fixture ${result.fixture} != ${fixture}`);
+        if (result.gc !== gc) mismatch.push(`gc ${result.gc} != ${gc}`);
+        if (result.bun !== Bun.version) mismatch.push(`bun ${result.bun} != parent ${Bun.version}`);
+        if (result.asksConnect !== true) mismatch.push(`asksConnect ${result.asksConnect} != true`);
+        if (typeof result.utf8Bytes !== "number" || result.utf8Bytes !== EXPECTED_BYTES[fixture]) {
+          mismatch.push(`utf8Bytes ${result.utf8Bytes} != expected ${EXPECTED_BYTES[fixture]} (fixture ${fixture})`);
+        }
+        if (typeof result.segmentBytes !== "object" || result.segmentBytes === null
+          || result.segmentBytes.page + result.segmentBytes.script1 + result.segmentBytes.script2 !== result.utf8Bytes) {
+          mismatch.push(`segmentBytes do not sum to utf8Bytes`);
+        }
+        if (typeof result.vmHwmDelta !== "number" || result.vmHwmDelta < 0) {
+          mismatch.push(`vmHwmDelta ${result.vmHwmDelta} is not a non-negative number`);
+        }
+        if (mismatch.length > 0) {
+          failures++;
+          console.log(`FAIL pattern=${pattern} fixture=${fixture} gc=${gc} run=${run} reason=RESULT validation: ${mismatch.join("; ")}`);
+          continue;
+        }
         if (seenPids.has(result.pid)) {
           failures++;
           console.log(`FAIL duplicate pid ${result.pid} pattern=${pattern} fixture=${fixture} gc=${gc} run=${run}`);
@@ -65,6 +164,23 @@ for (const pattern of PATTERNS) {
       }
     }
   }
+}
+
+// F-032: assert the record count and per-combination completeness
+// before printing any success claim.
+let countOk = records.length === EXPECTED_RUNS && seenPids.size === records.length;
+const incomplete: string[] = [];
+for (const pattern of PATTERNS) {
+  for (const fixture of FIXTURES) {
+    for (const gc of GCS) {
+      const n = records.filter((r) => r.pattern === pattern && r.fixture === fixture && r.gc === gc).length;
+      if (n !== RUNS) incomplete.push(`${pattern}/${fixture}/${gc}: ${n} of ${RUNS}`);
+    }
+  }
+}
+if (incomplete.length > 0) {
+  countOk = false;
+  console.log(`COUNT MISMATCH: expected ${EXPECTED_RUNS} records (${RUNS} per combination), got ${records.length}; incomplete: ${incomplete.join("; ")}`);
 }
 
 console.log("");
@@ -105,5 +221,11 @@ for (const fixture of FIXTURES) {
   }
 }
 console.log("");
-console.log(failures === 0 ? "parent done: all child runs ok" : `parent done: ${failures} child failure(s)`);
-if (failures > 0) process.exit(1);
+// F-032: the success line is printed ONLY when every check passed —
+// zero failures, exact record count, every combination complete.
+if (failures === 0 && countOk) {
+  console.log("parent done: all child runs ok");
+} else {
+  console.log(`parent done: FAILED — ${failures} child failure(s), ${records.length} of ${EXPECTED_RUNS} records, count-ok=${countOk}`);
+  process.exit(1);
+}
