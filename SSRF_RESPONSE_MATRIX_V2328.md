@@ -541,8 +541,7 @@ read-only baru, bukan pengulangan pengujian.
 Verifikasi `git ls-remote origin development` = `a4bc5682fb35166069326c94f298ca64c3758e4d`
 (cocok HEAD lokal development); `origin/main` sebelum commit revisi
 ini = `44a823f220d68f7f49ba5a278dbcda5866dbdca6`; HEAD `main` setelah
-commit revisi ini = `PENDING — diisi commit kedua (lihat catatan di
-bawah)`
+commit revisi ini = `29be22cd7ef87bccbcb4498fac0f5e498ee96612`
 (terverifikasi via `git ls-remote origin main`).
 
 **Catatan pola §9 (seperti v2.3.25/v2.3.26/v2.3.27):** matriks ini di-commit dulu
