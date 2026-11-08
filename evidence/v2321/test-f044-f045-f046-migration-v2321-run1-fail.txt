@@ -1,0 +1,114 @@
+=== test-f044-f045-f046-migration-v2321 ===
+date: 08/11/2026, 13:28:53 WIB
+bun: 1.4.4
+sqlite_version (bun:sqlite): 3.53.4
+uid: 0
+kernel: 7.0.0-43-generic
+commit HEAD: 48c3f9432c1507bff77621a207f6dcf0eb8383f4
+env: VM lokal — BUKAN staging, BUKAN produksi; DB disposable di temp dir; no checkLink
+migration up artifact: 0006_unified_ownership_and_uniqueness_v2321.sql
+  sha256: ab9473f91bcb64bbc50e44e72af18426074100352fd5d03872604e05aa32a32c
+migration down artifact: 0006_down_v2321.sql
+  sha256: a51a6cfa4a2cb1761454ee35920ae684b685e86ebf03ee6a819507ba1cdb3a75
+sqlite3 CLI (cross-version H-MIG-09): 3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1 (64-bit) (exit 0)
+work dir (mkdtemp 0700): /tmp/v2321-O2rg0c
+base DB (0001-0005 + fixture): projects=12, checks=2, saved_projects=2, sha256=507beda53b8655a2…
+PASS BASE katalog repo = 12 baris (koreksi U-87 atas klaim '15 baris' v2.3.20) — projects=12 (12 INSERT di 0004; CATALOG actions.ts juga 12 entri)
+PASS BASE checks fixture = 2 baris legacy
+PASS BASE saved_projects fixture = 2 baris
+--- H-MIG-00 (F-044 reproduksi) ---
+PASS H-MIG-00a DDL v2.3.20 (ALTER ADD ... STORED) GAGAL di SQLite 3.53.4 — F-044 ter-reproduksi — cannot add a STORED column
+PASS H-MIG-00b VIRTUAL ADD berhasil (alternatif yang didokumentasikan)
+PASS H-MIG-00c index pada kolom VIRTUAL berhasil dibuat
+PASS H-MIG-00d VIRTUAL + unique index tetap menolak duplikat (alternatif fungsional, bukan yang dipilih) — UNIQUE constraint failed: t.canon2
+--- H-MIG-01 (migrasi v3 sukses) ---
+FAIL H-MIG-01a migrasi 0006 v3 (artefak sebenarnya) sukses — near "projects": syntax error (statement #1: SELECT `chain`,   CASE     WHEN `contract_address` IS NULL THEN NULL     WHEN `chain` = 'Solana' THEN trim(`contract_add)
+--- H-MIG-02 (inspeksi schema) ---
+FAIL H-MIG-02a sql projects memuat 'GENERATED ALWAYS AS' + 'STORED'
+FAIL H-MIG-02b sql projects memuat CHECK chain bernama
+FAIL H-MIG-02c sql projects memuat CHECK format bernama
+FAIL H-MIG-02d sql projects memuat kolom provenance
+FAIL H-MIG-02e unique index nama ada
+FAIL H-MIG-02f unique index alamat per chain ada (partial)
+FAIL H-MIG-02g unique index alamat bersifat partial (WHERE contract_address IS NOT NULL)
+FAIL H-MIG-02h checks punya kolom owner_user_id
+FAIL H-MIG-02i index checks_owner_idx ada
+FAIL H-MIG-02j saved_projects composite PK (principal_id, project_id) — pk=["project_id"]
+PASS H-MIG-02k saved_projects FK tetap ke projects(id) — [{"id":0,"seq":0,"table":"projects","from":"project_id","to":"id","on_update":"NO ACTION","on_delete":"NO ACTION","match":"NONE"}]
+PASS H-MIG-02l tidak ada trigger/view (0, seperti sebelum migrasi)
+PASS H-MIG-02m base (pre-migrasi) TIDAK punya kolom kanonik/CHECK bernama — artefak di atas benar-benar dari migrasi v3
+--- H-MIG-03 (pre-check duplikat) ---
+PASS H-MIG-03a migrasi GAGAL pada pre-check duplikat — VALIDATION gagal pada statement #0 — mengembalikan 1 baris: [{"dup_name":"baoracle — binance agent oracle","n":2}] (statement #0: SELECT lower(trim(`name`)) AS dup_name, count(*) AS n FROM `projects`   GROUP BY 1 HAVING count(*) > 1;)
+PASS H-MIG-03b kegagalan terjadi di Fase 1 (statement VALIDATION, sebelum BEGIN) — failedAt=0
+PASS H-MIG-03c DB byte-identik setelah abort pre-check — sha a27abfe7a84d vs a27abfe7a84d
+PASS H-MIG-03d jumlah projects tetap 13 (12 + 1 duplikat injeksi, tanpa perubahan migrasi)
+PASS H-MIG-03e kolom owner_user_id TIDAK ditambahkan (abort sebelum Fase 2)
+--- H-MIG-04 (pre-check chain tak dikenal) ---
+PASS H-MIG-04a migrasi GAGAL pada pre-check chain tak dikenal — near "projects": syntax error (statement #1: SELECT `chain`,   CASE     WHEN `contract_address` IS NULL THEN NULL     WHEN `chain` = 'Solana' THEN trim(`contract_add)
+PASS H-MIG-04b DB byte-identik setelah abort pre-check
+PASS H-MIG-04c jumlah projects tetap 13 (12 + 1 injeksi)
+--- H-MIG-05 (failure injection tengah transaksi) ---
+PASS H-MIG-05a migrasi tersabotase GAGAL — near "projects": syntax error (statement #1: SELECT `chain`,   CASE     WHEN `contract_address` IS NULL THEN NULL     WHEN `chain` = 'Solana' THEN trim(`contract_add)
+FAIL H-MIG-05b kegagalan terjadi di Fase 2 (setelah BEGIN) dan ROLLBACK dieksekusi — failedAt=1
+PASS H-MIG-05c DB byte-identik setelah ROLLBACK tengah transaksi
+PASS H-MIG-05d schema projects tetap definisi lama (tanpa kolom kanonik)
+PASS H-MIG-05e jumlah projects tetap 12
+  crash child stdout: crash-mid-migration: partial work done, exiting WITHOUT COMMIT (simulated crash)
+PASS H-MIG-05f proses crash keluar dengan kode 2 (simulasi mati) — exit=2
+PASS H-MIG-05g setelah crash: tabel projects lama UTUH (rollback journal)
+PASS H-MIG-05h setelah crash: jumlah projects tetap 12
+PASS H-MIG-05i DB byte-identik setelah pemulihan crash
+--- H-MIG-06 (backup/restore) ---
+FAIL H-MIG-06a migrasi pada salinan kerja sukses (prasyarat restore) — near "projects": syntax error (statement #1: SELECT `chain`,   CASE     WHEN `contract_address` IS NULL THEN NULL     WHEN `chain` = 'Solana' THEN trim(`contract_add)
+PASS H-MIG-06b restore dari backup = byte-identik dengan backup
+PASS H-MIG-06c DB hasil restore berschema lama (tanpa kolom kanonik)
+PASS H-MIG-06d DB hasil restore: projects = 12 baris
+--- H-MIG-07 (re-run ditolak) ---
+PASS H-MIG-07a re-run migrasi pada DB termigrasi GAGAL (bukan idempotent) — near "projects": syntax error (statement #1: SELECT `chain`,   CASE     WHEN `contract_address` IS NULL THEN NULL     WHEN `chain` = 'Solana' THEN trim(`contract_add)
+PASS H-MIG-07b DB byte-identik setelah re-run gagal (rollback)
+PASS H-MIG-07c jumlah projects tetap 12 setelah re-run gagal
+--- H-MIG-08 (down migration) ---
+FAIL H-MIG-08a down migration sukses pada salinan terpisah — no such column: principal_id (statement #0: SELECT `principal_id`, `project_id` FROM `saved_projects`   WHERE `principal_id` <> '<LEGACY>';)
+--- H-MIG-09 (cross-version SQLite 3.45.1) ---
+PASS H-MIG-09a sqlite3 CLI tersedia (versi kedua selain Bun) — 3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1 (64-bit)
+  H-MIG-09b eksekusi migrasi pada SQLite 3.45.1 dilakukan skrip run-mig-sqlite3451.sh; log: test-f044-f045-f046-migration-v2321-sqlite3451.txt (file migrasi yang SAMA, sha256 sama).
+PASS H-MIG-09c file migrasi yang dipakai CLI == file yang dipakai harness Bun (sha256 tercatat di header log ini)
+--- H-CAT-11 (F-045 direct SQL negatif) ---
+FAIL H-CAT-11 INSERT chain 'Fake Chain' + alamat EVM valid -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT chain 'Fake Chain' + contract NULL (tutup bypass canonical-NULL) -> DITOLAK CHECK
+FAIL H-CAT-11 UPDATE chain baris ada -> 'Fake Chain' -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT chain 'bnb chain' (case salah) -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT chain ' BNB Chain' (spasi) -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT Solana + alamat mengandung 'l' (base58 ilegal) -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT EVM + alamat pendek '0x1234' -> DITOLAK CHECK
+FAIL H-CAT-11 INSERT EVM + alamat non-hex '0xZZZ...' -> DITOLAK CHECK
+FAIL H-CAT-11 UPDATE contract_address baris ada -> format salah -> DITOLAK CHECK
+FAIL H-CAT-11 jumlah projects TIDAK berubah setelah semua penolakan — n=19
+--- H-CAT-12 (F-045 positif + uniqueness) ---
+PASS H-CAT-12a SEMUA 8 chain allowlist lolos INSERT
+FAIL H-CAT-12b duplikat EVM beda case (alamat BAOracle) -> UNIQUE violation
+FAIL H-CAT-12c duplikat EVM tanpa prefix 0x uppercase -> UNIQUE violation
+FAIL H-CAT-12d duplikat EVM whitespace -> UNIQUE violation
+PASS H-CAT-12e Solana satu huruf beda case -> DITERIMA (alamat BERBEDA)
+FAIL H-CAT-12f Solana sama persis -> UNIQUE violation
+PASS H-CAT-12g alamat EVM sama di chain BERBEDA -> DITERIMA
+PASS H-CAT-12h dua baris NULL contract_address -> DITERIMA
+FAIL H-CAT-12i duplikat nama ternormalisasi (case+spasi) -> UNIQUE violation
+--- H-CAT-13 (JS == DB canonical) ---
+906 | console.log("--- H-CAT-13 (JS == DB canonical) ---");
+907 | {
+908 |   const p = join(workDir, "cat13.db");
+909 |   copyFileSync(mig01Path, p);
+910 |   const db = new Database(p);
+911 |   const rows: any[] = db.query("SELECT id, name, chain, contract_address, contract_address_canonical AS c FROM projects ORDER BY id").all();
+                               ^
+SQLiteError: no such column: contract_address_canonical
+      errno: 1,
+ byteOffset: 42,
+       code: "SQLITE_ERROR"
+
+      at [prepareOwned] (bun:sqlite:369:37)
+      at query (bun:sqlite:386:31)
+      at /home/hatch/workspace/airdrop-generate-foundation/evidence/v2321/test-f044-f045-f046-migration-v2321.ts:911:26
+
+Bun v1.4.4 (Linux x64)

@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.20 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.20 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.21 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.21 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,17 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.21 (8 November 2026)
+
+| # | Lokasi | Perubahan |
+| --- | --- | --- |
+| 1 | §D.4.32 (baru) + matriks §2 F-044 + `evidence/v2321/0006_unified_ownership_and_uniqueness_v2321.sql` (BARU) + harness | **F-044 — migrasi SQLite ditulis ulang (rebuild):** teks v2 (ALTER ADD STORED) SUPERSEDED — gagal pada tabel berisi (`cannot add a STORED column`, H-MIG-00a, 3.53.4 + 3.45.1) dan mengandung typo sintaks (U-94). Pendekatan rebuild create/copy/validate/swap dalam satu transaksi atomik; urutan SQL, FK handling, backup/restore, failure injection + rollback, dan down migration eksplisit di artefak. Bukti VM atas ARTEFAK migrasi yang sebenarnya (bukan mirror): `test-f044-f045-f046-migration-v2321.txt` (Bun 1.4.4 / SQLite 3.53.4, uid 0, 109 assert PASS) + `...-sqlite3451.txt` (25 assert PASS). Nuansa U-96: ALTER ADD STORED berhasil pada tabel KOSONG — jebakan dev/prod. Lantai versi >= 3.31.0 (up) / >= 3.35.0 (down); versi runtime produksi NOT VERIFIED (U-90). Tes baru H-MIG-00..09. |
+| 2 | §D.4.32 (baru) + matriks §2 F-045 + proposal §4 (3d) | **F-045 — CHECK constraint chain nyata:** `projects_chain_allowlist_ck` + `projects_contract_format_ck` sebagai SQL bernama dalam rebuild (bukan komentar). Direct SQL INSERT/UPDATE negatif teruji termasuk contract NULL (tutup bypass canonical-NULL); 8 chain allowlist lolos; inspeksi `sqlite_master` membuktikan constraint terpasang. Format CHECK disamakan dengan fungsi aplikasi (prefix `0x`/`0X` + 40 hex, atau 40 hex tanpa prefix — U-95). Tes baru H-CAT-11..13. |
+| 3 | §D.4.32 (baru) + matriks §2 F-046 + proposal §5 (baru) | **F-046 — legacy checks fail-closed:** default L-A — NULL berarti "tanpa pemilik tercatat", BUKAN publik; predikat lama v2.3.20 (`OR owner IS NULL`) DIHAPUS setelah harness membuktikan kebocoran 2 baris legacy ke principal B (H-TEN-11d). Pseudodiff `listChecks`/`deleteCheck`/`askGibran` fail-closed + fungsi terpisah `exportLegacyChecks` (admin-gated). Scope `ctx.db` dinyatakan NOT VERIFIED; keputusan baru K-10 (L-A/L-B/L-C); konsekuensi anonim write-only dicatat (U-89). Tes baru H-TEN-11..15. |
+| 4 | §D.4.32 + header desain (baris 3–5) + proposal §6 | **Koreksi faktual U-87 + U-88:** katalog repo adalah 12 baris (bukan 15 seperti diklaim v2.3.20); migrasi v3 memakai jumlah aktual, bukan hardcode. §D.4.31 dirujuk 9× v2.3.20 tetapi badannya tidak pernah ditulis — v2.3.21 menambahkan §D.4.32 dan TIDAK memalsukan §D.4.31 retroaktif. |
+| 5 | §D.4.32 + matriks §5 + proposal Lampiran B | **Risiko baru U-87..U-96** (row-count, §D.4.31 hilang, anonim write-only, versi SQLite produksi, sqlite_sequence, pemetaan Drizzle, validasi runner, typo DDL v2, kesamaan input app-vs-DB, jebakan dev/prod). Gate **G-K diperbarui** (K-1..K-5/K-7..K-10 + otorisasi tahap (b)). |
+| 6 | §D.4.32 + matriks §6/§8/§10 | **Carry-forward + traceability:** F-001..F-005 tetap OPEN/BLOCKED; F-019/F-028 NOT VERIFIED; F-030 CONFIRMED BLOCKER; staging roles UNASSIGNED + 2 baris baru (SQLite runtime, K-10); `checkLink` TIDAK di-invoke; log gagal run1/run2 + CLI run1 dipertahankan terpisah (aturan raw log). Pemicu revisi v2.3.22 adalah audit independen V15, ATAU keputusan owner atas K-1..K-5/K-7..K-10/G-A/G-C/G-D/G-F/G-G (G-K), ATAU bukti runtime G-B, ATAU staging tersedia (G-E). |
 
 ## Perubahan di revisi v2.3.20 (8 November 2026)
 
@@ -6880,6 +6891,62 @@ berlaku), no production testing (termasuk tidak memanggil
 OPEN/BLOCKED. Penutupan F-001 butuh H-SSRF-01..26 terhadap
 implementasi aktual di staging terisolasi + log mentah + review
 independen — hasil VM saja tidak cukup.
+
+---
+
+### D.4.32 Jawaban atas audit independen V14 — F-044, F-045, F-046 + Handoff §9 (BARU, v2.3.21)
+
+**Catatan kejujuran (U-88):** changelog v2.3.20 merujuk §D.4.31
+sembilan kali, tetapi badan §D.4.31 tidak pernah ditulis di dokumen
+ini. Revisi v2.3.21 TIDAK memalsukan §D.4.31 secara retroaktif —
+bagian ini diberi nomor §D.4.32 dan ketiadaan §D.4.31 dicatat sebagai
+risiko U-88 di matriks v2.3.21 §5 dan proposal v2.3.21 Lampiran B.
+
+**F-044 — migrasi SQLite (High):** teks v2 (ALTER TABLE ADD COLUMN
+... STORED) SUPERSEDED. Pendekatan yang dipilih: rebuild
+create/copy/validate/swap dalam satu transaksi atomik (prosedur 12
+langkah SQLite). Bukti VM atas ARTEFAK migrasi yang sebenarnya
+(`evidence/v2321/0006_unified_ownership_and_uniqueness_v2321.sql`,
+SHA-256 `6c5bcbdc…`): H-MIG-00 (reproduksi — gagal pada tabel berisi
+di 3.53.4 + 3.45.1; berhasil pada tabel kosong — U-96, jebakan
+dev/prod), H-MIG-01 (sukses; 12/2/2 baris utuh; id lanjut 13),
+H-MIG-02 (inspeksi schema), H-MIG-03/04 (pre-check abort, DB
+byte-identik), H-MIG-05 (sabotase + crash tanpa COMMIT → rollback
+penuh), H-MIG-06 (backup/restore byte-identik), H-MIG-07 (re-run
+gagal bersih), H-MIG-08 (down migration; struktur == base),
+H-MIG-09 (lintas versi 3.45.1). Total 109 PASS (Bun) + 25 PASS
+(CLI), 0 FAIL. Lantai versi: >= 3.31.0 (up) / >= 3.35.0 (down);
+versi runtime produksi NOT VERIFIED (U-90).
+
+**F-045 — CHECK constraint chain (Medium):** dua CHECK bernama
+sebagai SQL nyata dalam rebuild (`projects_chain_allowlist_ck`,
+`projects_contract_format_ck`); direct SQL INSERT/UPDATE negatif
+teruji termasuk NULL contract (H-CAT-11); 8 chain allowlist lolos +
+uniqueness teruji (H-CAT-12); JS == DB canonical untuk semua baris
++ edge (H-CAT-13).
+
+**F-046 — legacy checks privacy (Medium):** default fail-closed
+L-A — `owner_user_id = NULL` berarti "tanpa pemilik tercatat",
+BUKAN publik; predikat lama v2.3.20 (`OR owner_user_id IS NULL`)
+DIHAPUS setelah harness membuktikan kebocoran 2 baris legacy ke
+principal B (H-TEN-11d). Dua principal teruji (H-TEN-11..15);
+scope `ctx.db` dinyatakan NOT VERIFIED; keputusan owner baru K-10
+(L-A/L-B/L-C); konsekuensi anonim write-only dicatat (U-89).
+
+**Koreksi faktual (U-87):** katalog repo adalah 12 baris, bukan 15
+seperti diklaim v2.3.20; migrasi v3 memakai jumlah aktual, bukan
+hardcode. **Temuan proses (U-94/U-95):** DDL v2 mengandung typo
+sintaks dan mishandle prefix `0X` — keduanya ditemukan karena
+harness mengeksekusi artefak, bukan menyalin teks tes; pelajaran:
+DDL proposal harus selalu dieksekusi harness sebelum diklaim siap.
+
+**Carry-forward:** F-001..F-005 tetap OPEN/BLOCKED; F-019/F-028
+NOT VERIFIED; F-030 CONFIRMED BLOCKER; STAGE-P01..P12 BLOCKED.
+Gate G-K diperbarui (K-1..K-5/K-7..K-10 + otorisasi tahap (b)).
+Pemicu revisi v2.3.22 adalah audit independen V15, ATAU keputusan
+owner atas K-1..K-5/K-7..K-10/G-A/G-C/G-D/G-F/G-G (G-K), ATAU bukti
+runtime G-B (termasuk versi SQLite produksi, U-90), ATAU staging
+tersedia (G-E).
 
 ---
 

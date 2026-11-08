@@ -1,0 +1,142 @@
+=== test-f044-f045-f046-migration-v2321 ===
+date: 08/11/2026, 13:32:54 WIB
+bun: 1.4.4
+sqlite_version (bun:sqlite): 3.53.4
+uid: 0
+kernel: 7.0.0-43-generic
+commit HEAD: 48c3f9432c1507bff77621a207f6dcf0eb8383f4
+env: VM lokal — BUKAN staging, BUKAN produksi; DB disposable di temp dir; no checkLink
+migration up artifact: 0006_unified_ownership_and_uniqueness_v2321.sql
+  sha256: 6c5bcbdc4082497f682dd4d2908e71fa0f89a26bdb933c1d84b85e12edf2640c
+migration down artifact: 0006_down_v2321.sql
+  sha256: 1f1bf2a260174d5a424cfb855b74fd06f16d5e74bfd0f114104d9f5c9eac46cf
+sqlite3 CLI (cross-version H-MIG-09): 3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1 (64-bit) (exit 0)
+work dir (mkdtemp 0700): /tmp/v2321-WwwfNI
+base DB (0001-0005 + fixture): projects=12, checks=2, saved_projects=2, sha256=b55066e9fbdf2f2f…
+PASS BASE katalog repo = 12 baris (koreksi U-87 atas klaim '15 baris' v2.3.20) — projects=12 (12 INSERT di 0004; CATALOG actions.ts juga 12 entri)
+PASS BASE checks fixture = 2 baris legacy
+PASS BASE saved_projects fixture = 2 baris
+--- H-MIG-00 (F-044 reproduksi) ---
+PASS H-MIG-00a DDL v2.3.20 (ALTER ADD ... STORED) GAGAL pada tabel BERISI di SQLite 3.53.4 — F-044 ter-reproduksi — cannot add a STORED column
+PASS H-MIG-00b VIRTUAL ADD berhasil (alternatif yang didokumentasikan)
+PASS H-MIG-00c index pada kolom VIRTUAL berhasil dibuat
+PASS H-MIG-00d VIRTUAL + unique index tetap menolak duplikat (alternatif fungsional, bukan yang dipilih) — UNIQUE constraint failed: t.canon2
+PASS H-MIG-00e tabel KOSONG + STORED ADD BERHASIL di 3.53.4 — kegagalan bergantung isi tabel (U-96)
+PASS H-MIG-00f kolom STORED pada tabel kosong terhitung benar setelah insert — c=abc
+--- H-MIG-01 (migrasi v3 sukses) ---
+PASS H-MIG-01a migrasi 0006 v3 (artefak sebenarnya) sukses
+PASS H-MIG-01b projects tetap 12 baris — n=12
+PASS H-MIG-01c checks tetap 2 baris — n=2
+PASS H-MIG-01d saved_projects tetap 2 baris — n=2
+PASS H-MIG-01e SEMUA nilai kolom projects identik sebelum/sesudah (dump JSON sama)
+PASS H-MIG-01f baris checks utuh; owner_user_id legacy tetap NULL
+PASS H-MIG-01g baris saved_projects utuh; principal_id = '<LEGACY>'
+PASS H-MIG-01h insert pasca-migrasi dapat id 13 (sqlite_sequence utuh) — id=13
+PASS H-MIG-01i kolom kanonik baris baru terhitung DB (= fungsi JS) — db=0x1111111111111111111111111111111111111111
+PASS H-MIG-01j PRAGMA foreign_key_check = 0 baris — []
+PASS H-MIG-01k PRAGMA integrity_check = 'ok'
+--- H-MIG-02 (inspeksi schema) ---
+PASS H-MIG-02a sql projects memuat 'GENERATED ALWAYS AS' + 'STORED'
+PASS H-MIG-02b sql projects memuat CHECK chain bernama
+PASS H-MIG-02c sql projects memuat CHECK format bernama
+PASS H-MIG-02d sql projects memuat kolom provenance
+PASS H-MIG-02e unique index nama ada
+PASS H-MIG-02f unique index alamat per chain ada (partial)
+PASS H-MIG-02g unique index alamat bersifat partial (WHERE contract_address IS NOT NULL)
+PASS H-MIG-02h checks punya kolom owner_user_id
+PASS H-MIG-02i index checks_owner_idx ada
+PASS H-MIG-02j saved_projects composite PK (principal_id, project_id) — pk=["principal_id","project_id"]
+PASS H-MIG-02k saved_projects FK tetap ke projects(id) — [{"id":0,"seq":0,"table":"projects","from":"project_id","to":"id","on_update":"NO ACTION","on_delete":"NO ACTION","match":"NONE"}]
+PASS H-MIG-02l tidak ada trigger/view (0, seperti sebelum migrasi)
+PASS H-MIG-02m base (pre-migrasi) TIDAK punya kolom kanonik/CHECK bernama — artefak di atas benar-benar dari migrasi v3
+--- H-MIG-03 (pre-check duplikat) ---
+PASS H-MIG-03a migrasi GAGAL pada pre-check duplikat — VALIDATION gagal pada statement #0 — mengembalikan 1 baris: [{"dup_name":"baoracle — binance agent oracle","n":2}] (statement #0: SELECT lower(trim(`name`)) AS dup_name, count(*) AS n FROM `projects`   GROUP BY 1 HAVING count(*) > 1;)
+PASS H-MIG-03b kegagalan terjadi di Fase 1 (statement VALIDATION, sebelum BEGIN) — failedAt=0
+PASS H-MIG-03c DB byte-identik setelah abort pre-check — sha e580c772b854 vs e580c772b854
+PASS H-MIG-03d jumlah projects tetap 13 (12 + 1 duplikat injeksi, tanpa perubahan migrasi)
+PASS H-MIG-03e kolom owner_user_id TIDAK ditambahkan (abort sebelum Fase 2)
+--- H-MIG-04 (pre-check chain tak dikenal) ---
+PASS H-MIG-04a migrasi GAGAL pada pre-check chain tak dikenal — VALIDATION gagal pada statement #2 — mengembalikan 1 baris: [{"id":13,"name":"Proyek Chain Asing","chain":"Fake Chain"}] (statement #2: SELECT `id`, `name`, `chain` FROM `projects`   WHERE `chain` NOT IN ('BNB Chain','Ethereum','Base','Arbitrum','Polygon',)
+PASS H-MIG-04b DB byte-identik setelah abort pre-check
+PASS H-MIG-04c jumlah projects tetap 13 (12 + 1 injeksi)
+--- H-MIG-05 (failure injection tengah transaksi) ---
+PASS H-MIG-05a migrasi tersabotase GAGAL — no such table: main.projects_typo (statement #19: CREATE UNIQUE INDEX `projects_contract_normalized_unique`   ON `projects_typo` (`chain`, `contract_address_canonical`)  )
+PASS H-MIG-05b kegagalan terjadi di Fase 2 (setelah BEGIN) dan ROLLBACK dieksekusi — failedAt=19
+PASS H-MIG-05c DB byte-identik setelah ROLLBACK tengah transaksi
+PASS H-MIG-05d schema projects tetap definisi lama (tanpa kolom kanonik)
+PASS H-MIG-05e jumlah projects tetap 12
+  crash child stdout: crash-mid-migration: partial work done, exiting WITHOUT COMMIT (simulated crash)
+PASS H-MIG-05f proses crash keluar dengan kode 2 (simulasi mati) — exit=2
+PASS H-MIG-05g setelah crash: tabel projects lama UTUH (rollback journal)
+PASS H-MIG-05h setelah crash: jumlah projects tetap 12
+PASS H-MIG-05i DB byte-identik setelah pemulihan crash
+--- H-MIG-06 (backup/restore) ---
+PASS H-MIG-06a migrasi pada salinan kerja sukses (prasyarat restore)
+PASS H-MIG-06b restore dari backup = byte-identik dengan backup
+PASS H-MIG-06c DB hasil restore berschema lama (tanpa kolom kanonik)
+PASS H-MIG-06d DB hasil restore: projects = 12 baris
+--- H-MIG-07 (re-run ditolak) ---
+PASS H-MIG-07a re-run migrasi pada DB termigrasi GAGAL (bukan idempotent) — duplicate column name: owner_user_id (statement #20: ALTER TABLE `checks` ADD COLUMN `owner_user_id` text;)
+PASS H-MIG-07b DB byte-identik setelah re-run gagal (rollback)
+PASS H-MIG-07c jumlah projects tetap 12 setelah re-run gagal
+--- H-MIG-08 (down migration) ---
+PASS H-MIG-08a down migration sukses pada salinan terpisah
+PASS H-MIG-08b projects tetap 12 baris setelah down — n=12
+PASS H-MIG-08c checks tetap 2 baris setelah down — n=2
+PASS H-MIG-08d saved_projects tetap 2 baris setelah down — n=2
+PASS H-MIG-08e dump projects setelah down == dump sebelum migrasi naik
+PASS H-MIG-08f sql projects tanpa kolom kanonik/CHECK bernama
+PASS H-MIG-08g kedua unique index hilang setelah down
+PASS H-MIG-08h checks tanpa kolom owner_user_id setelah down
+PASS H-MIG-08i saved_projects kembali PK project_id saja — pk=["project_id"]
+PASS H-MIG-08j saved_projects tanpa kolom principal_id
+PASS H-MIG-08k foreign_key_check = 0 baris setelah down
+PASS H-MIG-08l PRAGMA table_info ketiga tabel == base (struktur kembali persis)
+--- H-MIG-09 (cross-version SQLite 3.45.1) ---
+PASS H-MIG-09a sqlite3 CLI tersedia (versi kedua selain Bun) — 3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1 (64-bit)
+  H-MIG-09b eksekusi migrasi pada SQLite 3.45.1 dilakukan skrip run-mig-sqlite3451.sh; log: test-f044-f045-f046-migration-v2321-sqlite3451.txt (file migrasi yang SAMA, sha256 sama).
+PASS H-MIG-09c file migrasi yang dipakai CLI == file yang dipakai harness Bun (sha256 tercatat di header log ini)
+--- H-CAT-11 (F-045 direct SQL negatif) ---
+PASS H-CAT-11 INSERT chain 'Fake Chain' + alamat EVM valid -> DITOLAK CHECK — CHECK constraint failed: projects_chain_allowlist_ck
+PASS H-CAT-11 INSERT chain 'Fake Chain' + contract NULL (tutup bypass canonical-NULL) -> DITOLAK CHECK — CHECK constraint failed: projects_chain_allowlist_ck
+PASS H-CAT-11 UPDATE chain baris ada -> 'Fake Chain' -> DITOLAK CHECK — CHECK constraint failed: projects_chain_allowlist_ck
+PASS H-CAT-11 INSERT chain 'bnb chain' (case salah) -> DITOLAK CHECK — CHECK constraint failed: projects_chain_allowlist_ck
+PASS H-CAT-11 INSERT chain ' BNB Chain' (spasi) -> DITOLAK CHECK — CHECK constraint failed: projects_chain_allowlist_ck
+PASS H-CAT-11 INSERT Solana + alamat mengandung 'l' (base58 ilegal) -> DITOLAK CHECK — CHECK constraint failed: projects_contract_format_ck
+PASS H-CAT-11 INSERT EVM + alamat pendek '0x1234' -> DITOLAK CHECK — CHECK constraint failed: projects_contract_format_ck
+PASS H-CAT-11 INSERT EVM + alamat non-hex '0xZZZ...' -> DITOLAK CHECK — CHECK constraint failed: projects_contract_format_ck
+PASS H-CAT-11 UPDATE contract_address baris ada -> format salah -> DITOLAK CHECK — CHECK constraint failed: projects_contract_format_ck
+PASS H-CAT-11 jumlah projects TIDAK berubah setelah semua penolakan — n=12
+--- H-CAT-12 (F-045 positif + uniqueness) ---
+PASS H-CAT-12a SEMUA 8 chain allowlist lolos INSERT
+PASS H-CAT-12b duplikat EVM beda case (alamat BAOracle) -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS H-CAT-12c duplikat EVM tanpa prefix 0x uppercase -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS H-CAT-12d duplikat EVM whitespace -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS H-CAT-12d2 duplikat EVM prefix '0X' uppercase -> UNIQUE violation (bukan '0x0x...' — U-95) — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS H-CAT-12e Solana satu huruf beda case -> DITERIMA (alamat BERBEDA)
+PASS H-CAT-12f Solana sama persis -> UNIQUE violation — UNIQUE constraint failed: projects.chain, projects.contract_address_canonical
+PASS H-CAT-12g alamat EVM sama di chain BERBEDA -> DITERIMA
+PASS H-CAT-12h dua baris NULL contract_address -> DITERIMA
+PASS H-CAT-12i duplikat nama ternormalisasi (case+spasi) -> UNIQUE violation — UNIQUE constraint failed: index 'projects_name_normalized_unique'
+--- H-CAT-13 (JS == DB canonical) ---
+PASS H-CAT-13a fungsi JS == generated column DB untuk SEMUA 12 baris seed
+PASS H-CAT-13b korpus edge: JS == DB (atau UNIQUE bila duplikat seed — benar)
+--- H-TEN-11..15 (F-046 dua principal, fail-closed) ---
+PASS H-TEN-11a listChecks(B) hanya baris B (1 baris) — [{"id":5,"domain":"b-1.test","o":"principal-B"}]
+PASS H-TEN-11b listChecks(A) hanya baris A (2 baris) — ["a-2.test","a-1.test"]
+PASS H-TEN-11c legacy NULL TIDAK terlihat principal A maupun B (fail-closed)
+PASS H-TEN-11d KONTRAS: predikat lama v2.3.20 (OR owner IS NULL) MEMBOCORKAN 2 baris legacy ke B — alasan F-046 — old-predicate rows=3 (legacy=2)
+PASS H-TEN-12a DELETE baris A oleh B = 0 baris terhapus — changes=0
+PASS H-TEN-12b baris A MASIH ADA setelah percobaan hapus oleh B
+PASS H-TEN-12c DELETE baris legacy NULL oleh B = 0 baris terhapus — changes=0
+PASS H-TEN-12d kedua baris legacy MASIH ADA
+PASS H-TEN-12e DELETE baris SENDIRI oleh B = 1 baris terhapus — changes=1
+PASS H-TEN-12f DELETE id tidak ada = 0 baris (not found, tanpa bocor info)
+PASS H-TEN-13 askGibran(A) hanya membaca checks A (2 baris; legacy + B tidak masuk prompt) — ["a-2.test","a-1.test"]
+PASS H-TEN-14 predikat export legacy (admin-gated) mengembalikan TEPAT 2 baris NULL — bukan untuk principal biasa — ["example-legacy-1.test","example-legacy-2.test"]
+PASS H-TEN-15a state A (completed/bookmarked) tidak mengubah state B (not_started/tidak bookmark) — A={"b":1,"t":"completed"} B={"b":0,"t":"not_started"}
+PASS H-TEN-15b baris '<LEGACY>' tetap 2 (tidak tertimpa state per-principal)
+PASS H-TEN-15c INSERT duplikat (principal-B, project 1) -> UNIQUE violation (composite key menegakkan di DB) — UNIQUE constraint failed: saved_projects.principal_id, saved_projects.project_id
+PASS H-TEN-15d katalog tetap GLOBAL (12 baris terlihat tanpa filter owner)
+=== RESULT: 109 PASS, 0 FAIL ===
+work dir (DB disposable, tidak di-commit): /tmp/v2321-WwwfNI

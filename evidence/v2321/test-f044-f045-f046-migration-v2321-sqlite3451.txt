@@ -1,0 +1,40 @@
+=== H-MIG-09 cross-version SQLite 3.45.1 ===
+date: 2026-11-08 13:32:54 WIB
+sqlite3: 3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1 (64-bit)
+uid: 0
+work dir: /tmp/v2321-cli-J9b5rw
+migration artifact: /home/hatch/workspace/airdrop-generate-foundation/evidence/v2321/0006_unified_ownership_and_uniqueness_v2321.sql
+  sha256: 6c5bcbdc4082497f682dd4d2908e71fa0f89a26bdb933c1d84b85e12edf2640c
+down artifact: /home/hatch/workspace/airdrop-generate-foundation/evidence/v2321/0006_down_v2321.sql
+  sha256: 1f1bf2a260174d5a424cfb855b74fd06f16d5e74bfd0f114104d9f5c9eac46cf
+PASS BASE projects = 12 (koreksi U-87) (=12)
+PASS BASE checks table ada (=checks)
+PASS H-MIG-00-cli ALTER ADD STORED gagal di 3.45.1 pada tabel berisi: Error: stepping, cannot add a STORED column
+PASS H-MIG-00-cli tabel KOSONG + STORED ADD berhasil di 3.45.1 (nuansa U-96)
+PASS H-MIG-00-cli VIRTUAL ADD + index berhasil di 3.45.1
+PASS H-MIG-01-cli migrasi v3 sukses di SQLite 3.45.1 (exit 0)
+--- output migrasi (harus hanya 'ok' dari integrity_check) ---
+ok
+PASS H-MIG-01-cli output validasi hanya 'ok'
+PASS H-MIG-01-cli projects tetap 12 (=12)
+PASS H-MIG-01-cli checks tetap 2 (=2)
+PASS H-MIG-01-cli saved_projects tetap 2 (=2)
+PASS H-MIG-01-cli foreign_key_check 0 baris (=)
+PASS H-MIG-01-cli integrity_check ok (=ok)
+H-MIG-02-cli schema projects:
+GENERATED ALWAYS AS
+PASS H-MIG-02-cli CHECK chain bernama ada
+PASS H-MIG-02-cli CHECK format bernama ada
+PASS H-MIG-02-cli generated column STORED ada
+PASS H-MIG-02-cli unique index alamat ada (=projects_contract_normalized_unique)
+PASS H-MIG-02-cli unique index nama ada (=projects_name_normalized_unique)
+PASS H-CAT-11-cli INSERT Fake Chain ditolak di 3.45.1: Error: stepping, CHECK constraint failed: projects_chain_allowlist_ck (19)
+PASS H-CAT-11-cli INSERT Fake Chain + NULL contract ditolak di 3.45.1: Error: stepping, CHECK constraint failed: projects_chain_allowlist_ck (19)
+PASS H-CAT-11-cli jumlah projects tetap 12 (=12)
+PASS H-MIG-08-cli down migration sukses di SQLite 3.45.1 (exit 0)
+PASS H-MIG-08-cli output validasi down hanya 'ok'
+PASS H-MIG-08-cli projects tetap 12 setelah down (=12)
+PASS H-MIG-08-cli kolom kanonik hilang setelah down
+PASS H-MIG-08-cli checks tanpa owner_user_id (=)
+=== RESULT H-MIG-09 (sqlite3 CLI 3.45.1): ALL PASS ===
+work dir (DB disposable, tidak di-commit): /tmp/v2321-cli-J9b5rw
