@@ -1,0 +1,689 @@
+parent pid=3320 bun=1.4.4 execPath=/opt/hatch-image/bin/bun
+matrix: patterns=A,B fixtures=ascii,nonascii,nonascii-bytes gc=forced,natural runs=5 per combination
+total child runs: 60
+--- child run pattern=A fixture=ascii gc=forced run=1 pid=3323 exit=0 ---
+child pid=3323 bun=1.4.4 pattern=A fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19943424 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=20217856
+A1 after html + scriptTexts: rss=21704704 (+1761280) heapUsed=1340398 (+1006202) external=1073214 vmHwm=21905408
+A2 after join: rss=22228992 (+2285568) heapUsed=1940970 (+1606774) external=1673690 vmHwm=22519808
+A3 after haystack: rss=22360064 (+2416640) heapUsed=1940731 (+1606535) external=1673691 vmHwm=22659072
+A4 after lower: rss=24326144 (+4382720) heapUsed=3940929 (+3606733) external=3673809 vmHwm=24670208
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=21913600 (+1970176) heapUsed=1339532 (+1005336) heapTotal=919552 external=1072460 (+1002456) vmHwm=24457216 (+4239360 vs baseline vmHwm)
+RESULT {"pid":3323,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19943424,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":20217856},"final":{"rss":21913600,"heapUsed":1339532,"heapTotal":919552,"external":1072460,"vmHwm":24457216},"vmHwmDelta":4239360,"rssDelta":1970176,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=ascii gc=forced run=2 pid=3332 exit=0 ---
+child pid=3332 bun=1.4.4 pattern=A fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19369984 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=19640320
+A1 after html + scriptTexts: rss=21073920 (+1703936) heapUsed=1340062 (+1005866) external=1073214 vmHwm=21245952
+A2 after join: rss=21598208 (+2228224) heapUsed=1940635 (+1606439) external=1673691 vmHwm=21864448
+A3 after haystack: rss=21598208 (+2228224) heapUsed=1940731 (+1606535) external=1673691 vmHwm=21872640
+A4 after lower: rss=23695360 (+4325376) heapUsed=3940926 (+3606730) external=3673806 vmHwm=23896064
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=21188608 (+1818624) heapUsed=1339532 (+1005336) heapTotal=919552 external=1072460 (+1002456) vmHwm=23826432 (+4186112 vs baseline vmHwm)
+RESULT {"pid":3332,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19369984,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":19640320},"final":{"rss":21188608,"heapUsed":1339532,"heapTotal":919552,"external":1072460,"vmHwm":23826432},"vmHwmDelta":4186112,"rssDelta":1818624,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=ascii gc=forced run=3 pid=3338 exit=0 ---
+child pid=3338 bun=1.4.4 pattern=A fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19046400 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=19468288
+A1 after html + scriptTexts: rss=20619264 (+1572864) heapUsed=1340398 (+1006202) external=1073214 vmHwm=21114880
+A2 after join: rss=21143552 (+2097152) heapUsed=1940971 (+1606775) external=1673691 vmHwm=21716992
+A3 after haystack: rss=21143552 (+2097152) heapUsed=1940731 (+1606535) external=1673691 vmHwm=21733376
+A4 after lower: rss=23240704 (+4194304) heapUsed=3940926 (+3606730) external=3673806 vmHwm=23756800
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=20766720 (+1720320) heapUsed=1339532 (+1005336) heapTotal=919552 external=1072460 (+1002456) vmHwm=23371776 (+3903488 vs baseline vmHwm)
+RESULT {"pid":3338,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19046400,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":19468288},"final":{"rss":20766720,"heapUsed":1339532,"heapTotal":919552,"external":1072460,"vmHwm":23371776},"vmHwmDelta":3903488,"rssDelta":1720320,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=ascii gc=forced run=4 pid=3345 exit=0 ---
+child pid=3345 bun=1.4.4 pattern=A fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19238912 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=19603456
+A1 after html + scriptTexts: rss=20942848 (+1703936) heapUsed=1340062 (+1005866) external=1073214 vmHwm=21209088
+A2 after join: rss=21467136 (+2228224) heapUsed=1940635 (+1606439) external=1673691 vmHwm=21831680
+A3 after haystack: rss=21467136 (+2228224) heapUsed=1940731 (+1606535) external=1673691 vmHwm=21852160
+A4 after lower: rss=23564288 (+4325376) heapUsed=3940926 (+3606730) external=3673806 vmHwm=23871488
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=21057536 (+1818624) heapUsed=1339532 (+1005336) heapTotal=919552 external=1072460 (+1002456) vmHwm=23695360 (+4091904 vs baseline vmHwm)
+RESULT {"pid":3345,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19238912,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":19603456},"final":{"rss":21057536,"heapUsed":1339532,"heapTotal":919552,"external":1072460,"vmHwm":23695360},"vmHwmDelta":4091904,"rssDelta":1818624,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=ascii gc=forced run=5 pid=3352 exit=0 ---
+child pid=3352 bun=1.4.4 pattern=A fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19202048 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=19558400
+A1 after html + scriptTexts: rss=20774912 (+1572864) heapUsed=1340062 (+1005866) external=1073214 vmHwm=21204992
+A2 after join: rss=21430272 (+2228224) heapUsed=1940635 (+1606439) external=1673691 vmHwm=21807104
+A3 after haystack: rss=21430272 (+2228224) heapUsed=1940731 (+1606535) external=1673691 vmHwm=21827584
+A4 after lower: rss=23396352 (+4194304) heapUsed=3940926 (+3606730) external=3673806 vmHwm=23838720
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=20934656 (+1732608) heapUsed=1339532 (+1005336) heapTotal=919552 external=1072460 (+1002456) vmHwm=23527424 (+3969024 vs baseline vmHwm)
+RESULT {"pid":3352,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19202048,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":19558400},"final":{"rss":20934656,"heapUsed":1339532,"heapTotal":919552,"external":1072460,"vmHwm":23527424},"vmHwmDelta":3969024,"rssDelta":1732608,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=ascii gc=natural run=1 pid=3358 exit=0 ---
+child pid=3358 bun=1.4.4 pattern=A fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17752064 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18010112
+A1 after html + scriptTexts: rss=19587072 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19816448
+A2 after join: rss=20242432 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20422656
+A3 after haystack: rss=20242432 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20430848
+A4 after lower: rss=22208512 (+4456448) heapUsed=952320 (+1024) external=0 vmHwm=22450176
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22339584 (+4587520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22593536 (+4583424 vs baseline vmHwm)
+RESULT {"pid":3358,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17752064,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18010112},"final":{"rss":22339584,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22593536},"vmHwmDelta":4583424,"rssDelta":4587520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=ascii gc=natural run=2 pid=3361 exit=0 ---
+child pid=3361 bun=1.4.4 pattern=A fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17707008 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18026496
+A1 after html + scriptTexts: rss=19673088 (+1966080) heapUsed=952320 (+1024) external=0 vmHwm=19832832
+A2 after join: rss=20328448 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20439040
+A3 after haystack: rss=20328448 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20447232
+A4 after lower: rss=22294528 (+4587520) heapUsed=952320 (+1024) external=0 vmHwm=22466560
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22425600 (+4718592) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22609920 (+4583424 vs baseline vmHwm)
+RESULT {"pid":3361,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17707008,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18026496},"final":{"rss":22425600,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22609920},"vmHwmDelta":4583424,"rssDelta":4718592,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=ascii gc=natural run=3 pid=3364 exit=0 ---
+child pid=3364 bun=1.4.4 pattern=A fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17928192 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18182144
+A1 after html + scriptTexts: rss=19763200 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19988480
+A2 after join: rss=20418560 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20594688
+A3 after haystack: rss=20418560 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20602880
+A4 after lower: rss=22384640 (+4456448) heapUsed=952320 (+1024) external=0 vmHwm=22622208
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22515712 (+4587520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22765568 (+4583424 vs baseline vmHwm)
+RESULT {"pid":3364,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17928192,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18182144},"final":{"rss":22515712,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22765568},"vmHwmDelta":4583424,"rssDelta":4587520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=ascii gc=natural run=4 pid=3367 exit=0 ---
+child pid=3367 bun=1.4.4 pattern=A fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18214912
+A1 after html + scriptTexts: rss=19922944 (+1966080) heapUsed=952320 (+1024) external=0 vmHwm=20086784
+A2 after join: rss=20578304 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20692992
+A3 after haystack: rss=20578304 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20701184
+A4 after lower: rss=22544384 (+4587520) heapUsed=952320 (+1024) external=0 vmHwm=22720512
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22675456 (+4718592) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22863872 (+4648960 vs baseline vmHwm)
+RESULT {"pid":3367,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18214912},"final":{"rss":22675456,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22863872},"vmHwmDelta":4648960,"rssDelta":4718592,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=ascii gc=natural run=5 pid=3370 exit=0 ---
+child pid=3370 bun=1.4.4 pattern=A fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18214912
+A1 after html + scriptTexts: rss=19791872 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=20021248
+A2 after join: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20627456
+A3 after haystack: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20635648
+A4 after lower: rss=22413312 (+4456448) heapUsed=952320 (+1024) external=0 vmHwm=22654976
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22544384 (+4587520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22798336 (+4583424 vs baseline vmHwm)
+RESULT {"pid":3370,"bun":"1.4.4","pattern":"A","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18214912},"final":{"rss":22544384,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22798336},"vmHwmDelta":4583424,"rssDelta":4587520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=1 pid=3373 exit=0 ---
+child pid=3373 bun=1.4.4 pattern=A fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19177472 heapUsed=334535 heapTotal=902144 external=70007 vmHwm=19443712
+A1 after html + scriptTexts: rss=20750336 (+1572864) heapUsed=1340401 (+1005866) external=1073217 vmHwm=21094400
+A2 after join: rss=21274624 (+2097152) heapUsed=1940974 (+1606439) external=1673694 vmHwm=21708800
+A3 after haystack: rss=21274624 (+2097152) heapUsed=1941070 (+1606535) external=1673694 vmHwm=21729280
+A4 after lower: rss=23371776 (+4194304) heapUsed=3941265 (+3606730) external=3673809 vmHwm=23818240
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=20914176 (+1736704) heapUsed=1339871 (+1005336) heapTotal=919552 external=1072463 (+1002456) vmHwm=23515136 (+4071424 vs baseline vmHwm)
+RESULT {"pid":3373,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19177472,"heapUsed":334535,"heapTotal":902144,"external":70007,"vmHwm":19443712},"final":{"rss":20914176,"heapUsed":1339871,"heapTotal":919552,"external":1072463,"vmHwm":23515136},"vmHwmDelta":4071424,"rssDelta":1736704,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=2 pid=3380 exit=0 ---
+child pid=3380 bun=1.4.4 pattern=A fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19095552 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19456000
+A1 after html + scriptTexts: rss=20668416 (+1572864) heapUsed=1340065 (+1005866) external=1073217 vmHwm=21094400
+A2 after join: rss=21192704 (+2097152) heapUsed=1940638 (+1606439) external=1673694 vmHwm=21704704
+A3 after haystack: rss=21192704 (+2097152) heapUsed=1940734 (+1606535) external=1673694 vmHwm=21716992
+A4 after lower: rss=23289856 (+4194304) heapUsed=3940929 (+3606730) external=3673809 vmHwm=23805952
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=20836352 (+1740800) heapUsed=1339535 (+1005336) heapTotal=919552 external=1072463 (+1002456) vmHwm=23433216 (+3977216 vs baseline vmHwm)
+RESULT {"pid":3380,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19095552,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19456000},"final":{"rss":20836352,"heapUsed":1339535,"heapTotal":919552,"external":1072463,"vmHwm":23433216},"vmHwmDelta":3977216,"rssDelta":1740800,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=3 pid=3386 exit=0 ---
+child pid=3386 bun=1.4.4 pattern=A fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19107840 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19632128
+A1 after html + scriptTexts: rss=20811776 (+1703936) heapUsed=1340401 (+1006202) external=1073217 vmHwm=21319680
+A2 after join: rss=21336064 (+2228224) heapUsed=1940974 (+1606775) external=1673694 vmHwm=21946368
+A3 after haystack: rss=21336064 (+2228224) heapUsed=1941070 (+1606871) external=1673694 vmHwm=21962752
+A4 after lower: rss=23433216 (+4325376) heapUsed=3941265 (+3607066) external=3673809 vmHwm=24051712
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=20975616 (+1867776) heapUsed=1339871 (+1005672) heapTotal=919552 external=1072463 (+1002456) vmHwm=23576576 (+3944448 vs baseline vmHwm)
+RESULT {"pid":3386,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19107840,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19632128},"final":{"rss":20975616,"heapUsed":1339871,"heapTotal":919552,"external":1072463,"vmHwm":23576576},"vmHwmDelta":3944448,"rssDelta":1867776,"heapUsedDelta":1005672,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=4 pid=3392 exit=0 ---
+child pid=3392 bun=1.4.4 pattern=A fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19214336 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19566592
+A1 after html + scriptTexts: rss=20787200 (+1572864) heapUsed=1340401 (+1006202) external=1073217 vmHwm=21200896
+A2 after join: rss=21311488 (+2097152) heapUsed=1940974 (+1606775) external=1673694 vmHwm=21815296
+A3 after haystack: rss=21311488 (+2097152) heapUsed=1941070 (+1606871) external=1673694 vmHwm=21827584
+A4 after lower: rss=23552000 (+4337664) heapUsed=3940929 (+3606730) external=3673809 vmHwm=23916544
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=21086208 (+1871872) heapUsed=1339535 (+1005336) heapTotal=919552 external=1072463 (+1002456) vmHwm=23683072 (+4116480 vs baseline vmHwm)
+RESULT {"pid":3392,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19214336,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19566592},"final":{"rss":21086208,"heapUsed":1339535,"heapTotal":919552,"external":1072463,"vmHwm":23683072},"vmHwmDelta":4116480,"rssDelta":1871872,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=nonascii gc=forced run=5 pid=3398 exit=0 ---
+child pid=3398 bun=1.4.4 pattern=A fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19275776 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19562496
+A1 after html + scriptTexts: rss=20848640 (+1572864) heapUsed=1340401 (+1006202) external=1073217 vmHwm=21196800
+A2 after join: rss=21372928 (+2097152) heapUsed=1940974 (+1606775) external=1673694 vmHwm=21811200
+A3 after haystack: rss=21372928 (+2097152) heapUsed=1941070 (+1606871) external=1673694 vmHwm=21831680
+A4 after lower: rss=23470080 (+4194304) heapUsed=3941265 (+3607066) external=3673809 vmHwm=23932928
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=21065728 (+1789952) heapUsed=1339535 (+1005336) heapTotal=919552 external=1072463 (+1002456) vmHwm=23601152 (+4038656 vs baseline vmHwm)
+RESULT {"pid":3398,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":19275776,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19562496},"final":{"rss":21065728,"heapUsed":1339535,"heapTotal":919552,"external":1072463,"vmHwm":23601152},"vmHwmDelta":4038656,"rssDelta":1789952,"heapUsedDelta":1005336,"externalDelta":1002456}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=1 pid=3404 exit=0 ---
+child pid=3404 bun=1.4.4 pattern=A fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17928192 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18178048
+A1 after html + scriptTexts: rss=19763200 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19984384
+A2 after join: rss=20418560 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20598784
+A3 after haystack: rss=20418560 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20606976
+A4 after lower: rss=22528000 (+4599808) heapUsed=952320 (+1024) external=0 vmHwm=22704128
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22659072 (+4730880) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22847488 (+4669440 vs baseline vmHwm)
+RESULT {"pid":3404,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17928192,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18178048},"final":{"rss":22659072,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22847488},"vmHwmDelta":4669440,"rssDelta":4730880,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=2 pid=3407 exit=0 ---
+child pid=3407 bun=1.4.4 pattern=A fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18202624
+A1 after html + scriptTexts: rss=19791872 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=20008960
+A2 after join: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20623360
+A3 after haystack: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20631552
+A4 after lower: rss=22556672 (+4599808) heapUsed=952320 (+1024) external=0 vmHwm=22728704
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22687744 (+4730880) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22872064 (+4669440 vs baseline vmHwm)
+RESULT {"pid":3407,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18202624},"final":{"rss":22687744,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22872064},"vmHwmDelta":4669440,"rssDelta":4730880,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=3 pid=3410 exit=0 ---
+child pid=3410 bun=1.4.4 pattern=A fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17784832 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18030592
+A1 after html + scriptTexts: rss=19619840 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19836928
+A2 after join: rss=20275200 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20451328
+A3 after haystack: rss=20275200 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20459520
+A4 after lower: rss=22384640 (+4599808) heapUsed=952320 (+1024) external=0 vmHwm=22556672
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22515712 (+4730880) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22700032 (+4669440 vs baseline vmHwm)
+RESULT {"pid":3410,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17784832,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18030592},"final":{"rss":22515712,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22700032},"vmHwmDelta":4669440,"rssDelta":4730880,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=4 pid=3413 exit=0 ---
+child pid=3413 bun=1.4.4 pattern=A fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17920000 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18239488
+A1 after html + scriptTexts: rss=19886080 (+1966080) heapUsed=952320 (+1024) external=0 vmHwm=20045824
+A2 after join: rss=20541440 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20660224
+A3 after haystack: rss=20541440 (+2621440) heapUsed=952320 (+1024) external=0 vmHwm=20668416
+A4 after lower: rss=22507520 (+4587520) heapUsed=952320 (+1024) external=0 vmHwm=22765568
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22650880 (+4730880) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22908928 (+4669440 vs baseline vmHwm)
+RESULT {"pid":3413,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17920000,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18239488},"final":{"rss":22650880,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22908928},"vmHwmDelta":4669440,"rssDelta":4730880,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii gc=natural run=5 pid=3417 exit=0 ---
+child pid=3417 bun=1.4.4 pattern=A fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18202624
+A1 after html + scriptTexts: rss=19791872 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=20013056
+A2 after join: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20627456
+A3 after haystack: rss=20447232 (+2490368) heapUsed=952320 (+1024) external=0 vmHwm=20635648
+A4 after lower: rss=22556672 (+4599808) heapUsed=952320 (+1024) external=0 vmHwm=22732800
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 3599936 (input 1000000; ratio 3.60x)
+final: rss=22687744 (+4730880) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22876160 (+4673536 vs baseline vmHwm)
+RESULT {"pid":3417,"bun":"1.4.4","pattern":"A","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":3599936,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18202624},"final":{"rss":22687744,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22876160},"vmHwmDelta":4673536,"rssDelta":4730880,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=1 pid=3420 exit=0 ---
+child pid=3420 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19009536 heapUsed=333868 heapTotal=902144 external=70012 vmHwm=19361792
+A1 after html + scriptTexts: rss=20189184 (+1179648) heapUsed=840071 (+506203) external=573223 vmHwm=20496384
+A2 after join: rss=20451328 (+1441792) heapUsed=1140641 (+806773) external=873697 vmHwm=20803584
+A3 after haystack: rss=20451328 (+1441792) heapUsed=1140738 (+806870) external=873698 vmHwm=20811776
+A4 after lower: rss=21643264 (+2633728) heapUsed=2140934 (+1807066) external=1873814 vmHwm=21913600
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=21319680 (+2310144) heapUsed=839540 (+505672) heapTotal=919552 external=572468 (+502456) vmHwm=21774336 (+2412544 vs baseline vmHwm)
+RESULT {"pid":3420,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":19009536,"heapUsed":333868,"heapTotal":902144,"external":70012,"vmHwm":19361792},"final":{"rss":21319680,"heapUsed":839540,"heapTotal":919552,"external":572468,"vmHwm":21774336},"vmHwmDelta":2412544,"rssDelta":2310144,"heapUsedDelta":505672,"externalDelta":502456}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=2 pid=3426 exit=0 ---
+child pid=3426 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19177472 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19509248
+A1 after html + scriptTexts: rss=20226048 (+1048576) heapUsed=840071 (+505867) external=573223 vmHwm=20647936
+A2 after join: rss=20488192 (+1310720) heapUsed=1140641 (+806437) external=873697 vmHwm=20955136
+A3 after haystack: rss=20488192 (+1310720) heapUsed=1140738 (+806534) external=873698 vmHwm=20955136
+A4 after lower: rss=21536768 (+2359296) heapUsed=2140933 (+1806729) external=1873813 vmHwm=22044672
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=21221376 (+2043904) heapUsed=839540 (+505336) heapTotal=919552 external=572468 (+502456) vmHwm=21680128 (+2170880 vs baseline vmHwm)
+RESULT {"pid":3426,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":19177472,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19509248},"final":{"rss":21221376,"heapUsed":839540,"heapTotal":919552,"external":572468,"vmHwm":21680128},"vmHwmDelta":2170880,"rssDelta":2043904,"heapUsedDelta":505336,"externalDelta":502456}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=3 pid=3432 exit=0 ---
+child pid=3432 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=18989056 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19419136
+A1 after html + scriptTexts: rss=20037632 (+1048576) heapUsed=840071 (+505867) external=573223 vmHwm=20537344
+A2 after join: rss=20430848 (+1441792) heapUsed=1140641 (+806437) external=873697 vmHwm=20856832
+A3 after haystack: rss=20430848 (+1441792) heapUsed=1140738 (+806534) external=873698 vmHwm=20856832
+A4 after lower: rss=21479424 (+2490368) heapUsed=2140933 (+1806729) external=1873813 vmHwm=21946368
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=21168128 (+2179072) heapUsed=839540 (+505336) heapTotal=919552 external=572468 (+502456) vmHwm=21610496 (+2191360 vs baseline vmHwm)
+RESULT {"pid":3432,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":18989056,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19419136},"final":{"rss":21168128,"heapUsed":839540,"heapTotal":919552,"external":572468,"vmHwm":21610496},"vmHwmDelta":2191360,"rssDelta":2179072,"heapUsedDelta":505336,"externalDelta":502456}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=4 pid=3438 exit=0 ---
+child pid=3438 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19189760 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19542016
+A1 after html + scriptTexts: rss=20238336 (+1048576) heapUsed=840071 (+505867) external=573223 vmHwm=20672512
+A2 after join: rss=20500480 (+1310720) heapUsed=1140641 (+806437) external=873697 vmHwm=21000192
+A3 after haystack: rss=20500480 (+1310720) heapUsed=1140738 (+806534) external=873698 vmHwm=21020672
+A4 after lower: rss=21549056 (+2359296) heapUsed=2140934 (+1806730) external=1873814 vmHwm=22110208
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=21241856 (+2052096) heapUsed=839540 (+505336) heapTotal=919552 external=572468 (+502456) vmHwm=21749760 (+2207744 vs baseline vmHwm)
+RESULT {"pid":3438,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":19189760,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19542016},"final":{"rss":21241856,"heapUsed":839540,"heapTotal":919552,"external":572468,"vmHwm":21749760},"vmHwmDelta":2207744,"rssDelta":2052096,"heapUsedDelta":505336,"externalDelta":502456}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=forced run=5 pid=3444 exit=0 ---
+child pid=3444 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19009536 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19357696
+A1 after html + scriptTexts: rss=20058112 (+1048576) heapUsed=840407 (+506203) external=573223 vmHwm=20475904
+A2 after join: rss=20320256 (+1310720) heapUsed=1140976 (+806772) external=873696 vmHwm=20795392
+A3 after haystack: rss=20320256 (+1310720) heapUsed=1141074 (+806870) external=873698 vmHwm=20815872
+A4 after lower: rss=21512192 (+2502656) heapUsed=2141270 (+1807066) external=1873814 vmHwm=21913600
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=21184512 (+2174976) heapUsed=839876 (+505672) heapTotal=919552 external=572468 (+502456) vmHwm=21643264 (+2285568 vs baseline vmHwm)
+RESULT {"pid":3444,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":19009536,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19357696},"final":{"rss":21184512,"heapUsed":839876,"heapTotal":919552,"external":572468,"vmHwm":21643264},"vmHwmDelta":2285568,"rssDelta":2174976,"heapUsedDelta":505672,"externalDelta":502456}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=1 pid=3450 exit=0 ---
+child pid=3450 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17760256 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18010112
+A1 after html + scriptTexts: rss=19070976 (+1310720) heapUsed=952320 (+1024) external=0 vmHwm=19308544
+A2 after join: rss=19464192 (+1703936) heapUsed=952320 (+1024) external=0 vmHwm=19623936
+A3 after haystack: rss=19464192 (+1703936) heapUsed=952320 (+1024) external=0 vmHwm=19632128
+A4 after lower: rss=20525056 (+2764800) heapUsed=952320 (+1024) external=0 vmHwm=20721664
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=20656128 (+2895872) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20865024 (+2854912 vs baseline vmHwm)
+RESULT {"pid":3450,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":17760256,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18010112},"final":{"rss":20656128,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20865024},"vmHwmDelta":2854912,"rssDelta":2895872,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=2 pid=3453 exit=0 ---
+child pid=3453 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17879040 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18120704
+A1 after html + scriptTexts: rss=19189760 (+1310720) heapUsed=952320 (+1024) external=0 vmHwm=19423232
+A2 after join: rss=19451904 (+1572864) heapUsed=952320 (+1024) external=0 vmHwm=19738624
+A3 after haystack: rss=19582976 (+1703936) heapUsed=952320 (+1024) external=0 vmHwm=19746816
+A4 after lower: rss=20643840 (+2764800) heapUsed=952320 (+1024) external=0 vmHwm=20836352
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=20774912 (+2895872) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20979712 (+2859008 vs baseline vmHwm)
+RESULT {"pid":3453,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":17879040,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18120704},"final":{"rss":20774912,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20979712},"vmHwmDelta":2859008,"rssDelta":2895872,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=3 pid=3456 exit=0 ---
+child pid=3456 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17920000 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18235392
+A1 after html + scriptTexts: rss=19361792 (+1441792) heapUsed=952320 (+1024) external=0 vmHwm=19533824
+A2 after join: rss=19755008 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19849216
+A3 after haystack: rss=19755008 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19857408
+A4 after lower: rss=20672512 (+2752512) heapUsed=952320 (+1024) external=0 vmHwm=20946944
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=20946944 (+3026944) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21155840 (+2920448 vs baseline vmHwm)
+RESULT {"pid":3456,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":17920000,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18235392},"final":{"rss":20946944,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21155840},"vmHwmDelta":2920448,"rssDelta":3026944,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=4 pid=3459 exit=0 ---
+child pid=3459 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17707008 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18018304
+A1 after html + scriptTexts: rss=19148800 (+1441792) heapUsed=952320 (+1024) external=0 vmHwm=19316736
+A2 after join: rss=19410944 (+1703936) heapUsed=952320 (+1024) external=0 vmHwm=19632128
+A3 after haystack: rss=19542016 (+1835008) heapUsed=952320 (+1024) external=0 vmHwm=19640320
+A4 after lower: rss=20459520 (+2752512) heapUsed=952320 (+1024) external=0 vmHwm=20729856
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=20602880 (+2895872) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20873216 (+2854912 vs baseline vmHwm)
+RESULT {"pid":3459,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":17707008,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18018304},"final":{"rss":20602880,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20873216},"vmHwmDelta":2854912,"rssDelta":2895872,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=A fixture=nonascii-bytes gc=natural run=5 pid=3463 exit=0 ---
+child pid=3463 bun=1.4.4 pattern=A fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17928192 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18173952
+A1 after html + scriptTexts: rss=19238912 (+1310720) heapUsed=952320 (+1024) external=0 vmHwm=19472384
+A2 after join: rss=19501056 (+1572864) heapUsed=952320 (+1024) external=0 vmHwm=19787776
+A3 after haystack: rss=19632128 (+1703936) heapUsed=952320 (+1024) external=0 vmHwm=19795968
+A4 after lower: rss=20692992 (+2764800) heapUsed=952320 (+1024) external=0 vmHwm=20885504
+A5 checks ran, asksConnect=true
+A6 live string chars at peak analysis point: 1799936 (input 500000; ratio 3.60x)
+final: rss=20824064 (+2895872) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21028864 (+2854912 vs baseline vmHwm)
+RESULT {"pid":3463,"bun":"1.4.4","pattern":"A","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":1799936,"baseline":{"rss":17928192,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18173952},"final":{"rss":20824064,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21028864},"vmHwmDelta":2854912,"rssDelta":2895872,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=ascii gc=forced run=1 pid=3467 exit=0 ---
+child pid=3467 bun=1.4.4 pattern=B fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=18878464 heapUsed=334532 heapTotal=902144 external=70004 vmHwm=19398656
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21499904 (+2621440 vs baseline); peak heapUsed: 742620 (+408088 vs baseline)
+final: rss=19484672 (+606208) heapUsed=342912 (+8380) heapTotal=903168 external=75600 (+5596) vmHwm=21499904 (+2101248 vs baseline vmHwm)
+RESULT {"pid":3467,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":18878464,"heapUsed":334532,"heapTotal":902144,"external":70004,"vmHwm":19398656},"final":{"rss":19484672,"heapUsed":342912,"heapTotal":903168,"external":75600,"vmHwm":21499904},"vmHwmDelta":2101248,"rssDelta":606208,"heapUsedDelta":8380,"externalDelta":5596}
+done
+--- child run pattern=B fixture=ascii gc=forced run=2 pid=3473 exit=0 ---
+child pid=3473 bun=1.4.4 pattern=B fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19329024 heapUsed=334644 heapTotal=902144 external=70004 vmHwm=19640320
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21950464 (+2621440 vs baseline); peak heapUsed: 742619 (+407975 vs baseline)
+final: rss=19922944 (+593920) heapUsed=342912 (+8268) heapTotal=903168 external=75600 (+5596) vmHwm=21950464 (+2310144 vs baseline vmHwm)
+RESULT {"pid":3473,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19329024,"heapUsed":334644,"heapTotal":902144,"external":70004,"vmHwm":19640320},"final":{"rss":19922944,"heapUsed":342912,"heapTotal":903168,"external":75600,"vmHwm":21950464},"vmHwmDelta":2310144,"rssDelta":593920,"heapUsedDelta":8268,"externalDelta":5596}
+done
+--- child run pattern=B fixture=ascii gc=forced run=3 pid=3479 exit=0 ---
+child pid=3479 bun=1.4.4 pattern=B fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19333120 heapUsed=334532 heapTotal=902144 external=70004 vmHwm=19542016
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21954560 (+2621440 vs baseline); peak heapUsed: 742619 (+408087 vs baseline)
+final: rss=19931136 (+598016) heapUsed=343248 (+8716) heapTotal=903168 external=75600 (+5596) vmHwm=21954560 (+2412544 vs baseline vmHwm)
+RESULT {"pid":3479,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19333120,"heapUsed":334532,"heapTotal":902144,"external":70004,"vmHwm":19542016},"final":{"rss":19931136,"heapUsed":343248,"heapTotal":903168,"external":75600,"vmHwm":21954560},"vmHwmDelta":2412544,"rssDelta":598016,"heapUsedDelta":8716,"externalDelta":5596}
+done
+--- child run pattern=B fixture=ascii gc=forced run=4 pid=3485 exit=0 ---
+child pid=3485 bun=1.4.4 pattern=B fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19361792 heapUsed=334532 heapTotal=902144 external=70004 vmHwm=19628032
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21983232 (+2621440 vs baseline); peak heapUsed: 742619 (+408087 vs baseline)
+final: rss=19959808 (+598016) heapUsed=342912 (+8380) heapTotal=903168 external=75600 (+5596) vmHwm=21983232 (+2355200 vs baseline vmHwm)
+RESULT {"pid":3485,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19361792,"heapUsed":334532,"heapTotal":902144,"external":70004,"vmHwm":19628032},"final":{"rss":19959808,"heapUsed":342912,"heapTotal":903168,"external":75600,"vmHwm":21983232},"vmHwmDelta":2355200,"rssDelta":598016,"heapUsedDelta":8380,"externalDelta":5596}
+done
+--- child run pattern=B fixture=ascii gc=forced run=5 pid=3491 exit=0 ---
+child pid=3491 bun=1.4.4 pattern=B fixture=ascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19329024 heapUsed=334196 heapTotal=902144 external=70004 vmHwm=19505152
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21950464 (+2621440 vs baseline); peak heapUsed: 742620 (+408424 vs baseline)
+final: rss=19914752 (+585728) heapUsed=342912 (+8716) heapTotal=903168 external=75600 (+5596) vmHwm=21950464 (+2445312 vs baseline vmHwm)
+RESULT {"pid":3491,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19329024,"heapUsed":334196,"heapTotal":902144,"external":70004,"vmHwm":19505152},"final":{"rss":19914752,"heapUsed":342912,"heapTotal":903168,"external":75600,"vmHwm":21950464},"vmHwmDelta":2445312,"rssDelta":585728,"heapUsedDelta":8716,"externalDelta":5596}
+done
+--- child run pattern=B fixture=ascii gc=natural run=1 pid=3497 exit=0 ---
+child pid=3497 bun=1.4.4 pattern=B fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17850368 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18169856
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21913600 (+4063232 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21913600 (+4063232) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22024192 (+3854336 vs baseline vmHwm)
+RESULT {"pid":3497,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17850368,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18169856},"final":{"rss":21913600,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22024192},"vmHwmDelta":3854336,"rssDelta":4063232,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=ascii gc=natural run=2 pid=3500 exit=0 ---
+child pid=3500 bun=1.4.4 pattern=B fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18214912
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21889024 (+3932160 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21889024 (+3932160) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22065152 (+3850240 vs baseline vmHwm)
+RESULT {"pid":3500,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18214912},"final":{"rss":21889024,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22065152},"vmHwmDelta":3850240,"rssDelta":3932160,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=ascii gc=natural run=3 pid=3503 exit=0 ---
+child pid=3503 bun=1.4.4 pattern=B fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17678336 heapUsed=951296 heapTotal=951296 external=0 vmHwm=17997824
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21741568 (+4063232 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21741568 (+4063232) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21852160 (+3854336 vs baseline vmHwm)
+RESULT {"pid":3503,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17678336,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":17997824},"final":{"rss":21741568,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21852160},"vmHwmDelta":3854336,"rssDelta":4063232,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=ascii gc=natural run=4 pid=3506 exit=0 ---
+child pid=3506 bun=1.4.4 pattern=B fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17772544 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18030592
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21835776 (+4063232 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21835776 (+4063232) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21946368 (+3915776 vs baseline vmHwm)
+RESULT {"pid":3506,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17772544,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18030592},"final":{"rss":21835776,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21946368},"vmHwmDelta":3915776,"rssDelta":4063232,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=ascii gc=natural run=5 pid=3509 exit=0 ---
+child pid=3509 bun=1.4.4 pattern=B fixture=ascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17752064 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18001920
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21684224 (+3932160 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21684224 (+3932160) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21856256 (+3854336 vs baseline vmHwm)
+RESULT {"pid":3509,"bun":"1.4.4","pattern":"B","fixture":"ascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17752064,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18001920},"final":{"rss":21684224,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21856256},"vmHwmDelta":3854336,"rssDelta":3932160,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=1 pid=3512 exit=0 ---
+child pid=3512 bun=1.4.4 pattern=B fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19120128 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19386368
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21741568 (+2621440 vs baseline); peak heapUsed: 742622 (+408423 vs baseline)
+final: rss=19718144 (+598016) heapUsed=342915 (+8716) heapTotal=903168 external=75603 (+5596) vmHwm=21741568 (+2355200 vs baseline vmHwm)
+RESULT {"pid":3512,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19120128,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19386368},"final":{"rss":19718144,"heapUsed":342915,"heapTotal":903168,"external":75603,"vmHwm":21741568},"vmHwmDelta":2355200,"rssDelta":598016,"heapUsedDelta":8716,"externalDelta":5596}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=2 pid=3518 exit=0 ---
+child pid=3518 bun=1.4.4 pattern=B fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19238912 heapUsed=334647 heapTotal=902144 external=70007 vmHwm=19574784
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 22003712 (+2764800 vs baseline); peak heapUsed: 742623 (+407976 vs baseline)
+final: rss=19984384 (+745472) heapUsed=342915 (+8268) heapTotal=903168 external=75603 (+5596) vmHwm=22003712 (+2428928 vs baseline vmHwm)
+RESULT {"pid":3518,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19238912,"heapUsed":334647,"heapTotal":902144,"external":70007,"vmHwm":19574784},"final":{"rss":19984384,"heapUsed":342915,"heapTotal":903168,"external":75603,"vmHwm":22003712},"vmHwmDelta":2428928,"rssDelta":745472,"heapUsedDelta":8268,"externalDelta":5596}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=3 pid=3524 exit=0 ---
+child pid=3524 bun=1.4.4 pattern=B fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19308544 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19501056
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21929984 (+2621440 vs baseline); peak heapUsed: 742622 (+408423 vs baseline)
+final: rss=20025344 (+716800) heapUsed=343251 (+9052) heapTotal=903168 external=75603 (+5596) vmHwm=21929984 (+2428928 vs baseline vmHwm)
+RESULT {"pid":3524,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19308544,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19501056},"final":{"rss":20025344,"heapUsed":343251,"heapTotal":903168,"external":75603,"vmHwm":21929984},"vmHwmDelta":2428928,"rssDelta":716800,"heapUsedDelta":9052,"externalDelta":5596}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=4 pid=3530 exit=0 ---
+child pid=3530 bun=1.4.4 pattern=B fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=18952192 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19304448
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21716992 (+2764800 vs baseline); peak heapUsed: 742266 (+408067 vs baseline)
+final: rss=19697664 (+745472) heapUsed=342915 (+8716) heapTotal=903168 external=75603 (+5596) vmHwm=21716992 (+2412544 vs baseline vmHwm)
+RESULT {"pid":3530,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":18952192,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19304448},"final":{"rss":19697664,"heapUsed":342915,"heapTotal":903168,"external":75603,"vmHwm":21716992},"vmHwmDelta":2412544,"rssDelta":745472,"heapUsedDelta":8716,"externalDelta":5596}
+done
+--- child run pattern=B fixture=nonascii gc=forced run=5 pid=3536 exit=0 ---
+child pid=3536 bun=1.4.4 pattern=B fixture=nonascii gc=forced
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=19292160 heapUsed=334199 heapTotal=902144 external=70007 vmHwm=19611648
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21913600 (+2621440 vs baseline); peak heapUsed: 742287 (+408088 vs baseline)
+final: rss=19894272 (+602112) heapUsed=342915 (+8716) heapTotal=903168 external=75603 (+5596) vmHwm=21913600 (+2301952 vs baseline vmHwm)
+RESULT {"pid":3536,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"forced","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19292160,"heapUsed":334199,"heapTotal":902144,"external":70007,"vmHwm":19611648},"final":{"rss":19894272,"heapUsed":342915,"heapTotal":903168,"external":75603,"vmHwm":21913600},"vmHwmDelta":2301952,"rssDelta":602112,"heapUsedDelta":8716,"externalDelta":5596}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=1 pid=3542 exit=0 ---
+child pid=3542 bun=1.4.4 pattern=B fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17735680 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18051072
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21798912 (+4063232 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21798912 (+4063232) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21987328 (+3936256 vs baseline vmHwm)
+RESULT {"pid":3542,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17735680,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18051072},"final":{"rss":21798912,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21987328},"vmHwmDelta":3936256,"rssDelta":4063232,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=2 pid=3545 exit=0 ---
+child pid=3545 bun=1.4.4 pattern=B fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17903616 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18149376
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21979136 (+4075520 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21979136 (+4075520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22089728 (+3940352 vs baseline vmHwm)
+RESULT {"pid":3545,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17903616,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18149376},"final":{"rss":21979136,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22089728},"vmHwmDelta":3940352,"rssDelta":4075520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=3 pid=3548 exit=0 ---
+child pid=3548 bun=1.4.4 pattern=B fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17698816 heapUsed=951296 heapTotal=951296 external=0 vmHwm=17944576
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21774336 (+4075520 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21774336 (+4075520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21884928 (+3940352 vs baseline vmHwm)
+RESULT {"pid":3548,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17698816,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":17944576},"final":{"rss":21774336,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21884928},"vmHwmDelta":3940352,"rssDelta":4075520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=4 pid=3551 exit=0 ---
+child pid=3551 bun=1.4.4 pattern=B fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17891328 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18141184
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21966848 (+4075520 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21966848 (+4075520) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=22077440 (+3936256 vs baseline vmHwm)
+RESULT {"pid":3551,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17891328,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18141184},"final":{"rss":21966848,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":22077440},"vmHwmDelta":3936256,"rssDelta":4075520,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii gc=natural run=5 pid=3554 exit=0 ---
+child pid=3554 bun=1.4.4 pattern=B fixture=nonascii gc=natural
+input: page=400000 chars + 2 scripts x 300000 chars = 1000000 accepted input chars
+baseline: rss=17735680 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18051072
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 21798912 (+4063232 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=21798912 (+4063232) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=21987328 (+3936256 vs baseline vmHwm)
+RESULT {"pid":3554,"bun":"1.4.4","pattern":"B","fixture":"nonascii","gc":"natural","inputChars":1000000,"utf8BytesApprox":2000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17735680,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18051072},"final":{"rss":21798912,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":21987328},"vmHwmDelta":3936256,"rssDelta":4063232,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=1 pid=3557 exit=0 ---
+child pid=3557 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19066880 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19472384
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20639744 (+1572864 vs baseline); peak heapUsed: 542628 (+208424 vs baseline)
+final: rss=20250624 (+1183744) heapUsed=343257 (+9053) heapTotal=903168 external=75609 (+5597) vmHwm=20811776 (+1339392 vs baseline vmHwm)
+RESULT {"pid":3557,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19066880,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19472384},"final":{"rss":20250624,"heapUsed":343257,"heapTotal":903168,"external":75609,"vmHwm":20811776},"vmHwmDelta":1339392,"rssDelta":1183744,"heapUsedDelta":9053,"externalDelta":5597}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=2 pid=3563 exit=0 ---
+child pid=3563 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19226624 heapUsed=334540 heapTotal=902144 external=70012 vmHwm=19472384
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20942848 (+1716224 vs baseline); peak heapUsed: 542628 (+208088 vs baseline)
+final: rss=20553728 (+1327104) heapUsed=343257 (+8717) heapTotal=903168 external=75609 (+5597) vmHwm=20942848 (+1470464 vs baseline vmHwm)
+RESULT {"pid":3563,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19226624,"heapUsed":334540,"heapTotal":902144,"external":70012,"vmHwm":19472384},"final":{"rss":20553728,"heapUsed":343257,"heapTotal":903168,"external":75609,"vmHwm":20942848},"vmHwmDelta":1470464,"rssDelta":1327104,"heapUsedDelta":8717,"externalDelta":5597}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=3 pid=3569 exit=0 ---
+child pid=3569 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19267584 heapUsed=333868 heapTotal=902144 external=70012 vmHwm=19636224
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20971520 (+1703936 vs baseline); peak heapUsed: 542292 (+208424 vs baseline)
+final: rss=20508672 (+1241088) heapUsed=342921 (+9053) heapTotal=903168 external=75609 (+5597) vmHwm=20983808 (+1347584 vs baseline vmHwm)
+RESULT {"pid":3569,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19267584,"heapUsed":333868,"heapTotal":902144,"external":70012,"vmHwm":19636224},"final":{"rss":20508672,"heapUsed":342921,"heapTotal":903168,"external":75609,"vmHwm":20983808},"vmHwmDelta":1347584,"rssDelta":1241088,"heapUsedDelta":9053,"externalDelta":5597}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=4 pid=3575 exit=0 ---
+child pid=3575 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19120128 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19451904
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20824064 (+1703936 vs baseline); peak heapUsed: 542293 (+208089 vs baseline)
+final: rss=20434944 (+1314816) heapUsed=342921 (+8717) heapTotal=903168 external=75609 (+5597) vmHwm=20824064 (+1372160 vs baseline vmHwm)
+RESULT {"pid":3575,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19120128,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19451904},"final":{"rss":20434944,"heapUsed":342921,"heapTotal":903168,"external":75609,"vmHwm":20824064},"vmHwmDelta":1372160,"rssDelta":1314816,"heapUsedDelta":8717,"externalDelta":5597}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=forced run=5 pid=3581 exit=0 ---
+child pid=3581 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=forced
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=19230720 heapUsed=334204 heapTotal=902144 external=70012 vmHwm=19677184
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20803584 (+1572864 vs baseline); peak heapUsed: 542628 (+208424 vs baseline)
+final: rss=20418560 (+1187840) heapUsed=342921 (+8717) heapTotal=903168 external=75609 (+5597) vmHwm=21045248 (+1368064 vs baseline vmHwm)
+RESULT {"pid":3581,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"forced","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":19230720,"heapUsed":334204,"heapTotal":902144,"external":70012,"vmHwm":19677184},"final":{"rss":20418560,"heapUsed":342921,"heapTotal":903168,"external":75609,"vmHwm":21045248},"vmHwmDelta":1368064,"rssDelta":1187840,"heapUsedDelta":8717,"externalDelta":5597}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=1 pid=3587 exit=0 ---
+child pid=3587 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17956864 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18198528
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20459520 (+2502656 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=20459520 (+2502656) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20684800 (+2486272 vs baseline vmHwm)
+RESULT {"pid":3587,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17956864,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18198528},"final":{"rss":20459520,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20684800},"vmHwmDelta":2486272,"rssDelta":2502656,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=2 pid=3590 exit=0 ---
+child pid=3590 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17920000 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18231296
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20410368 (+2490368 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=20410368 (+2490368) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20652032 (+2420736 vs baseline vmHwm)
+RESULT {"pid":3590,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17920000,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18231296},"final":{"rss":20410368,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20652032},"vmHwmDelta":2420736,"rssDelta":2490368,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=3 pid=3593 exit=0 ---
+child pid=3593 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17928192 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18173952
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20430848 (+2502656 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=20430848 (+2502656) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20598784 (+2424832 vs baseline vmHwm)
+RESULT {"pid":3593,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17928192,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18173952},"final":{"rss":20430848,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20598784},"vmHwmDelta":2424832,"rssDelta":2502656,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=4 pid=3596 exit=0 ---
+child pid=3596 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17666048 heapUsed=951296 heapTotal=951296 external=0 vmHwm=17977344
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20156416 (+2490368 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=20156416 (+2490368) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20398080 (+2420736 vs baseline vmHwm)
+RESULT {"pid":3596,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17666048,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":17977344},"final":{"rss":20156416,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20398080},"vmHwmDelta":2420736,"rssDelta":2490368,"heapUsedDelta":17408,"externalDelta":0}
+done
+--- child run pattern=B fixture=nonascii-bytes gc=natural run=5 pid=3599 exit=0 ---
+child pid=3599 bun=1.4.4 pattern=B fixture=nonascii-bytes gc=natural
+input: page=200000 chars + 2 scripts x 150000 chars = 500000 accepted input chars
+baseline: rss=17850368 heapUsed=951296 heapTotal=951296 external=0 vmHwm=18165760
+B1 checks ran, asksConnect=true
+B2 peak rss during incremental scan: 20340736 (+2490368 vs baseline); peak heapUsed: 968704 (+17408 vs baseline)
+final: rss=20340736 (+2490368) heapUsed=968704 (+17408) heapTotal=968704 external=0 (+0) vmHwm=20586496 (+2420736 vs baseline vmHwm)
+RESULT {"pid":3599,"bun":"1.4.4","pattern":"B","fixture":"nonascii-bytes","gc":"natural","inputChars":500000,"utf8BytesApprox":1000000,"asksConnect":true,"liveChars":null,"baseline":{"rss":17850368,"heapUsed":951296,"heapTotal":951296,"external":0,"vmHwm":18165760},"final":{"rss":20340736,"heapUsed":968704,"heapTotal":968704,"external":0,"vmHwm":20586496},"vmHwmDelta":2420736,"rssDelta":2490368,"heapUsedDelta":17408,"externalDelta":0}
+done
+
+SUMMARY bun=1.4.4 runs-per-combination=5 child-failures=0 distinct-child-pids=60 of 60
+metric = delta vs that child's own clean baseline (bytes). vmHwm = OS high-water RSS from /proc/self/status.
+pattern | fixture | gc | n | vmHwmDelta median [min..max] | rssDelta median [min..max] | heapUsedDelta median [min..max] | externalDelta median [min..max] | asksConnect
+A | ascii | forced | 5 | vmHwm 4,091,904 [3,903,488..4,239,360] | rss 1,818,624 [1,720,320..1,970,176] | heapUsed 1,005,336 [1,005,336..1,005,336] | external 1,002,456 [1,002,456..1,002,456] | true (all runs)
+A | ascii | natural | 5 | vmHwm 4,583,424 [4,583,424..4,648,960] | rss 4,587,520 [4,587,520..4,718,592] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+A | nonascii | forced | 5 | vmHwm 4,038,656 [3,944,448..4,116,480] | rss 1,789,952 [1,736,704..1,871,872] | heapUsed 1,005,336 [1,005,336..1,005,672] | external 1,002,456 [1,002,456..1,002,456] | true (all runs)
+A | nonascii | natural | 5 | vmHwm 4,669,440 [4,669,440..4,673,536] | rss 4,730,880 [4,730,880..4,730,880] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+A | nonascii-bytes | forced | 5 | vmHwm 2,207,744 [2,170,880..2,412,544] | rss 2,174,976 [2,043,904..2,310,144] | heapUsed 505,336 [505,336..505,672] | external 502,456 [502,456..502,456] | true (all runs)
+A | nonascii-bytes | natural | 5 | vmHwm 2,854,912 [2,854,912..2,920,448] | rss 2,895,872 [2,895,872..3,026,944] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+B | ascii | forced | 5 | vmHwm 2,355,200 [2,101,248..2,445,312] | rss 598,016 [585,728..606,208] | heapUsed 8,380 [8,268..8,716] | external 5,596 [5,596..5,596] | true (all runs)
+B | ascii | natural | 5 | vmHwm 3,854,336 [3,850,240..3,915,776] | rss 4,063,232 [3,932,160..4,063,232] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+B | nonascii | forced | 5 | vmHwm 2,412,544 [2,301,952..2,428,928] | rss 716,800 [598,016..745,472] | heapUsed 8,716 [8,268..9,052] | external 5,596 [5,596..5,596] | true (all runs)
+B | nonascii | natural | 5 | vmHwm 3,936,256 [3,936,256..3,940,352] | rss 4,075,520 [4,063,232..4,075,520] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+B | nonascii-bytes | forced | 5 | vmHwm 1,368,064 [1,339,392..1,470,464] | rss 1,241,088 [1,183,744..1,327,104] | heapUsed 8,717 [8,717..9,053] | external 5,597 [5,597..5,597] | true (all runs)
+B | nonascii-bytes | natural | 5 | vmHwm 2,420,736 [2,420,736..2,486,272] | rss 2,490,368 [2,490,368..2,502,656] | heapUsed 17,408 [17,408..17,408] | external 0 [0..0] | true (all runs)
+
+RATIO A/B (median vmHwmDelta, same fixture+gc; >1 means pattern A peaked higher than B):
+ascii | forced | A median vmHwm 4,091,904 / B median vmHwm 2,355,200 = 1.74x (A range 3,903,488..4,239,360; B range 2,101,248..2,445,312)
+ascii | natural | A median vmHwm 4,583,424 / B median vmHwm 3,854,336 = 1.19x (A range 4,583,424..4,648,960; B range 3,850,240..3,915,776)
+nonascii | forced | A median vmHwm 4,038,656 / B median vmHwm 2,412,544 = 1.67x (A range 3,944,448..4,116,480; B range 2,301,952..2,428,928)
+nonascii | natural | A median vmHwm 4,669,440 / B median vmHwm 3,936,256 = 1.19x (A range 4,669,440..4,673,536; B range 3,936,256..3,940,352)
+nonascii-bytes | forced | A median vmHwm 2,207,744 / B median vmHwm 1,368,064 = 1.61x (A range 2,170,880..2,412,544; B range 1,339,392..1,470,464)
+nonascii-bytes | natural | A median vmHwm 2,854,912 / B median vmHwm 2,420,736 = 1.18x (A range 2,854,912..2,920,448; B range 2,420,736..2,486,272)
+
+parent done: all child runs ok
