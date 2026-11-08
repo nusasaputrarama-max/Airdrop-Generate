@@ -14,6 +14,20 @@ import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk"
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import * as schema from "./schema";
 import { canonicalizeContractAddress } from "./catalog";
+import {
+  MAX_REDIRECT_HOPS,
+  MAX_SCRIPTS_PER_PAGE,
+  PAGE_DECODED_CAP,
+  RDAP_DECODED_CAP,
+  SCRIPT_DECODED_CAP,
+  TOTAL_DEADLINE_MS,
+  GUARD_ACCEPT_RDAP,
+  createScanBudget,
+  fetchGuardedOnce,
+  readCappedStream,
+  validateUrlForFetch,
+  type ScanBudget,
+} from "./ssrf-guard";
 
 const signalSchema = z.object({
   id: z.string(),
@@ -83,8 +97,6 @@ function normalizeUrl(raw: string): URL {
   }
   return url;
 }
-
-const UA = "Mozilla/5.0 (compatible; CekLinkAirdrop/1.0)";
 
 // ---------------------------------------------------------------------------
 // Principal (F-005/F-018/F-046 — v2.3.23, D-01/D-04).
@@ -197,12 +209,24 @@ function cacheSet<T>(
  * Ambil isi halaman mengikuti redirect, dengan cache + satu retry jaringan.
  * `deadline` (opsional) adalah sinyal deadline total pemeriksaan dari
  * `analyze()` — bila sudah aborted, tidak ada retry lagi.
+ * `budget` (opsional) adalah ScanBudget pemeriksaan — dibagikan page +
+ * semua redirect + semua script; bila tidak ada, dibuatkan satu baru
+ * (dipakai hanya oleh jalur non-analyze).
+ *
+ * K-1 (F-001): guard berjalan SEBELUM cache — entri cache hanya dilayani
+ * setelah URL-nya sendiri lolos kanonikalisasi + port + validasi DNS.
+ * Cache hit tidak membuka koneksi baru, jadi preflight hanya memeriksa
+ * ulang URL-nya (bukan rantai redirect yang tersimpan — rantai itu sudah
+ * divalidasi saat di-fetch).
  */
 async function fetchText(
   url: string,
   cap: number,
   deadline?: AbortSignal,
+  budget?: ScanBudget,
 ): Promise<FetchResult | null> {
+  const preflight = await validateUrlForFetch(url);
+  if (!preflight.ok) return null;
   const cached = cacheGet(FETCH_CACHE, url);
   if (cached !== undefined) return cached;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -210,7 +234,7 @@ async function fetchText(
       await new Promise((resolve) => setTimeout(resolve, 500));
       if (deadline?.aborted) return null;
     }
-    const result = await fetchTextOnce(url, cap, deadline);
+    const result = await fetchTextOnce(url, cap, deadline, budget);
     if (result !== null) {
       cacheSet(FETCH_CACHE, url, result, FETCH_CACHE_TTL_MS, FETCH_CACHE_MAX);
       return result;
@@ -221,32 +245,73 @@ async function fetchText(
   return null;
 }
 
+/** Media types the scanner reads as text. Anything else is not downloaded. */
+function isScannableContentType(contentType: string): boolean {
+  const media = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (media.startsWith("text/")) return true;
+  if (media === "application/xhtml+xml") return true;
+  if (media === "application/xml") return true;
+  if (media === "application/json" || media.endsWith("+json")) return true;
+  return false;
+}
+
+function parseContentLength(value: string | null): number | null {
+  if (value === null) return null;
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function destroyBody(body: { destroy(): void }): void {
+  try {
+    body.destroy();
+  } catch {
+    /* already closed — ignore */
+  }
+}
+
 async function fetchTextOnce(
   url: string,
   cap: number,
   deadline?: AbortSignal,
+  budget?: ScanBudget,
 ): Promise<FetchResult | null> {
   const chain: string[] = [];
   let current = url;
+  const scanBudget = budget ?? createScanBudget();
   try {
-    for (let hop = 0; hop <= 6; hop++) {
+    for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
       chain.push(new URL(current).hostname.toLowerCase());
-      const res = await fetch(current, {
-        headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,*/*" },
-        redirect: "manual",
-        signal: AbortSignal.any([
-          AbortSignal.timeout(12000),
-          ...(deadline ? [deadline] : []),
-        ]),
-      });
-      if ([301, 302, 303, 307, 308].includes(res.status)) {
-        const loc = res.headers.get("location");
+      // F-001: every hop is re-validated in full (canonicalize + port +
+      // resolve ALL + validate ALL + pinned connect) by fetchGuardedOnce.
+      const guarded = await fetchGuardedOnce(current, { deadline });
+      if (guarded === null) return null;
+      if ([301, 302, 303, 307, 308].includes(guarded.status)) {
+        const loc = guarded.headers.get("location");
+        // Redirect bodies are discarded WITHOUT being read.
+        destroyBody(guarded.body);
         if (!loc) return null;
         current = new URL(loc, current).toString();
         continue;
       }
-      const text = (await res.text()).slice(0, cap);
-      return { text, finalUrl: current, status: res.status, chain };
+      // Content-Type gate (§A.5 note): clearly non-HTML/text bodies are
+      // not downloaded at all ("unsupported content type", not a verdict).
+      const contentType = guarded.headers.get("content-type");
+      if (contentType !== null && !isScannableContentType(contentType)) {
+        destroyBody(guarded.body);
+        return null;
+      }
+      // F-002/F-003: streamed read with L0 wire cap + L1 decoded cap +
+      // shared aggregate budget. Partial results are NEVER returned —
+      // readCappedStream throws and the whole fetch fails (null).
+      const { text } = await readCappedStream(guarded.body, {
+        contentEncoding: guarded.headers.get("content-encoding"),
+        contentLength: parseContentLength(guarded.headers.get("content-length")),
+        compressedCap: cap,
+        decompressedCap: cap,
+        budget: scanBudget,
+        signal: deadline ?? AbortSignal.timeout(TOTAL_DEADLINE_MS),
+      });
+      return { text, finalUrl: current, status: guarded.status, chain };
     }
     return null; // redirect loop or too many hops — treat as unreachable
   } catch {
@@ -283,40 +348,65 @@ async function lookupRdap(domain: string, deadline?: AbortSignal): Promise<RdapI
 }
 
 async function lookupRdapOnce(domain: string, deadline?: AbortSignal): Promise<RdapInfo> {
+  // F-001f: RDAP goes through the SAME guard as pages — manual redirect
+  // loop, every hop re-validated. The old `redirect: "follow"` followed
+  // redirects to ANY host without validation. Body is read capped
+  // (RDAP_DECODED_CAP) with its own budget — L3 aggregate per design
+  // covers page + redirects + scripts only; RDAP is bounded separately.
+  const rdapBudget = createScanBudget(RDAP_DECODED_CAP);
+  let current = `https://rdap.org/domain/${encodeURIComponent(domain)}`;
   try {
-    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
-      headers: { "user-agent": UA, accept: "application/rdap+json, application/json" },
-      redirect: "follow",
-      signal: AbortSignal.any([
-        AbortSignal.timeout(12000),
-        ...(deadline ? [deadline] : []),
-      ]),
-    });
-    if (!res.ok) return { registeredAt: null, registrar: null };
-    const data: any = await res.json();
-    let registeredAt: string | null = null;
-    if (Array.isArray(data?.events)) {
-      for (const ev of data.events) {
-        if (ev?.eventAction === "registration" && typeof ev?.eventDate === "string") {
-          registeredAt = ev.eventDate;
-          break;
+    for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+      const guarded = await fetchGuardedOnce(current, {
+        deadline,
+        accept: GUARD_ACCEPT_RDAP,
+      });
+      if (guarded === null) return { registeredAt: null, registrar: null };
+      if ([301, 302, 303, 307, 308].includes(guarded.status)) {
+        const loc = guarded.headers.get("location");
+        destroyBody(guarded.body);
+        if (!loc) return { registeredAt: null, registrar: null };
+        current = new URL(loc, current).toString();
+        continue;
+      }
+      if (guarded.status < 200 || guarded.status >= 300) {
+        destroyBody(guarded.body);
+        return { registeredAt: null, registrar: null };
+      }
+      const { text } = await readCappedStream(guarded.body, {
+        contentEncoding: guarded.headers.get("content-encoding"),
+        contentLength: parseContentLength(guarded.headers.get("content-length")),
+        compressedCap: RDAP_DECODED_CAP,
+        decompressedCap: RDAP_DECODED_CAP,
+        budget: rdapBudget,
+        signal: deadline ?? AbortSignal.timeout(TOTAL_DEADLINE_MS),
+      });
+      const data: any = JSON.parse(text);
+      let registeredAt: string | null = null;
+      if (Array.isArray(data?.events)) {
+        for (const ev of data.events) {
+          if (ev?.eventAction === "registration" && typeof ev?.eventDate === "string") {
+            registeredAt = ev.eventDate;
+            break;
+          }
         }
       }
-    }
-    let registrar: string | null = null;
-    if (Array.isArray(data?.entities)) {
-      const reg = data.entities.find(
-        (e: any) => Array.isArray(e?.roles) && e.roles.includes("registrar"),
-      );
-      const vcard: any[] = Array.isArray(reg?.vcardArray?.[1]) ? reg.vcardArray[1] : [];
-      for (const field of vcard) {
-        if (Array.isArray(field) && field[0] === "fn" && typeof field[3] === "string") {
-          registrar = field[3];
-          break;
+      let registrar: string | null = null;
+      if (Array.isArray(data?.entities)) {
+        const reg = data.entities.find(
+          (e: any) => Array.isArray(e?.roles) && e.roles.includes("registrar"),
+        );
+        const vcard: any[] = Array.isArray(reg?.vcardArray?.[1]) ? reg.vcardArray[1] : [];
+        for (const field of vcard) {
+          if (Array.isArray(field) && field[0] === "fn" && typeof field[3] === "string") {
+            registrar = field[3];
+            break;
+          }
         }
       }
+      return { registeredAt, registrar };
     }
-    return { registeredAt, registrar };
+    return { registeredAt: null, registrar: null }; // too many redirects
   } catch {
     return { registeredAt: null, registrar: null };
   }
@@ -426,10 +516,19 @@ async function analyze(input: URL): Promise<Analysis> {
   const signals: Signal[] = [];
   let score = 0;
 
-  // Deadline total per pemeriksaan (performa minimal, S2): satu sinyal
-  // 30 detik untuk semua fetch keluar. Ini BUKAN kontrol keamanan
-  // F-003 — kontrol keamanan lengkap tetap bagian desain remediasi.
-  const deadline = AbortSignal.timeout(30_000);
+  // Deadline total per pemeriksaan (F-003): 20 DETIK untuk semua fetch
+  // keluar (RDAP + page + semua redirect + semua script) — keputusan
+  // pemilik v2 (§A.5, syarat cutover). Nilai 30 detik di kode lama BUKAN
+  // keputusan pemilik (koreksi F-041 atas v2.3.19 §3.3). Toleransi
+  // staging +2 detik (K-3). Per-fetch 12 detik tetap sebagai batas DI
+  // DALAM anggaran total. Bila deadline tercapai, hasil pemeriksaan
+  // adalah "tidak selesai (timeout)" — BUKAN vonis — dan tidak ada baris
+  // checks yang menyimpan hasil parsial (lihat runCheck).
+  const deadline = AbortSignal.timeout(TOTAL_DEADLINE_MS);
+
+  // SATU ScanBudget per pemeriksaan (F-002/F-039): page + semua redirect
+  // + semua script berbagi aggregate cap 1.000.000 decoded bytes.
+  const budget = createScanBudget();
 
   // Set lookup O(1): hostname === d atau domain (registrable) === d sudah
   // mencakup kasus hostname berakhiran `.d` untuk daftar ini.
@@ -447,7 +546,7 @@ async function analyze(input: URL): Promise<Analysis> {
 
   const [rdap, page] = await Promise.all([
     lookupRdap(domain, deadline),
-    fetchText(input.toString(), 400_000, deadline),
+    fetchText(input.toString(), PAGE_DECODED_CAP, deadline, budget),
   ]);
 
   // --- Domain age (RDAP) ---
@@ -564,24 +663,28 @@ async function analyze(input: URL): Promise<Analysis> {
     }
 
     // Fetch up to 3 script files referenced by the page for deeper signals.
-    // Paralel (Promise.all) + dedup URL — hasil tetap urut seperti semula.
+    // SERIAL, satu reader aktif (F-039): dengan R = 1, batas transient
+    // A2 menjadi 1 x C_max — satu chunk saja. Trade-off latensi terukur
+    // ~6 ms pada fixture lokal (v2.3.20) — jauh di bawah deadline 20 detik.
+    // F-001e: SAME-ORIGIN saja — script lintas origin tidak di-fetch.
     const scriptSrcs = [...new Set(
       [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
         .map((m) => m[1])
         .filter((src): src is string => typeof src === "string" && src.length > 0)
-        .slice(0, 3),
+        .slice(0, MAX_SCRIPTS_PER_PAGE),
     )];
-    const scriptTexts = await Promise.all(
-      scriptSrcs.map(async (src) => {
-        try {
-          const abs = new URL(src, page.finalUrl).toString();
-          const s = await fetchText(abs, 300_000, deadline);
-          return s ? s.text : "";
-        } catch {
-          return ""; // skip bad script URL
-        }
-      }),
-    );
+    const scriptTexts: string[] = [];
+    const pageOrigin = new URL(page.finalUrl).origin;
+    for (const src of scriptSrcs) {
+      try {
+        const abs = new URL(src, page.finalUrl).toString();
+        if (new URL(abs).origin !== pageOrigin) continue; // lintas origin — skip
+        const s = await fetchText(abs, SCRIPT_DECODED_CAP, deadline, budget);
+        scriptTexts.push(s ? s.text : "");
+      } catch {
+        // skip bad script URL
+      }
+    }
     const scriptText = scriptTexts.join("\n");
     const haystack = `${html}\n${scriptText}`;
     const lower = haystack.toLowerCase();
