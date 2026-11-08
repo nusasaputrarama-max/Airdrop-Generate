@@ -497,11 +497,20 @@ export async function readCappedStream(
   let decodedBytes = 0;
   const chunks: Buffer[] = [];
 
+  // The transform's OWN CapError must win over the AbortError that
+  // pipeline surfaces when tryReserve aborts the shared budget
+  // controller (H-RES-07, v2.3.23): without this capture, an aggregate
+  // overflow deterministically surfaces as "aborted" instead of
+  // "aggregate-cap", hiding which limit actually fired. The cap
+  // invariant itself always held — only the error code was wrong.
+  let transformError: CapError | null = null;
+
   const wireCounter = new Transform({
     transform(chunk: Buffer, _enc, cb) {
       wireBytes += chunk.length;
       if (wireBytes > opts.compressedCap) {
-        cb(new CapError("wire-cap", `Wire bytes ${wireBytes} melebihi batas ${opts.compressedCap}.`));
+        transformError = new CapError("wire-cap", `Wire bytes ${wireBytes} melebihi batas ${opts.compressedCap}.`);
+        cb(transformError);
         return;
       }
       cb(null, chunk);
@@ -511,11 +520,13 @@ export async function readCappedStream(
     transform(chunk: Buffer, _enc, cb) {
       decodedBytes += chunk.length;
       if (decodedBytes > opts.decompressedCap) {
-        cb(new CapError("decoded-cap", `Decoded bytes ${decodedBytes} melebihi batas ${opts.decompressedCap}.`));
+        transformError = new CapError("decoded-cap", `Decoded bytes ${decodedBytes} melebihi batas ${opts.decompressedCap}.`);
+        cb(transformError);
         return;
       }
       if (!tryReserve(opts.budget, chunk.length)) {
-        cb(new CapError("aggregate-cap", `Aggregate decoded melebihi batas ${opts.budget.aggregateDecodedCap}.`));
+        transformError = new CapError("aggregate-cap", `Aggregate decoded melebihi batas ${opts.budget.aggregateDecodedCap}.`);
+        cb(transformError);
         return;
       }
       chunks.push(chunk);
@@ -544,6 +555,9 @@ export async function readCappedStream(
   try {
     await pipeline(body, wireCounter, decompressor, decodedCounter, sink, { signal: combined });
   } catch (err) {
+    // The transform's own error wins (see above) — pipeline may surface
+    // an AbortError instead when the budget abort raced the transform.
+    if (transformError !== null) throw transformError;
     if (err instanceof CapError) throw err;
     if (
       err instanceof Error &&

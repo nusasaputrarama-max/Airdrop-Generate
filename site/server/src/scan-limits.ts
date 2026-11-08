@@ -75,11 +75,17 @@ export async function acquireScanSlot(
     WHERE (SELECT COUNT(*) FROM scan_leases WHERE expires_at > ${now}) < ${MAX_SCAN_CONCURRENCY}
     RETURNING id
   `);
-  if (res.rowsAffected !== 1) return { acquired: false, reason: "concurrency-limit" };
-  const leaseId = (res.rows?.[0] as { id: number } | undefined)?.id;
-  if (typeof leaseId !== "number")
+  // H-LEASE (v2.3.23): on the real @libsql/client driver, INSERT ...
+  // RETURNING reports rowsAffected 0 even when the row IS inserted —
+  // rowsAffected is NOT a reliable success signal for RETURNING
+  // statements. The RETURNING row itself is the ground truth: one row
+  // means one lease acquired; zero rows means the cap was full.
+  // Whether production SpaceDb.run reports rowsAffected differently is
+  // NOT VERIFIED from this VM (staging follow-up, STAGE-P02).
+  const row = res.rows?.[0] as { id: number } | undefined;
+  if (typeof row?.id !== "number")
     return { acquired: false, reason: "concurrency-limit" };
-  return { acquired: true, leaseId };
+  return { acquired: true, leaseId: row.id };
 }
 
 /** Release a previously acquired lease (no-op if already gone). */
