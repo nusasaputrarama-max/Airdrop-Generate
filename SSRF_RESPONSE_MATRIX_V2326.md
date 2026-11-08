@@ -527,13 +527,14 @@ clean-clone TIDAK diulang (tidak ada perubahan material).
 Verifikasi `git ls-remote origin development` = `e11e8d13172d75e8ea8412754e5787b89d189465`
 (cocok HEAD lokal development); `origin/main` sebelum commit revisi
 ini = `77317c3a6715ef42f1e0fca23e99c64a735f4e50`; HEAD `main` setelah
-commit revisi ini = `TBD — dicatat di commit kedua` (lihat catatan
-di bawah).
+commit revisi ini = `d84110c2c7e47fdf2a296dbafaab7c66f0bcca15`
+(terverifikasi via `git ls-remote origin main`).
 
 **Catatan pola §9 (seperti v2.3.25):** matriks ini di-commit dulu
-(commit pertama), lalu commit kedua mencatat SHA main hasil commit
-pertama ke dalam baris di atas — supaya SHA yang tertulis adalah
-SHA yang benar-benar ter-push, bukan tebakan.
+(commit `d84110c`), lalu commit kedua ini (`docs(ssrf): record
+v2.3.26 main HEAD SHA in response matrix §9`) mencatat SHA main
+hasil commit pertama ke dalam baris di atas — supaya SHA yang
+tertulis adalah SHA yang benar-benar ter-push, bukan tebakan.
 
 ## §10. Unresolved Blockers
 
