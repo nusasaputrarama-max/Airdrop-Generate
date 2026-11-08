@@ -1,0 +1,14 @@
+=== v2.3.23 clean-clone driver ===
+repo=https://github.com/nusasaputrarama-max/Airdrop-Generate.git ref=dev mode=hidden check_setup_only=1
+work_dir=/tmp/v2323-clean-clone.z4zcBh (mktemp; trap removes only this dir)
+out=/home/hatch/workspace/airdrop-generate-dev/evidence/v2323/check-setup-hidden.txt
+--- git clone (shallow, --branch dev) ---
+Cloned https://github.com/nusasaputrarama-max/Airdrop-Generate.git @ f25bb24
+--- setup check: unshare -rm sanity ---
+--- setup check: /opt/hatch visible in this shell ---
+assets
+bin
+connectors
+prompts
+runtime-cell
+SETUP_OK: clone + site/ + unshare all work; no build run (check-setup-only)

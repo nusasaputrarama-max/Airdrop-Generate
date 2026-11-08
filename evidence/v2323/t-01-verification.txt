@@ -1,0 +1,42 @@
+T-01 verification attempt — v2.3.23 (2026-11-08, VM, branch dev)
+================================================================
+Question: can a second Hatch space be verified/created from the tooling
+available to this agent (no owner-as-courier)?
+
+Commands run (read-only probes; nothing published, shared, or modified):
+  $ /opt/hatch/bin/hatch --help
+  -> "Hatch daemon service binary", Usage: hatch, options -h/--help, -V/--version.
+     NO subcommands: no space/publish/create command exists.
+  $ /opt/hatch/bin/hatch --version
+  -> hatch 0.1.0 (b7b2517a512), built 2026-11-08T04:10:08Z.
+  $ /opt/hatch/bin/builtin-artifacts --help
+  -> "Write a built-in web artifact's files ... when its gate admits the
+     owner", --id only admits: welcome-to-muse-tutorial, muse-town.
+     NOT a space creation tool.
+  $ /opt/hatch/bin/hatch-doctor --help
+  -> only subcommand: run (deterministic runtime state checks). No spaces.
+  $ /opt/hatch/bin/share --help
+  -> Commands: remove, share-space, unshare-space, fetch-space-url,
+     export-html. share-space = "Share a published space"
+     (--slug, --share-type cloudflare). It requires an ALREADY PUBLISHED
+     space; there is no create/publish command in this CLI surface.
+  $ /opt/hatch/bin/share fetch-space-url --slug cek-link-airdrop
+  -> Error: space "cek-link-airdrop" is not currently shared; use
+     share-space only when the user explicitly asks to share it (exit 1).
+  $ /opt/hatch/bin/share fetch-space-url --slug airdrop-generate
+  -> Error: space "airdrop-generate" is not currently shared (exit 1).
+  $ ls ~/workspace/ts-spaces/
+  -> airdrop-generate  cek-link-airdrop  (both exist locally, unshared)
+
+Conclusion: T-01 stays BLOCKED.
+- What WAS verified: the share CLI's read-only probe works; neither
+  local space is currently shared; `hatch` has no space subcommands.
+- What is NOT available to this agent: any CLI or API to create/publish
+  a second Hatch space. Publishing happens through the web-artifact
+  tools, which this subagent does not operate (the parent agent does).
+- Evidence still needed (written artifacts): (a) a provider statement
+  or artifact-tooling run showing a second space CAN be created and
+  published for the same owner; (b) the publish flow + resulting URL for
+  the beta space; (c) confirmation whether a second space shares the
+  same app.db/runtime or is isolated (G2 tenant evidence depends on it).
+- No owner action was requested; the owner was NOT used as a courier.

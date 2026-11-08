@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.22 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.22 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.23 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.23 — **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE** (status keseluruhan TIDAK berubah oleh revisi ini). **PERUBAHAN v2.3.23:** implementasi di branch pengembangan terisolasi `dev` DIOTORISASI (V16 §1 + penilaian U-99 + direktif owner `c53fd73`) dan DIEKSEKUSI dalam revisi ini (D-01..D-04 + F-001/F-002/F-003 — lihat §D.4.34); otorisasi itu TIDAK mencakup merge ke `main`, produksi, live artifact, atau rilis/beta.
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **Respons atas audit independen V16:** `SSRF_RESPONSE_MATRIX_V2323.md` (implementasi D-01..D-04 di branch `dev` + jawaban handoff V16 §6 7 butir — lihat §D.4.34). **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,28 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.23 (8 November 2026)
+
+Revisi ini adalah **implementasi development-branch pertama** (bukan
+desain-only): atas otorisasi V16 §1 + penilaian U-99 (DITUTUP sebagai
+blocker proses) + direktif owner `c53fd73`, D-01..D-04 dikerjakan di
+branch `dev` (base `main` @ `7e82818`, merge `67cc7c7`) dan diuji di
+VM atas FILE AKTUAL. Status keseluruhan tetap: **DESIGN REVIEW ONLY
+— IMPLEMENTATION NOT APPROVED FOR RELEASE — NOT READY FOR COMMUNITY
+BETA**. `main`, produksi, live artifact, dan `app.db` live TIDAK
+diubah; Link Scanner TIDAK diaktifkan.
+
+| # | Lokasi perubahan | Isi perubahan |
+| --- | --- | --- |
+| 1 | §D.4.34 (baru) + matriks §2 butir 1 + `site/drizzle/0006…` + `site/server/src/schema.ts` + `site/server/src/actions.ts` + `site/server/src/catalog.ts` | **D-01 — F-044/F-045/F-046 DIIMPLEMENTASIKAN (bukan lagi proposal):** migrasi 0006 aktual (rebuild; journal idx 5) + down migration operator; schema Drizzle mirror (STORED, CHECK bernama, provenance, composite PK, `checks_owner_idx`); owner scoping semua actions; canonical comparison per-chain; provenance server-side. H-MIG-00..09 + H-CAT-11..13 + H-TEN-11..15 + DK-01..07 = **232 PASS / 0 FAIL** (migrator CLI nyata + sqlite3 CLI 3.45.1 + Bun 3.53.4). Lantai SQLite >= 3.31.0 (up) / >= 3.35.0 (down); runtime produksi NOT VERIFIED (U-90). K-10: default L-A; keputusan bisnis masih dibutuhkan. |
+| 2 | §D.4.34 (baru) + matriks §2 butir 2 + `site/server/src/ssrf-guard.ts` (BARU) + wiring `actions.ts` | **F-001 DIIMPLEMENTASIKAN di jalur fetch nyata:** canonicalizeHost + port policy, resolveAll (ALL A/AAAA, 5 dtk, late-result dibuang), validateDestination, nodeConnector pinned lookup (Pendekatan 1, Model B), fetchGuardedOnce, validateUrlForFetch (K-1: guard sebelum cache), redirect-hop revalidation, RDAP via guard, script serial + same-origin. H-SSRF **32/32 PASS**. Tiga temuan harness diperbaiki: multicast 224/4 (U-108), trailing dot (RFC 1034 §3.1), timeout resolver injeksi (H-SSRF-18). Staging egress NOT VERIFIED (STAGE-P01/P03). |
+| 3 | §D.4.34 (baru) + matriks §2 butir 3 + `site/drizzle/0007…` + `site/server/src/scan-limits.ts` (BARU) | **F-002/F-003/F-022/F-025/F-026/F-027 DIIMPLEMENTASIKAN:** `readCappedStream` (L0/L1) + `ScanBudget` aggregate 1.000.000 + deadline total 20 dtk (koreksi dari 30 dtk — bukan keputusan pemilik) + lease global max 5 (atomic conditional INSERT, TTL 25 dtk) + rate per principal 10/menit + 100/jam + wiring `runCheck` fail-closed. H-RES **15/15 PASS** + H-LEASE **8/8 PASS**. Dua temuan diperbaiki: kode error aggregate-cap (DL-23-06) + `rowsAffected` RETURNING di libsql (DL-23-05; U-107: semantik `SpaceDb.run` produksi NOT VERIFIED). Memori bounded TIDAK diklaim dari model VM. |
+| 4 | §D.4.34 (baru) + matriks §2 butir 4 | **F-004/F-005/F-018 + auth boundary DIIMPLEMENTASIKAN di `dev`:** uniqueness via unique index (SpaceDb tanpa `transaction` — atomicity dari statement/index); principal dari `ctx.viewer` (ADA di tipe SDK 0.14.0 — populasi runtime NOT VERIFIED, STAGE-P02); owner scoping semua actions; H-TEN PASS via handler Actions asli + mock ctx + libsql nyata. Gate §5 (export legacy) tetap BELUM diimplementasikan. |
+| 5 | §D.4.34 (baru) + matriks §2 butir 5 + `evidence/v2323/landing-page-status.txt` | **Landing page statis DIBANGUN parent agent** (artifact baru terpisah, slug `airdrop-generate`; live `cek-link-airdrop` TIDAK disentuh; verifikasi internal builder lulus). **TAPI:** `share.shared=false`, BELUM ADA URL publik — acceptance V16 butir 5 TIDAK TERPENUHI → **partially addressed**; next action share + health check eksternal. |
+| 6 | §D.4.34 (baru) + matriks §2 butir 6 + `evidence/v2323/t-01-verification.txt` | **T-01 dicoba via tooling yang tersedia: tetap BLOCKED.** `hatch` hanya daemon (tanpa subcommand); `builtin-artifacts` hanya 2 built-in; `share-space` butuh space sudah ter-publish; probe `fetch-space-url` bekerja (kedua space belum shared). Butuh pernyataan provider / run artifact-tooling. |
+| 7 | §D.4.34 (baru) + matriks §2 butir 7 + `evidence/v2323/run-clean-clone-build.sh` (BARU) | **U-103 ADDRESSED:** driver portabel (argumen repo/ref, default remote, mktemp+trap, output dari lokasi script, status setup exit 2). Check-setup PASS (clone remote + unshare, exit 0) TANPA re-run build (dilarang untuk kosmetik). F-047 tetap BLOCKED. |
+| 8 | §D.4.34 + matriks §5 + §10 | **Risiko baru U-103..U-108** (driver portabel; legacy saved_projects; typing Drizzle; log run-pertama tidak dipertahankan — U-106 process gap; `SpaceDb.run` rowsAffected; multicast 224/4). U-98/U-99 CLOSED (V16). Gate **G-K diperbarui** (otorisasi `dev` granted; K-10 + T-01 + M-1/M-2 tetap OPEN). **Gate berikutnya: STAGING VALIDATION** (prasyarat: 6 peran ditunjuk + bukti provider + K-10 + environment G-E). Pemicu revisi v2.3.24: audit V17, ATAU bukti staging, ATAU keputusan owner K-10/T-01, ATAU jawaban provider M-1/M-2. |
 
 ## Perubahan di revisi v2.3.22 (8 November 2026)
 
@@ -7038,6 +7060,119 @@ T-01 + M-1/M-2). Pemicu revisi v2.3.23 adalah audit independen V16,
 ATAU tanggapan ChatGPT atas diskusi link-jadi, ATAU keputusan owner
 atas K-1..K-5/K-7..K-10/U-99/T-01 (G-K), ATAU bukti runtime G-B,
 ATAU staging tersedia (G-E).
+
+---
+
+### D.4.34 Jawaban atas audit independen V16 — implementasi D-01..D-04 di branch `dev` + Handoff §6 (BARU, v2.3.23)
+
+**Otorisasi (dasar hukum revisi ini):** V16 §1 keputusan 1 +
+§2 penilaian U-99 + direktif owner `c53fd73` + instruksi owner
+terbaru. U-99 DITUTUP sebagai blocker proses; U-98 terjawab
+(`dev` = development branch). Implementasi HANYA di `dev`
+(base `main` @ `7e82818`, merge `67cc7c7`); `main`, produksi,
+live artifact `cek-link-airdrop`, deployment config, dan `app.db`
+live TIDAK diubah; Link Scanner TIDAK diaktifkan; tanpa
+destructive testing produksi. Status keseluruhan tetap **DESIGN
+REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE — NOT READY
+FOR COMMUNITY BETA**.
+
+**What materially changed (vs v2.3.22 — desain-only):** revisi ini
+menulis KODE APLIKASI NYATA + mengujinya atas FILE AKTUAL di VM
+(bukan proposal/harness model saja). Tujuh commit di `dev`:
+`67cc7c7` (merge), `e022869` (migrasi 0006), `daec8ea` (schema +
+owner scoping), `9c666a4` (guard + wiring fetch), `247d98a`
+(migrasi 0007 + scan-limits), `514352b` (fix H-SSRF-02/12b/18),
+`24de11e` (fix H-RES-07 + H-LEASE). Detail + bukti lengkap:
+`SSRF_RESPONSE_MATRIX_V2323.md` §2/§8 + `evidence/v2323/`.
+
+**D-01 — F-044/F-045/F-046 (V16 §6 butir 1):** migrasi 0006
+AKTUAL di `site/drizzle/` (rebuild create/copy/validate/swap;
+teks v3 diadaptasi format migrator SAJA — breakpoint satu
+statement, tanpa kontrol transaksi/PRAGMA, tanpa SELECT validasi
+di file karena migrator mengabaikannya, U-93) + `schema.ts`
+mirror + owner scoping + `catalog.ts`. Legacy NULL fail-closed
+L-A (DL-23-03); K-10 tersisa. H-MIG-00..09 + H-CAT-11..13 +
+H-TEN-11..15 + DK-01..07 = **232 PASS / 0 FAIL** (migrator CLI
+nyata, Bun SQLite 3.53.4 + CLI 3.45.1; re-run verifikasi run-5
+juga 232/0). Down migration 0006 + 0007 (operator-run, sqlite3
+CLI) teruji. Lantai SQLite >= 3.31.0 (up) / >= 3.35.0 (down);
+runtime produksi NOT VERIFIED (U-90).
+
+**F-001 (V16 §6 butir 2):** `ssrf-guard.ts` + wiring
+`actions.ts` pada jalur fetch `checkLink` yang sebenarnya:
+canonicalizeHost + port policy (http→80/https→443), resolveAll
+(ALL A/AAAA, 5 dtk, late-result dibuang), validateDestination
+(empty/mixed/malformed → DENY), nodeConnector pinned lookup
+(Pendekatan 1, Model B raw bytes; TLS SNI + verifikasi sertifikat
+terhadap hostname), fetchGuardedOnce (revalidasi tiap hop, TANPA
+fallback fetch), validateUrlForFetch (K-1: guard SEBELUM cache),
+RDAP via guard (redirect manual), script SERIAL + same-origin.
+H-SSRF **32/32 PASS** (stub + server lokal; nol request ke
+metadata/internal/publik). Temuan diperbaiki: multicast 224/4
+(U-108), trailing dot (RFC 1034 §3.1), timeout resolver injeksi
+(H-SSRF-18; race 5 dtk kini membungkus resolver injeksi juga).
+
+**F-002/F-003/F-022/F-025/F-026/F-027 (V16 §6 butir 3):**
+`readCappedStream` (L0 wire / L1 decoded / L3 aggregate
+1.000.000 via `ScanBudget` sinkron) + deadline total 20 dtk
+(koreksi dari 30 dtk di kode lama — bukan keputusan pemilik) +
+Content-Type/Encoding allowlist + migrasi 0007 + `scan-limits.ts`
+(lease atomik max 5, TTL 25 dtk > deadline; rate 10/menit +
+100/jam per principal; bucket anonim) + wiring `runCheck`
+fail-closed. H-RES **15/15 PASS** + H-LEASE **8/8 PASS**.
+Temuan diperbaiki: kode error aggregate-cap (DL-23-06) +
+`rowsAffected` RETURNING di libsql (DL-23-05; U-107: semantik
+`SpaceDb.run` produksi NOT VERIFIED). IP-based enforcement
+BLOCKED (U-85 — Ctx tanpa peer TCP address). Memori bounded
+TIDAK diklaim dari slice/model VM.
+
+**F-004/F-005/F-018 + auth boundary (V16 §6 butir 4):**
+uniqueness via unique index + tangkap pelanggaran (SpaceDb
+tanpa `transaction` — atomicity dari statement/index);
+principal dari `ctx.viewer` (ADA di tipe SDK 0.14.0:
+`LocalViewer`/`CloudflareViewer` — populasi runtime NOT
+VERIFIED, STAGE-P02); owner scoping semua actions; H-TEN PASS
+via handler `Actions` asli + mock ctx + libsql nyata. Gate §5
+(export legacy) tetap BELUM diimplementasikan.
+
+**Landing page (V16 §6 butir 5):** dibangun parent agent sebagai
+artifact BARU terpisah (slug `airdrop-generate`; live TIDAK
+disentuh; verifikasi internal lulus) — TAPI `share.shared=false`,
+BELUM ADA URL publik → partially addressed; acceptance "URL HTTPS
+publik + health check eksternal" BELUM TERPENUHI.
+
+**T-01 (V16 §6 butir 6):** dicoba via tooling yang tersedia —
+tetap BLOCKED. `hatch` hanya daemon; `builtin-artifacts` hanya
+2 built-in; `share-space` butuh space sudah ter-publish; probe
+`fetch-space-url` bekerja. Butuh pernyataan provider / run
+artifact-tooling.
+
+**U-103 (V16 §6 butir 7):** driver portabel baru (argumen
+repo/ref, default remote, mktemp+trap, output dari lokasi
+script, status setup exit 2); check-setup PASS tanpa re-run
+build.
+
+**Risiko baru U-103..U-108:** U-103 addressed; U-104 OPEN
+(tradeoff legacy saved_projects); U-105 addressed (DDL diff
+sebagai penjaga); U-106 BARU — process gap (log mentah
+run-pertama 3 harness tidak dipertahankan terpisah; temuan +
+perbaikan tetap terlacak); U-107 OPEN (semantik `SpaceDb.run`
+RETURNING di produksi NOT VERIFIED); U-108 CLOSED (multicast
+224/4 — ditemukan + diperbaiki). U-98/U-99 CLOSED (V16).
+
+**Carry-forward:** F-019 NOT VERIFIED (`checkLink` masih
+terdaftar); F-047 resolusi BLOCKED (U-97); F-006b/F-016/F-017
+OPEN; staging roles UNASSIGNED + 3 baris baru (STAGE-P01/P02,
+U-90, K-10 — lihat `STAGING_READINESS_V2323.md`).
+
+**Gate proyek konkret berikutnya: STAGING VALIDATION.**
+Prasyarat: (1) Rama menunjuk keenam peran staging; (2) provider
+menyediakan bukti (versi/digest runtime, scope `ctx.db`,
+topologi egress, SDK redistributable/kontrak build, jawaban
+T-01); (3) keputusan owner K-10; (4) environment staging
+tersedia (G-E). Pemicu revisi v2.3.24 adalah audit independen
+V17, ATAU bukti staging, ATAU keputusan owner atas K-10/T-01,
+ATAU jawaban provider atas M-1/M-2.
 
 ---
 
