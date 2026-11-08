@@ -1,0 +1,4 @@
+    [H-TO-01] elapsed=20015 ms, error="Pemeriksaan kehabisan waktu (batas 20 detik) — hasilnya tidak disimpan. Coba lagi; bila terus timeout, situsnya mungkin memang lambat atau tidak merespons."
+PASS H-TO-01 runCheck + DNS lambat terakumulasi -> timeout eksplisit, 0 baris, lease lepas, ~20 dtk
+
+H-TO: 1 PASS / 0 FAIL (total 1)

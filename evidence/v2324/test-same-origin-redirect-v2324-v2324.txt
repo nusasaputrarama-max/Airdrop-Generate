@@ -1,0 +1,7 @@
+PASS H-SO-01 script same-origin -> 302 cross-origin -> null, hop kedua tak dibuka
+PASS H-SO-02 redirect same-origin -> diikuti, body kembali
+PASS H-SO-03 URL awal cross-origin vs allowedOrigin -> null, 0 calls
+PASS H-SO-04 tanpa allowedOrigin (jalur page): redirect cross-origin tetap diikuti
+PASS H-SO-05 redirect relatif same-origin -> diikuti
+
+H-SO: 5 PASS / 0 FAIL (total 5)

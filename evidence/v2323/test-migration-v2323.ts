@@ -23,12 +23,13 @@
 //   H-MIG-06  Backup/restore: restore byte-identik dengan backup.
 //   H-MIG-07  Re-run: (a) migrator re-run = no-op bersih (ledger
 //             gating); (b) file 0006 di-re-run LANGSUNG (tanpa migrator)
-//             GAGAL di chunk #10 (ADD COLUMN duplikat) — rebuild
-//             projects sebelum titik gagal ternyata idempotent pada
-//             data/skema ini (schemaDump tak berubah), TETAPI itu
-//             kebetulan urutan, bukan jaminan: kegagalan di chunk
-//             lain bisa mengaplikasi sebagian. File JANGAN pernah
-//             di-re-run langsung.
+//             GAGAL di chunk #10 (ADD COLUMN duplikat) — v2.3.23: rebuild
+//             projects ternyata idempotent pada data/skema ini (schemaDump
+//             tak berubah). v2.3.24 (F-055/0008): TIDAK LAGI idempotent —
+//             rebuild memakai CHECK 0006 sehingga CHECK Solana base58
+//             penuh DIAM-DIAM KEMBALI ke versi lemah (07b-6 menguji
+//             tepat itu: satu-satunya diff adalah teks CHECK projects).
+//             File JANGAN pernah di-re-run langsung.
 //   H-MIG-08  Down migration 0006 + 0007 (baru) via sqlite3 CLI:
 //             schema kembali ke base / 0006 tetap utuh; row count tetap;
 //             guard V-D1/V-D2.
@@ -791,10 +792,37 @@ console.log("--- H-MIG-07 (re-run) ---");
     idxAfter.some((r) => r.name === "projects_name_normalized_unique") && idxAfter.some((r) => r.name === "projects_contract_normalized_unique"),
     `indexes=${JSON.stringify(idxAfter.map((r: any) => r.name))}`,
   );
-  check(
-    "H-MIG-07b-6 HASIL AKTUAL (koreksi atas prediksi awal): re-run langsung gagal di ADD COLUMN TETAPI schemaDump TIDAK berubah — rebuild projects bersifat idempotent pada data/skema ini; yang TIDAK aman tetaplah asumsi idempotency (kegagalan di chunk lain bisa mengaplikasi sebagian — lihat 07b-2), jadi file JANGAN pernah di-re-run langsung; keamanan re-run hanya dari ledger migrator (07a)",
-    schemaDump(dbB) === schemaB0,
-  );
+  // v2.3.24 (F-055, migrasi 0008): re-run langsung 0006 TIDAK LAGI
+  // idempotent pada skema — rebuild projects memakai CHECK 0006 (lama),
+  // sehingga CHECK Solana base58 penuh (0008) DIAM-DIAM KEMBALI ke
+  // versi lemah. Data/index/row count tetap utuh (07b-3/4/5), TAPI
+  // skema BERUBAH — dan justru inilah bukti paling kuat bahwa file
+  // migrasi JANGAN PERNAH di-re-run langsung: re-run sebagian bisa
+  // melemahkan constraint tanpa error yang jelas (gagalnya baru di
+  // chunk #10, setelah rebuild selesai). Satu-satunya perbedaan yang
+  // diizinkan: teks CHECK tabel projects.
+  {
+    const before = JSON.parse(schemaB0) as { master: any[]; extra: any };
+    const after = JSON.parse(schemaDump(dbB)) as { master: any[]; extra: any };
+    const key = (e: any) => `${e.type}:${e.name}`;
+    const beforeMap = new Map(before.master.map((e) => [key(e), e]));
+    const afterMap = new Map(after.master.map((e) => [key(e), e]));
+    const diffKeys = [...beforeMap.keys()].filter(
+      (k) => JSON.stringify(beforeMap.get(k)) !== JSON.stringify(afterMap.get(k)),
+    );
+    const onlyProjectsCheckChanged =
+      diffKeys.length === 1 &&
+      diffKeys[0] === "table:projects" &&
+      String(beforeMap.get("table:projects")?.sql ?? "").includes("[^1-9A-HJ-NP-Za-km-z]") &&
+      !String(afterMap.get("table:projects")?.sql ?? "").includes("[^1-9A-HJ-NP-Za-km-z]") &&
+      String(afterMap.get("table:projects")?.sql ?? "").includes("[0OlI]");
+    const extraSame = JSON.stringify(before.extra) === JSON.stringify(after.extra);
+    check(
+      "H-MIG-07b-6 (v2.3.24) re-run 0006 MENGEMBALIKAN DIAM-DIAM CHECK Solana ke versi lemah 0006 — satu-satunya diff adalah teks CHECK tabel projects; JANGAN pernah re-run file migrasi langsung",
+      onlyProjectsCheckChanged && extraSame,
+      `diffKeys=${JSON.stringify(diffKeys)} extraSame=${extraSame}`,
+    );
+  }
   dbB.close();
 }
 

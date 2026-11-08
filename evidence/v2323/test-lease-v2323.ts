@@ -124,10 +124,11 @@ await test("H-LEASE-00", async () => {
   ok(tables.includes("scan_leases"), `tabel scan_leases hilang: ${tables.join(",")}`);
   ok(tables.includes("rate_limits"), `tabel rate_limits hilang: ${tables.join(",")}`);
   const migRows = (await db.run(sql`SELECT COUNT(*) AS n FROM __drizzle_migrations`)).rows[0] as { n: number };
-  ok(migRows.n === 7, `__drizzle_migrations ${migRows.n} != 7 (0001..0007)`);
+  ok(migRows.n === 8, `__drizzle_migrations ${migRows.n} != 8 (0001..0008)`);
   const journal = JSON.parse(readFileSync(join(spaceDir, "drizzle", "meta", "_journal.json"), "utf-8"));
-  ok(journal.entries.length === 7, `journal entries ${journal.entries.length} != 7`);
+  ok(journal.entries.length === 8, `journal entries ${journal.entries.length} != 8`);
   ok(journal.entries[6].tag === "0007_scan_leases_and_rate_limits", `journal idx 6 tag ${journal.entries[6].tag}`);
+  ok(journal.entries[7].tag === "0008_solana_base58_check", `journal idx 7 tag ${journal.entries[7].tag}`);
   const ddl = (await db.run(sql`SELECT sql FROM sqlite_master WHERE name='scan_leases'`)).rows[0] as { sql: string };
   ok(ddl.sql.includes("expires_at"), "DDL scan_leases tanpa expires_at");
   console.log(`  migrator ok, tabel: ${tables.join(", ")}, sqlite ${sqlVer}`);
