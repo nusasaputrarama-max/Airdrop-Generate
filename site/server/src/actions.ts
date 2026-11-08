@@ -11,7 +11,7 @@
 // and saves the result as one row in `checks` (the user's history).
 
 import { defineAction, z, type ActionsModule, type Ctx } from "@hatch/space-sdk";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import * as schema from "./schema";
 import { canonicalizeContractAddress } from "./catalog";
 import {
@@ -1683,6 +1683,36 @@ Tulis jawaban Gibran untuk pesan terbaru itu, mematuhi semua aturan di atas.`;
     };
   }
   return { reply: trimmed };
+}
+
+/**
+ * Export legacy check rows (F-046 gate §5, policy L-A default).
+ *
+ * Legacy rows are checks with owner_user_id IS NULL ("no recorded
+ * owner"). Under L-A they are NEVER returned to an ordinary principal
+ * by any query — the ONLY read path is this function, and it is gated
+ * on the SPACE OWNER: ctx.viewer.isOwner === true, an identity the
+ * runtime verifies (local daemon / share). It is NOT in the Actions
+ * map, so no client can invoke it; it exists for server-side
+ * audit/migration of legacy data only.
+ *
+ * Fail-closed: anonymous callers, non-owner principals, and a missing
+ * viewer all get an EMPTY array — the response never reveals whether
+ * legacy rows exist. Only NULL-owner rows are returned, oldest first,
+ * in the same Check shape listChecks returns.
+ *
+ * Exported for harness verification (H-LEG) — it is NOT an action.
+ */
+export async function exportLegacyChecks(ctx: Ctx): Promise<Check[]> {
+  const viewer = ctx.viewer;
+  if (!viewer || viewer.isOwner !== true) return [];
+  const db = ctx.db<typeof schema>();
+  const rows = await db
+    .select()
+    .from(schema.checks)
+    .where(isNull(schema.checks.ownerUserId))
+    .orderBy(asc(schema.checks.id));
+  return rows.map(rowToCheck);
 }
 
 export const Actions = {
