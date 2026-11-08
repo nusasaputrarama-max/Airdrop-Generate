@@ -405,7 +405,7 @@ test("H-MIGR-18", "sanity: valid non-chain rename + normal rollback still succee
     eq(r1.status, 0, `valid rename must exit 0 (stderr: ${r1.stderr})`);
     assert(existsSync(r1.backupFile), "valid rename must write a backup JSON");
     const backup = JSON.parse(readFileSync(r1.backupFile, "utf8"));
-    eq(backup.version, "v2328-1", "backup must record the new tool version v2328-1");
+    eq(backup.version, "v2329-1", "backup must record the new tool version v2329-1");
     eq(JSON.stringify(counts(tdb)), JSON.stringify(before), "valid rename must NOT change per-table row counts");
     eq(keyCount(tdb, "checks", "owner_user_id", LEGACY_A), 0, "no checks row may keep the legacy key");
     eq(keyCount(tdb, "checks", "owner_user_id", CURRENT_A), 3, "3 checks must now carry the current key");

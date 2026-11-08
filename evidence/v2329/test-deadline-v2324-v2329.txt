@@ -1,0 +1,8 @@
+PASS H-DL-01 deadline sudah aborted -> validasi langsung gagal, resolver 0 calls
+PASS H-DL-02 resolver tak settle + deadline 2 dtk -> deadline-aborted ~2 dtk
+PASS H-DL-03 fetchText + deadline aborted -> null meski cache hit tersedia
+PASS H-DL-04 invarian lease: TTL 25 dtk > deadline 20 dtk; expiresAt = acquired + 25 dtk
+PASS H-DL-05 fetchGuardedOnce + deadline aborted -> null, connector 0 calls
+PASS H-DL-06 jalur normal tak terganggu: resolver cepat + deadline jauh -> ok
+
+H-DL: 6 PASS / 0 FAIL (total 6)

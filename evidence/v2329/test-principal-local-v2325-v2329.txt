@@ -1,0 +1,9 @@
+PASS H-PL-01 listChecks: alice vs bob (ownerUserId sama) terisolasi; legacy tak terlihat
+PASS H-PL-02 deleteCheck: bob tak bisa hapus baris alice; alice bisa hapus barisnya sendiri
+PASS H-PL-03 askGibran: prompt alice hanya berisi domain alice; bob hanya domain bob
+PASS H-PL-04 saved state: bookmark alice tak terlihat bob maupun owner
+PASS H-PL-05 userId sama, isOwner beda: principal sama, TETAPI addProject hanya owner
+PASS H-PL-06 delegate agent/schedule: principal berbeda dari pemanggil langsung dan satu sama lain
+PASS H-PL-07 runCheck sebagai alice menulis owner `local:alice`; alice membaca kembali, bob tidak
+
+H-PL: 7 PASS / 0 FAIL (total 7)

@@ -1,0 +1,8 @@
+PASS H-AN2-01 dua anon setProjectState -> 0 baris; keduanya lihat default
+PASS H-AN2-02 baris '<LEGACY>' yang di-seed TIDAK PERNAH terbaca anon dan tidak tertimpa
+PASS H-AN2-03 API mode legacy tidak ada lagi (export + pola kode opt-in hilang)
+PASS H-AN2-04 viewer share Cloudflare non-owner + viewer source tidak dikenal fail-closed
+PASS H-AN2-05 local viewer dengan userId kosong fail-closed
+PASS H-AN2-06 kontrol positif: local owner bookmark tersimpan; anon tidak melihatnya; <LEGACY> utuh
+
+H-AN2: 6 PASS / 0 FAIL (total 6)

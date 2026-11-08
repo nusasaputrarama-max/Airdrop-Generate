@@ -1,0 +1,58 @@
+3719  openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libdl.so.2", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libm.so.6", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/proc/self/maps", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev/bunfig.toml", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+3719  openat(AT_FDCWD, "evidence/v2326/principal-key-migration.ts", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/proc/sys/vm/mmap_min_addr", O_RDONLY) = 3
+3719  openat(AT_FDCWD, "/proc/self/maps", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/sys/devices/system/cpu/online", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/proc/self/cgroup", O_RDONLY|O_CLOEXEC) = 3
+3719  openat(AT_FDCWD, "/sys/fs/cgroup/cpu.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+3719  openat(AT_FDCWD, "/", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 3
+3719  openat(AT_FDCWD, "/home/", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 4
+3719  openat(AT_FDCWD, "/home/hatch/", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+3719  openat(AT_FDCWD, "/home/hatch/workspace/", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 7
+3719  openat(7, "package.json", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 8
+3719  openat(7, "tsconfig.json", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 8
+3719  openat(AT_FDCWD, "/etc/localtime", O_RDONLY|O_CLOEXEC) = 5
+3719  openat(AT_FDCWD, "/proc/self/cgroup", O_RDONLY|O_CLOEXEC) = 5
+3719  openat(AT_FDCWD, "/sys/fs/cgroup/memory.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+3719  openat(AT_FDCWD, "/sys/fs/cgroup/memory.high", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+3719  openat(AT_FDCWD, "/proc/self/statm", O_RDONLY) = 5
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev/evidence/v2326", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev/evidence/", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 5
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev/evidence/v2326", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_DIRECTORY) = 6
+3719  openat(AT_FDCWD, "/home/hatch/workspace/airdrop-generate-dev/evidence/v2326/principal-key-migration.ts", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 5
+3719  openat(AT_FDCWD, "/home/hatch/.bun/install/cache/@t@/9fb8783df3203ecc.pile", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC) = 6
+3719  openat(AT_FDCWD, "/proc/self/statm", O_RDONLY) = 5
+3719  openat(AT_FDCWD, "/proc/self/statm", O_RDONLY) = 5
+3719  openat(AT_FDCWD, "/tmp/v2324-harness-x8Lqjp/test.db", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH) = 5
+3719  openat(AT_FDCWD, "/tmp/v2324-harness-x8Lqjp/test.db", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 5
+3719  openat(AT_FDCWD, "/dev/urandom", O_RDONLY|O_CLOEXEC) = 6
+3719  openat(AT_FDCWD, "/tmp/v2329-strace-mapping.json", O_RDONLY|O_NOCTTY|O_LARGEFILE|O_CLOEXEC) = 6
+3719  openat(AT_FDCWD, "/tmp", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH) = 6
+3719  openat(AT_FDCWD, "/tmp/v2324-harness-x8Lqjp/test.db", O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH) = 6
+3719  openat(AT_FDCWD, "/tmp/.v2329-strace-backup.json.tmp-3719-48436822", O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_LARGEFILE|O_CLOEXEC, 0600) = 6
+3719  fsync(6)                          = 0
+3719  link("/tmp/.v2329-strace-backup.json.tmp-3719-48436822", "/tmp/v2329-strace-backup.json") = 0
+3719  unlink("/tmp/.v2329-strace-backup.json.tmp-3719-48436822") = 0
+3719  openat(AT_FDCWD, "/tmp", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 6
+3719  fsync(6)                          = 0
+3719  openat(AT_FDCWD, "/tmp/v2329-strace-backup.json", O_RDONLY|O_NOCTTY|O_LARGEFILE|O_CLOEXEC) = 6
+3719  openat(AT_FDCWD, "/tmp/v2329-strace-backup.json", O_RDONLY|O_NOCTTY|O_LARGEFILE|O_CLOEXEC) = 6
+3719  openat(AT_FDCWD, "/tmp/v2324-harness-x8Lqjp/test.db-journal", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0640) = 6
+3719  fsync(6)                          = 0
+3719  openat(AT_FDCWD, "/tmp/v2324-harness-x8Lqjp", O_RDONLY|O_CLOEXEC) = 7
+3719  fsync(7)                          = 0
+3719  fsync(6)                          = 0
+3719  fsync(5)                          = 0
+3719  unlink("/tmp/v2324-harness-x8Lqjp/test.db-journal") = 0
+3723  +++ exited with 0 +++
+3721  +++ exited with 0 +++
+3722  +++ exited with 0 +++
+3720  +++ exited with 0 +++
+3719  +++ exited with 0 +++

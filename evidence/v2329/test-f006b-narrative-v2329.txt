@@ -1,0 +1,7 @@
+PASS H-NAR-01 F-006b actions.ts contains no incident-narrative phrasing
+PASS H-NAR-02 F-006b App.tsx contains no incident-narrative phrasing and no 7 Nov 2026 date
+PASS H-NAR-03 F-006b functional drainer protection is preserved in actions.ts
+PASS H-NAR-04 F-006b functional example + explainer preserved in App.tsx
+PASS H-NAR-05 F-006b Ptah lottery data line is out of scope and intentionally kept
+
+H-NAR: 5 PASS / 0 FAIL (total 5)

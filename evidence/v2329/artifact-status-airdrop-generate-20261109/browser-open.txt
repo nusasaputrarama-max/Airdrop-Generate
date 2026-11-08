@@ -1,0 +1,22 @@
+# browser-open result — project link (informational artifact)
+
+**Checked:** 2026-11-09 ~01:00 WIB (crawl 2026-11-08 18:00 UTC, <1 minute before the check)
+**URL:** https://muse.ai/s/airdrop-generate-xdxj6xcxoseqkxjxp/QIC3lZQIZDtURtrwyqgyuwpRL-2pikuz-7-cWzjYs4Y
+**Tool:** browser.open (text fetch; the tool does not expose an HTTP status code)
+
+Raw fetched text (verbatim, 4 lines):
+
+```
+# Airdrop Generate
+
+Airdrop Generate
+
+Content is user generated and unverified.
+```
+
+**Observed:** page title "Airdrop Generate" rendered; body is minimal
+("Content is user generated and unverified"). No scanner UI, no form,
+no wallet control, and no backend action is visible in the fetched text.
+
+**NOT claimed:** HTTP status (the tool does not display it); full page
+content (the fetch returns minimal text only).

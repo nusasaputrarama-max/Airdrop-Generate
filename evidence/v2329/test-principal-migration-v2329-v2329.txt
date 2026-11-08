@@ -1,0 +1,10 @@
+PASS H-MIGR-34 F-069 malformed checks row (sentinel URL/metadata/owner, missing id) refused; stderr has table+field, no sentinel
+PASS H-MIGR-35 F-069 malformed saved_projects row (sentinel principal, missing project_id) refused; stderr has table+field, no sentinel
+PASS H-MIGR-36 F-069 malformed projects row (sentinel provenance, missing id) refused; stderr has table+field, no sentinel
+PASS H-MIGR-37 F-069 chained mapping with sentinel principals + sentinel tool/version refused; stderr contains NO sentinel value
+PASS H-MIGR-38 F-069 rollback pre-validation with a sentinel current key refused; stderr names row index + field, no sentinel principal
+PASS H-MIGR-39 F-070 syscall-order evidence: fsync parent dir happens after link+unlink and before the DB transaction
+PASS H-MIGR-40 U-118 allowlisted working directory enforced: DB outside refused exit 2, DB inside allowed
+PASS H-MIGR-41 U-118 with no allowlist configured: tool warns explicitly (residual OPEN) and still runs
+
+H-MIGR: 8 PASS / 0 FAIL (total 8)

@@ -1,5 +1,6 @@
 // principal-key-migration.ts — F-060 / U-114 (v2.3.26), revised v2.3.27
-// (F-061..F-064, audit V21), revised v2.3.28 (F-065..F-068, audit V22):
+// (F-061..F-064, audit V21), revised v2.3.28 (F-065..F-068, audit V22),
+// revised v2.3.29 (F-069, F-070, U-118, audit V23):
 // OFFLINE tool for principal-key compatibility after the v2.3.25 change
 // `local:{ownerUserId}` -> `local:{userId}`.
 //
@@ -49,7 +50,8 @@
 //                    table arrays present and typed, complete row
 //                    shape/PK per row, countsBefore consistent with
 //                    the live DB, totalRows consistent, and the
-//                    SHA-256 integrity hash (v2328-1 backups) matching.
+//                    SHA-256 integrity hash (v2328-1 and later backups)
+//                    matching.
 //                    A backup missing a section, with an empty mapping,
 //                    an unsupported version, or a hash/count mismatch
 //                    is refused with exit 2 and NO writes. Backups
@@ -65,6 +67,48 @@
 // definition — DL-23-03); NULL-owner checks are NEVER touched (L-A).
 //
 // Safety guards (fail-closed):
+//   - F-069 (v2.3.29): NO backup validation error prints row values,
+//     full JSON objects, URLs, principal IDs, or other record data.
+//     Every validation failure reports only the table name, the row
+//     index, the failed field, and the expected type. The same rule
+//     applies to mapping-entry errors, archive key-list errors, the
+//     rename collision check, and rollback pre/post-validation errors
+//     (row index + table + field only; integer PKs are not printed
+//     either). `inventory` still prints principal keys to STDOUT —
+//     that is the tool's intended operator report, not an error path,
+//     and is out of scope for F-069.
+//   - F-070 (v2.3.29): writePrivateJsonAtomic() fsyncs the PARENT
+//     DIRECTORY (open dir fd + fsync) after link(2) + temp unlink and
+//     BEFORE returning, so the backup directory entry is durable
+//     before any SQLite transaction starts. If the directory cannot
+//     be opened or fsynced, the published output is removed and the
+//     tool fails closed (exit 1) instead of claiming durability it
+//     does not have. Platform note: directory fsync is verified on
+//     Linux in this VM; on a platform where it is unsupported the
+//     tool fails closed — it never silently claims crash durability.
+//     A trace hook (env PRINCIPAL_MIGRATION_FS_TRACE=<file>) records
+//     the filesystem steps in order for the H-MIGR-39 syscall-order
+//     test; that is syscall-order evidence, NOT a real power-loss
+//     test.
+//   - U-118 (v2.3.29): investigated whether Bun SQLite can verify
+//     the opened DB file's identity against the pre-open guard.
+//     PROBE (2026-11-09, Bun 1.4.4, bun:sqlite 3.53.4): a Database
+//     instance exposes only `filename` (the path string as given);
+//     `PRAGMA database_list` returns the path string only; there is
+//     no fd property (`$handle`/`fd`/`_fd` absent); `db.handle` is a
+//     bare number (0 on a fresh DB) with no identity meaning; and
+//     `fileControl()` returns no file identity. A post-open
+//     statSync(path) would only re-read the PATH, not the opened
+//     file, so it cannot prove the opened inode equals the guarded
+//     inode. CONCLUSION: the guard→open TOCTOU cannot be closed
+//     from inside the process with Bun's API. The enforceable
+//     boundary is an operator-configured allowlisted working
+//     directory: env PRINCIPAL_MIGRATION_ALLOWED_DIR
+//     (colon-separated); when set, the resolved DB path must sit
+//     under one of those directories or the tool refuses (exit 2).
+//     When unset, the tool prints an explicit U-118 WARNING on every
+//     run and the residual stays OPEN. Run the tool only on a copy
+//     in a private directory with no concurrent writers.
 //   - refuses to open a file named app.db or under a ts-spaces path —
 //     checked on the RESOLVED real path, not just the given string;
 //   - refuses ANY symlink as the db path (lstatSync), and refuses a
@@ -143,6 +187,7 @@
 import { Database } from "bun:sqlite";
 import { createHash } from "node:crypto";
 import {
+  appendFileSync,
   chmodSync,
   closeSync,
   fsyncSync,
@@ -157,11 +202,11 @@ import {
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
-const TOOL_VERSION = "v2328-1";
+const TOOL_VERSION = "v2329-1";
 // Backups this tool version accepts for rollback. v2327-1 backups carry
 // no integrity hash (pre-hash format); they are accepted only after
 // every other strict check passes, with an explicit warning (F-066).
-const SUPPORTED_BACKUP_VERSIONS = ["v2327-1", "v2328-1"];
+const SUPPORTED_BACKUP_VERSIONS = ["v2327-1", "v2328-1", "v2329-1"];
 // Retention/ownership note recorded in every backup/archive document
 // (F-067): operator-owned, private, delete securely when no longer
 // needed; never copy to shared storage unencrypted.
@@ -178,6 +223,23 @@ const TABLES: { table: string; column: string; pk: string }[] = [
 function fail(msg: string, code = 1): never {
   console.error(`principal-key-migration: ERROR: ${msg}`);
   process.exit(code);
+}
+
+// F-070 evidence hook: when PRINCIPAL_MIGRATION_FS_TRACE is set to a
+// file path, every filesystem step of writePrivateJsonAtomic() appends
+// one line (`op target`) to that file, so a test can prove the syscall
+// order (write → fsync file → link → unlink temp → open dir → fsync
+// dir → read-back) without changing behaviour when the variable is
+// unset. This is syscall-order evidence, NOT a real power-loss test.
+// Tracing must never break the tool, so failures are swallowed.
+function traceFs(op: string, target: string): void {
+  const tracePath = process.env.PRINCIPAL_MIGRATION_FS_TRACE;
+  if (!tracePath) return;
+  try {
+    appendFileSync(tracePath, `${op} ${target}\n`, "utf8");
+  } catch {
+    /* ignore */
+  }
 }
 
 function parseArgs(argv: string[]): Record<string, string> {
@@ -262,6 +324,26 @@ function guardDbPath(dbPath: string): void {
     }
     if (kst.dev === st2.dev && kst.ino === st2.ino) {
       fail(`refusing database path ${dbPath} — same device/inode as known runtime database ${known}`, 2);
+    }
+  }
+  // U-118 (v2.3.29): allowlisted working directory. Bun SQLite exposes
+  // no fd/inode for the opened file (see header probe note), so the
+  // guard→open TOCTOU cannot be closed from inside the process. When
+  // the operator sets PRINCIPAL_MIGRATION_ALLOWED_DIR
+  // (colon-separated), the resolved DB path must sit under one of those
+  // directories; otherwise refuse. When unset, main() warns on every
+  // run and the residual stays OPEN — see the header note.
+  const allowedDirs = (process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR ?? "").split(":").filter(Boolean);
+  if (allowedDirs.length > 0) {
+    const inside = allowedDirs.some((d) => {
+      const ad = resolve(d);
+      return real === ad || real.startsWith(ad + "/");
+    });
+    if (!inside) {
+      fail(
+        `refusing database path ${dbPath} — resolved path ${real} is outside PRINCIPAL_MIGRATION_ALLOWED_DIR (${allowedDirs.join(":")}); run this tool only on a copy inside an allowlisted private working directory (U-118)`,
+        2,
+      );
     }
   }
 }
@@ -358,7 +440,12 @@ function writePrivateJsonAtomic(outPath: string, doc: unknown, dbPath: string): 
   //      publish is atomic AND exclusive (rename(2) would silently
   //      overwrite — deliberately not used). Then unlink the temp
   //      name; the published file has nlink == 1.
-  //   4. Verify: mode must be exactly 0600 (chmod + re-stat once if
+  //   4. F-070: fsync the PARENT DIRECTORY after link+unlink, so the
+  //      directory entry created by link(2) is durable before any DB
+  //      transaction starts. If the directory cannot be opened or
+  //      fsynced, remove the published output and FAIL CLOSED —
+  //      never claim crash durability the platform did not provide.
+  //   5. Verify: mode must be exactly 0600 (chmod + re-stat once if
   //      needed; if it still is not private, remove the file and
   //      FAIL CLOSED), nlink must be 1, and the bytes read back must
   //      equal what was written.
@@ -369,12 +456,15 @@ function writePrivateJsonAtomic(outPath: string, doc: unknown, dbPath: string): 
   let fd: number;
   try {
     fd = openSync(tmp, "wx", 0o600);
+    traceFs("open-tmp", tmp);
   } catch (e) {
     fail(`cannot create output file ${outPath} (temp ${tmp}): ${e instanceof Error ? e.message : String(e)}`, 1);
   }
   try {
     writeSync(fd, text, "utf8");
+    traceFs("write", tmp);
     fsyncSync(fd);
+    traceFs("fsync-file", tmp);
   } catch (e) {
     try {
       closeSync(fd);
@@ -390,11 +480,13 @@ function writePrivateJsonAtomic(outPath: string, doc: unknown, dbPath: string): 
   }
   try {
     closeSync(fd);
+    traceFs("close-file", tmp);
   } catch {
     /* ignore */
   }
   try {
     linkSync(tmp, outPath);
+    traceFs("link", outPath);
   } catch (e) {
     try {
       unlinkSync(tmp);
@@ -405,11 +497,55 @@ function writePrivateJsonAtomic(outPath: string, doc: unknown, dbPath: string): 
   }
   try {
     unlinkSync(tmp);
+    traceFs("unlink-tmp", tmp);
+  } catch {
+    /* ignore */
+  }
+  // F-070: fsync the parent directory so the link(2) directory entry
+  // is durable before the caller starts any SQLite transaction.
+  let dirFd: number;
+  try {
+    dirFd = openSync(dir, "r");
+    traceFs("open-dir", dir);
+  } catch (e) {
+    try {
+      unlinkSync(outPath);
+    } catch {
+      /* ignore */
+    }
+    fail(
+      `cannot open parent directory ${dir} to fsync it after publishing ${outPath} (F-070 durability) — output removed, failing closed: ${e instanceof Error ? e.message : String(e)}`,
+      1,
+    );
+  }
+  try {
+    fsyncSync(dirFd);
+    traceFs("fsync-dir", dir);
+  } catch (e) {
+    try {
+      closeSync(dirFd);
+    } catch {
+      /* ignore */
+    }
+    try {
+      unlinkSync(outPath);
+    } catch {
+      /* ignore */
+    }
+    fail(
+      `cannot fsync parent directory ${dir} after publishing ${outPath} (F-070 durability) — output removed, failing closed: ${e instanceof Error ? e.message : String(e)}`,
+      1,
+    );
+  }
+  try {
+    closeSync(dirFd);
+    traceFs("close-dir", dir);
   } catch {
     /* ignore */
   }
   // Fail-closed private-mode verification (F-067).
   let st = statSync(outPath);
+  traceFs("stat", outPath);
   if ((st.mode & 0o777) !== 0o600) {
     try {
       chmodSync(outPath, 0o600);
@@ -437,6 +573,7 @@ function writePrivateJsonAtomic(outPath: string, doc: unknown, dbPath: string): 
   let back: string;
   try {
     back = readFileSync(outPath, "utf8");
+    traceFs("read-back", outPath);
   } catch (e) {
     fail(`cannot read back output file ${outPath} for verification: ${e instanceof Error ? e.message : String(e)}`, 1);
   }
@@ -456,21 +593,24 @@ function isInt(n: unknown): n is number {
   return typeof n === "number" && Number.isInteger(n);
 }
 
-/** Row shape for one table: the PK + the principal column the tool uses. */
-function validateBackupRow(table: string, row: any): void {
+/** Row shape for one table: the PK + the principal column the tool uses.
+ * F-069: a failed row reports ONLY table name, row index, failed field,
+ * and expected type — never a value, never the row JSON, never a URL
+ * or principal ID. */
+function validateBackupRow(table: string, row: any, index: number): void {
   if (typeof row !== "object" || row === null || Array.isArray(row)) {
-    fail(`backup row in ${table} is not an object: ${JSON.stringify(row)}`, 2);
+    fail(`backup row #${index} in ${table} is not an object (expected an object row)`, 2);
   }
   if (table === "checks") {
-    if (!isInt(row.id)) fail(`backup checks row missing integer id: ${JSON.stringify(row)}`, 2);
-    if (typeof row.owner_user_id !== "string") fail(`backup checks row missing string owner_user_id: ${JSON.stringify(row)}`, 2);
+    if (!isInt(row.id)) fail(`backup row #${index} in checks: field "id" must be an integer`, 2);
+    if (typeof row.owner_user_id !== "string") fail(`backup row #${index} in checks: field "owner_user_id" must be a string`, 2);
   } else if (table === "saved_projects") {
-    if (typeof row.principal_id !== "string") fail(`backup saved_projects row missing string principal_id: ${JSON.stringify(row)}`, 2);
-    if (!isInt(row.project_id)) fail(`backup saved_projects row missing integer project_id: ${JSON.stringify(row)}`, 2);
+    if (typeof row.principal_id !== "string") fail(`backup row #${index} in saved_projects: field "principal_id" must be a string`, 2);
+    if (!isInt(row.project_id)) fail(`backup row #${index} in saved_projects: field "project_id" must be an integer`, 2);
   } else if (table === "projects") {
-    if (!isInt(row.id)) fail(`backup projects row missing integer id: ${JSON.stringify(row)}`, 2);
+    if (!isInt(row.id)) fail(`backup row #${index} in projects: field "id" must be an integer`, 2);
     if (typeof row.provenance_submitted_by !== "string")
-      fail(`backup projects row missing string provenance_submitted_by: ${JSON.stringify(row)}`, 2);
+      fail(`backup row #${index} in projects: field "provenance_submitted_by" must be a string`, 2);
   }
 }
 
@@ -487,13 +627,13 @@ function validateBackupStructure(backup: any, backupPath: string): any {
     fail(`--backup file is not a JSON object written by this tool: ${backupPath}`, 2);
   }
   if (backup.tool !== "principal-key-migration") {
-    fail(`--backup file was not written by principal-key-migration (tool=${JSON.stringify(backup.tool)}): ${backupPath}`, 2);
+    fail(`--backup file was not written by principal-key-migration (field "tool" must be "principal-key-migration"): ${backupPath}`, 2);
   }
   if (typeof backup.version !== "string" || !SUPPORTED_BACKUP_VERSIONS.includes(backup.version)) {
-    fail(`--backup version ${JSON.stringify(backup.version)} is not supported (supported: ${SUPPORTED_BACKUP_VERSIONS.join(", ")}): ${backupPath}`, 2);
+    fail(`--backup version is not supported (supported: ${SUPPORTED_BACKUP_VERSIONS.join(", ")}): ${backupPath}`, 2);
   }
   if (backup.mode !== "rename-backup") {
-    fail(`--backup mode must be "rename-backup" (got ${JSON.stringify(backup.mode)}): ${backupPath}`, 2);
+    fail(`--backup mode must be "rename-backup": ${backupPath}`, 2);
   }
   // Mapping: non-empty and valid — same rules as rename() (duplicates,
   // malformed entries, chained/cyclic mappings all refused).
@@ -510,7 +650,7 @@ function validateBackupStructure(backup: any, backupPath: string): any {
     if (!Array.isArray(arr)) {
       fail(`--backup is incomplete: rows.${t.table} must be an array (got ${typeof arr}): ${backupPath}`, 2);
     }
-    for (const row of arr) validateBackupRow(t.table, row);
+    for (let i = 0; i < arr.length; i++) validateBackupRow(t.table, arr[i], i);
     totalRows += arr.length;
   }
   if (totalRows === 0) {
@@ -522,15 +662,16 @@ function validateBackupStructure(backup: any, backupPath: string): any {
   for (const t of TABLES) {
     const n = backup.countsBefore[t.table];
     if (!isInt(n) || n < 0) {
-      fail(`--backup countsBefore.${t.table} must be a non-negative integer (got ${JSON.stringify(n)}): ${backupPath}`, 2);
+      fail(`--backup countsBefore.${t.table} must be a non-negative integer: ${backupPath}`, 2);
     }
   }
-  if (backup.version === "v2328-1") {
+  if (backup.version !== "v2327-1") {
+    // Hashed backup formats (v2328-1 and later): integrity is mandatory.
     if (!isInt(backup.totalRows)) {
-      fail(`--backup totalRows must be an integer in v2328-1 backups: ${backupPath}`, 2);
+      fail(`--backup totalRows must be an integer in a hashed backup: ${backupPath}`, 2);
     }
     if (backup.totalRows !== totalRows) {
-      fail(`--backup totalRows ${backup.totalRows} does not match the sum of row sections ${totalRows}: ${backupPath}`, 2);
+      fail(`--backup totalRows does not match the sum of row sections: ${backupPath}`, 2);
     }
     if (
       typeof backup.integrity !== "object" ||
@@ -539,11 +680,11 @@ function validateBackupStructure(backup: any, backupPath: string): any {
       typeof backup.integrity.hash !== "string" ||
       !/^[0-9a-f]{64}$/.test(backup.integrity.hash)
     ) {
-      fail(`--backup integrity { algorithm: "sha-256", hash } is missing or malformed in a v2328-1 backup: ${backupPath}`, 2);
+      fail(`--backup integrity { algorithm: "sha-256", hash } is missing or malformed in a hashed backup: ${backupPath}`, 2);
     }
     const recomputed = backupIntegrityHash(backup);
     if (recomputed !== backup.integrity.hash) {
-      fail(`--backup integrity hash mismatch (stored ${backup.integrity.hash}, recomputed ${recomputed}) — backup was edited or corrupted: ${backupPath}`, 2);
+      fail(`--backup integrity hash mismatch — backup was edited or corrupted: ${backupPath}`, 2);
     }
   } else {
     // v2327-1 legacy backup: no integrity field existed. Accept only
@@ -603,9 +744,10 @@ function archive(db: Database, dbPath: string, keysPath: string, outPath: string
   const keysJson = readJson(keysPath);
   const keys: string[] = Array.isArray(keysJson) ? keysJson : keysJson.keys;
   if (!Array.isArray(keys) || keys.length === 0) fail("--keys file must be a JSON array of legacy key strings (or {\"keys\": [...]})", 2);
-  for (const k of keys) {
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
     if (typeof k !== "string" || k === LEGACY_SENTINEL) {
-      fail(`archive key list must not contain '<LEGACY>' (archive it via archive-special, not this list) — bad key: ${JSON.stringify(k)}`, 2);
+      fail(`archive key list entry #${i} must be a string and must not be '<LEGACY>' (archive it via archive-special, not this list)`, 2);
     }
   }
   const archived: Record<string, any[]> = {};
@@ -679,17 +821,18 @@ function validateMapping(mapping: any): MappingEntry[] {
   }
   const seenLegacy = new Set<string>();
   const seenCurrent = new Set<string>();
-  for (const e of mapping) {
+  for (let i = 0; i < mapping.length; i++) {
+    const e = mapping[i];
     if (typeof e?.legacyKey !== "string" || typeof e?.currentKey !== "string" || typeof e?.basis !== "string" || e.basis.trim() === "") {
-      fail(`each mapping entry needs string legacyKey/currentKey and a non-empty basis (how the mapping was verified): ${JSON.stringify(e)}`, 2);
+      fail(`mapping entry #${i} needs string legacyKey/currentKey and a non-empty basis (how the mapping was verified)`, 2);
     }
     if (e.legacyKey === LEGACY_SENTINEL) fail("mapping must never rename '<LEGACY>' rows — their owner is unknown; archive them instead", 2);
     if (!e.legacyKey.startsWith("local:") || !e.currentKey.startsWith("local:")) {
-      fail(`keys must both be local principals (local:...): ${JSON.stringify(e)}`, 2);
+      fail(`mapping entry #${i}: keys must both be local principals (local:...)`, 2);
     }
-    if (e.legacyKey === e.currentKey) fail(`legacyKey must differ from currentKey: ${JSON.stringify(e)}`, 2);
-    if (seenLegacy.has(e.legacyKey)) fail(`duplicate legacyKey in mapping: ${e.legacyKey}`, 2);
-    if (seenCurrent.has(e.currentKey)) fail(`duplicate currentKey in mapping (ambiguous target): ${e.currentKey}`, 2);
+    if (e.legacyKey === e.currentKey) fail(`mapping entry #${i}: legacyKey must differ from currentKey`, 2);
+    if (seenLegacy.has(e.legacyKey)) fail(`mapping entry #${i}: duplicate legacyKey`, 2);
+    if (seenCurrent.has(e.currentKey)) fail(`mapping entry #${i}: duplicate currentKey (ambiguous target)`, 2);
     seenLegacy.add(e.legacyKey);
     seenCurrent.add(e.currentKey);
   }
@@ -704,7 +847,7 @@ function validateMapping(mapping: any): MappingEntry[] {
   const overlap = [...seenCurrent].filter((k) => seenLegacy.has(k));
   if (overlap.length > 0) {
     fail(
-      `mapping rejected: currentKey(s) ${overlap.join(", ")} also appear as legacyKey(s) — chained/cyclic mapping (A→B,B→C or A↔B) would cascade rows onto the wrong principal depending on order; split into separate non-overlapping mappings with fresh backups per step`,
+      `mapping rejected: ${overlap.length} currentKey(s) also appear as legacyKey(s) — chained/cyclic mapping (A→B,B→C or A↔B) would cascade rows onto the wrong principal depending on order; split into separate non-overlapping mappings with fresh backups per step`,
       2,
     );
   }
@@ -738,7 +881,7 @@ function rename(db: Database, dbPath: string, mappingPath: string, backupPath: s
       .all(m.currentKey, m.legacyKey);
     if (clashes.length > 0) {
       fail(
-        `collision: target ${m.currentKey} already has saved_projects row(s) for project(s) ${clashes.map((c: any) => c.pid).join(",")} also held by ${m.legacyKey} — refusing rename (no writes made)`,
+        `collision: a mapping target already has saved_projects row(s) for ${clashes.length} project(s) also held by the legacy key — refusing rename (no writes made)`,
         2,
       );
     }
@@ -785,10 +928,10 @@ function rename(db: Database, dbPath: string, mappingPath: string, backupPath: s
       for (let i = 0; i < mapping.length; i++) {
         const m = mapping[i];
         const left = rowsForKey(db, t.table, t.column, m.legacyKey);
-        if (left.length > 0) throw new Error(`${t.table} still has ${left.length} row(s) with legacy key ${m.legacyKey}`);
+        if (left.length > 0) throw new Error(`${t.table} still has ${left.length} row(s) with a legacy key`);
         const gotCurrent = rowsForKey(db, t.table, t.column, m.currentKey).length;
         if (gotCurrent !== expectedCurrent[t.table][i]) {
-          throw new Error(`${t.table} key ${m.currentKey}: expected ${expectedCurrent[t.table][i]} row(s), got ${gotCurrent}`);
+          throw new Error(`${t.table} key count mismatch for mapping entry #${i}: expected ${expectedCurrent[t.table][i]} row(s), got ${gotCurrent}`);
         }
       }
     }
@@ -829,29 +972,34 @@ function rollback(db: Database, backup: any, backupPath: string): void {
   }
   const currentKeyFor = (legacyKey: string): string => {
     const hit = mapping.find((x) => x.legacyKey === legacyKey);
-    if (!hit) throw new Error(`backup row has legacy key ${legacyKey} with no mapping entry — refusing to guess`);
+    if (!hit) throw new Error(`backup row has a legacy key with no mapping entry — refusing to guess`);
     return hit.currentKey;
   };
   // F-066: NO `?? []` defaults anywhere — every section was proven
   // present and an array by validateBackupStructure().
+  // F-069: every error below names only the table, the row index, and
+  // the field — never a principal key value or a row's content.
   const checksRows: any[] = backup.rows.checks;
   const savedRows: any[] = backup.rows.saved_projects;
   const projectsRows: any[] = backup.rows.projects;
   try {
-    for (const r of checksRows) {
+    for (let i = 0; i < checksRows.length; i++) {
+      const r = checksRows[i];
       const cur = currentKeyFor(r.owner_user_id);
       const hit: any = db.query("SELECT 1 AS ok FROM checks WHERE id = ? AND owner_user_id = ?").get(r.id, cur);
-      if (!hit) throw new Error(`checks id=${r.id}: expected owner ${cur} (post-rename state), row missing or owner changed — refusing rollback`);
+      if (!hit) throw new Error(`checks row #${i}: pre-validation failed — row not found at its expected post-rename key (field owner_user_id); refusing rollback`);
     }
-    for (const r of savedRows) {
+    for (let i = 0; i < savedRows.length; i++) {
+      const r = savedRows[i];
       const cur = currentKeyFor(r.principal_id);
       const hit: any = db.query("SELECT 1 AS ok FROM saved_projects WHERE principal_id = ? AND project_id = ?").get(cur, r.project_id);
-      if (!hit) throw new Error(`saved_projects (principal=${cur}, project_id=${r.project_id}): row missing or principal changed after rename — refusing rollback`);
+      if (!hit) throw new Error(`saved_projects row #${i}: pre-validation failed — row not found at its expected post-rename key (field principal_id); refusing rollback`);
     }
-    for (const r of projectsRows) {
+    for (let i = 0; i < projectsRows.length; i++) {
+      const r = projectsRows[i];
       const cur = currentKeyFor(r.provenance_submitted_by);
       const hit: any = db.query("SELECT 1 AS ok FROM projects WHERE id = ? AND provenance_submitted_by = ?").get(r.id, cur);
-      if (!hit) throw new Error(`projects id=${r.id}: expected submitted_by ${cur} (post-rename state), row missing or owner changed — refusing rollback`);
+      if (!hit) throw new Error(`projects row #${i}: pre-validation failed — row not found at its expected post-rename key (field provenance_submitted_by); refusing rollback`);
     }
   } catch (e) {
     fail(`rollback refused, no writes made: ${e instanceof Error ? e.message : String(e)}`, 2);
@@ -861,37 +1009,43 @@ function rollback(db: Database, backup: any, backupPath: string): void {
     // F-063 (2): match on the CURRENT key as well as the row id, and
     // require exactly 1 affected row per UPDATE — never overwrite a
     // principal that changed after the rename, never silently skip.
-    for (const r of checksRows) {
+    for (let i = 0; i < checksRows.length; i++) {
+      const r = checksRows[i];
       const info: any = db
         .query("UPDATE checks SET owner_user_id = ? WHERE id = ? AND owner_user_id = ?")
         .run(r.owner_user_id, r.id, currentKeyFor(r.owner_user_id));
-      if (info.changes !== 1) throw new Error(`checks id=${r.id}: expected exactly 1 row updated, got ${info.changes}`);
+      if (info.changes !== 1) throw new Error(`checks row #${i}: expected exactly 1 row updated, got ${info.changes}`);
     }
-    for (const r of savedRows) {
+    for (let i = 0; i < savedRows.length; i++) {
+      const r = savedRows[i];
       const info: any = db
         .query("UPDATE saved_projects SET principal_id = ? WHERE principal_id = ? AND project_id = ?")
         .run(r.principal_id, currentKeyFor(r.principal_id), r.project_id);
-      if (info.changes !== 1) throw new Error(`saved_projects project_id=${r.project_id}: expected exactly 1 row updated, got ${info.changes}`);
+      if (info.changes !== 1) throw new Error(`saved_projects row #${i}: expected exactly 1 row updated, got ${info.changes}`);
     }
-    for (const r of projectsRows) {
+    for (let i = 0; i < projectsRows.length; i++) {
+      const r = projectsRows[i];
       const info: any = db
         .query("UPDATE projects SET provenance_submitted_by = ? WHERE id = ? AND provenance_submitted_by = ?")
         .run(r.provenance_submitted_by, r.id, currentKeyFor(r.provenance_submitted_by));
-      if (info.changes !== 1) throw new Error(`projects id=${r.id}: expected exactly 1 row updated, got ${info.changes}`);
+      if (info.changes !== 1) throw new Error(`projects row #${i}: expected exactly 1 row updated, got ${info.changes}`);
     }
     // F-063 (3): POSTCONDITION before COMMIT — every backup row is
     // back on its legacy key, and per-table counts are unchanged.
-    for (const r of checksRows) {
+    for (let i = 0; i < checksRows.length; i++) {
+      const r = checksRows[i];
       const hit: any = db.query("SELECT 1 AS ok FROM checks WHERE id = ? AND owner_user_id = ?").get(r.id, r.owner_user_id);
-      if (!hit) throw new Error(`postcondition failed: checks id=${r.id} not restored to ${r.owner_user_id}`);
+      if (!hit) throw new Error(`postcondition failed: checks row #${i} not restored (field owner_user_id)`);
     }
-    for (const r of savedRows) {
+    for (let i = 0; i < savedRows.length; i++) {
+      const r = savedRows[i];
       const hit: any = db.query("SELECT 1 AS ok FROM saved_projects WHERE principal_id = ? AND project_id = ?").get(r.principal_id, r.project_id);
-      if (!hit) throw new Error(`postcondition failed: saved_projects project_id=${r.project_id} not restored to ${r.principal_id}`);
+      if (!hit) throw new Error(`postcondition failed: saved_projects row #${i} not restored (field principal_id)`);
     }
-    for (const r of projectsRows) {
+    for (let i = 0; i < projectsRows.length; i++) {
+      const r = projectsRows[i];
       const hit: any = db.query("SELECT 1 AS ok FROM projects WHERE id = ? AND provenance_submitted_by = ?").get(r.id, r.provenance_submitted_by);
-      if (!hit) throw new Error(`postcondition failed: projects id=${r.id} not restored to ${r.provenance_submitted_by}`);
+      if (!hit) throw new Error(`postcondition failed: projects row #${i} not restored (field provenance_submitted_by)`);
     }
     for (const t of TABLES) {
       const after = countRows(db, t.table);
@@ -919,6 +1073,16 @@ function main(): void {
     process.exit(2);
   }
   guardDbPath(dbPath);
+  // U-118: when no allowlisted working directory is configured, say so
+  // on every run — the guard→open TOCTOU residual is OPEN and the
+  // operator must run only on a copy in a private directory with no
+  // concurrent writers. (When PRINCIPAL_MIGRATION_ALLOWED_DIR is set,
+  // guardDbPath() enforces it instead.)
+  if (!process.env.PRINCIPAL_MIGRATION_ALLOWED_DIR) {
+    console.error(
+      "principal-key-migration: WARNING: PRINCIPAL_MIGRATION_ALLOWED_DIR is not set — U-118 residual TOCTOU open: run this tool only on a copy in a private directory with no concurrent writers",
+    );
+  }
   const flags = parseArgs(rest);
   // F-066: validate the rollback backup (structure + integrity) BEFORE
   // opening the database, so an incomplete/malformed backup is refused

@@ -72,7 +72,7 @@ type Contract = z.infer<typeof contractSchema>;
 type Check = z.infer<typeof checkSchema>;
 type Verdict = Check["verdict"];
 
-/** Domains confirmed as drainers in the user's own 2026-11-07 incident. */
+/** Domains confirmed as drainers (maintained blocklist). */
 const KNOWN_BAD_DOMAINS = new Set(["solbarn.cc", "sharkmoon.tech"]);
 const isKnownBadDomain = (d: string): boolean => KNOWN_BAD_DOMAINS.has(d);
 
@@ -296,7 +296,7 @@ interface FetchResult {
 /**
  * Fetches a page following redirects MANUALLY (max 6 hops) so the full
  * redirect chain is recorded: a claim link that quietly hops across domains
- * (the exact 7 Nov 2026 drainer pattern) must show every hop, not just the
+ * (the redirect-chain drainer pattern) must show every hop, not just the
  * landing page. Returns null when the page cannot be fetched at all.
  */
 // ---- Cache in-memory hasil fetch + RDAP (performa, S7) ----
@@ -785,7 +785,7 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
       status: "bahaya",
       label: "Domain ini sudah terbukti menguras wallet",
       detail:
-        "Tercatat dari kejadian 7 Nov 2026: link klaim airdrop palsu yang mengarahkan ke halaman connect wallet dan menguras isi wallet Solana dalam satu transaksi. Jangan buka, jangan connect wallet apa pun ke domain ini.",
+        "Domain ini tercatat sebagai drainer: link klaim airdrop palsu yang mengarahkan ke halaman connect wallet dan menguras isi wallet dalam satu transaksi. Jangan buka, jangan connect wallet apa pun ke domain ini.",
     });
   }
 
@@ -872,8 +872,8 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
     pageTitle = html.match(/<title[^>]*>([^<]{1,160})<\/title>/i)?.[1]?.trim() ?? null;
 
     // The known-drainer list applies to EVERY hop, not just the pasted
-    // domain: a clean-looking link that redirects through solbarn.cc or
-    // sharkmoon.tech is the same drainer wearing a different front door.
+    // domain: a clean-looking link that redirects through a known
+    // drainer domain is the same drainer wearing a different front door.
     const chainHitsBad =
       !knownBad &&
       page.chain.some(
@@ -885,7 +885,7 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
         id: "known_bad_redirect",
         status: "bahaya",
         label: "Rantai redirect melewati domain drainer yang terbukti",
-        detail: `Link ini memang bukan ${[...KNOWN_BAD_DOMAINS].join(" / ")} secara langsung, tapi rantai redirect-nya melewati salah satu domain itu (${page.chain.join(" → ")}). Keduanya tercatat menguras wallet pada kejadian 7 Nov 2026. Jangan lanjutkan, jangan connect wallet.`,
+        detail: `Link ini memang bukan ${[...KNOWN_BAD_DOMAINS].join(" / ")} secara langsung, tapi rantai redirect-nya melewati salah satu domain yang tercatat sebagai drainer (${page.chain.join(" → ")}). Jangan lanjutkan, jangan connect wallet.`,
       });
     }
 
@@ -899,7 +899,7 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
           id: "redirect",
           status: "bahaya",
           label: "Link berbelok ke domain lain",
-          detail: `Rantai redirect: ${chainText}. Kamu memasukkan domain ${domain}, tapi halaman berakhir di ${finalHost}. Pola persis kejadian 7 Nov 2026: link awal terlihat biasa, lalu diarahkan ke domain lain tempat connect wallet diminta.`,
+          detail: `Rantai redirect: ${chainText}. Kamu memasukkan domain ${domain}, tapi halaman berakhir di ${finalHost}. Polanya: link awal terlihat biasa, lalu diarahkan ke domain lain tempat connect wallet diminta.`,
         });
       } else if (page.chain.length >= 3) {
         score += 10;
@@ -989,7 +989,7 @@ async function analyze(input: URL, opts?: { forceFresh?: boolean; testHooks?: Fe
         id: "signing",
         status: "bahaya",
         label: "Kode halaman bisa meminta tanda tangan transaksi",
-        detail: "Di dalam script halaman ditemukan fungsi penandatanganan transaksi. Di tangan situs palsu, satu tanda tangan dari kamu cukup untuk memindahkan isi wallet — persis mekanisme drainer.",
+        detail: "Di dalam script halaman ditemukan fungsi penandatanganan transaksi. Di tangan situs palsu, satu tanda tangan dari kamu cukup untuk memindahkan isi wallet.",
       });
     }
 
@@ -1822,7 +1822,7 @@ const gibranMessageSchema = z.object({
 });
 
 const GIBRAN_SITE_KNOWLEDGE = `TENTANG PLATFORM:
-- AIRDROP GENERATE dibangun oleh anak bangsa Indonesia. Pembuatnya bernama Rama, yang mendirikan platform ini setelah mengalami sendiri kehilangan aset karena link klaim airdrop palsu (kejadian pengurasan wallet pada 7 Nov 2026). Misinya: membantu orang Indonesia agar tidak tertipu link airdrop palsu, dan membagikan airdrop yang sudah diverifikasi.
+- AIRDROP GENERATE dibangun oleh anak bangsa Indonesia. Pembuatnya bernama Rama, yang mendirikan platform ini setelah mengalami sendiri kehilangan aset karena link klaim airdrop palsu. Misinya: membantu orang Indonesia agar tidak tertipu link airdrop palsu, dan membagikan airdrop yang sudah diverifikasi.
 - AIRDROP GENERATE adalah proyek independen — bukan lembaga resmi dan tidak berafiliasi dengan Binance atau proyek mana pun di katalog.
 - Kredit pembuat ada di bagian Tentang dan di footer: dibuat oleh Rama. Tautan Instagram resmi pembuat belum ditambahkan (menunggu pemiliknya memberikannya) — jangan mengarang handle Instagram apa pun, dan jangan menyebutkan handle X siapa pun sebagai Instagram pembuat.
 
@@ -1835,7 +1835,7 @@ CARA MEMAKAI PLATFORM AIRDROP GENERATE:
 - Tombol Hubungkan Wallet di navbar hanya membuka dialog penjelasan: platform ini hanya-baca, koneksi wallet sengaja belum diaktifkan, dan tidak ada fitur di situs ini yang bisa memulai atau menandatangani transaksi.
 
 PANDUAN KEAMANAN DI SITUS INI:
-1. Cek link dulu sebelum klik (60 detik): tempel link ke fitur Cek Link sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik situs drainer — pola persis di balik pengurasan wallet Solana pada 7 Nov 2026 yang terdokumentasi di platform ini (situs klaim "$SCAMSEM AIRDROP" palsu mengarahkan ke halaman connect wallet dan menguras isi wallet dalam satu transaksi yang ditandatangani).
+1. Cek link dulu sebelum klik (60 detik): tempel link ke fitur Cek Link sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik situs drainer.
 2. Baca kontraknya, bukan hitung mundurnya: proyek asli selalu bisa menunjukkan alamat kontraknya. Buka di explorer jaringan: cek tanggal deploy, jumlah holder, dan apakah alamatnya cocok dengan yang diumumkan kanal resmi proyek. Tidak ada alamat = tidak ada kepercayaan.
 3. Connect bukan bahayanya — tanda tanganlah bahayanya: connect wallet hanya membuka alamat publik. Pengurasan terjadi di langkah tanda tangan: satu persetujuan signTransaction bisa memindahkan semuanya. Pakai wallet burner terpisah untuk apa pun yang belum terbukti, dan jangan pernah menandatangani transaksi yang tidak bisa kamu baca.
 4. Gratis berarti gratis: "free mint" yang diam-diam menambah biaya proses, tingkatan berbayar, atau langkah pembayaran di luar situs bukanlah gratis. Katalog situs ini hanya memuat peluang yang jalur gratisnya sudah di-preview dan terkonfirmasi bernilai 0.

@@ -1133,7 +1133,7 @@ function CheckerSection({
             className="mt-3 text-left text-sm text-[var(--dim)] underline"
             onClick={() => setInput("https://scamsem.solbarn.cc/")}
           >
-            Isi contoh: link yang menguras wallet pada 7 Nov 2026 (scamsem.solbarn.cc)
+            Isi contoh: link klaim palsu (scamsem.solbarn.cc)
           </button>
 
           <h3 className="font-display mt-8 text-lg font-bold">Riwayat pemeriksaan</h3>
@@ -1196,8 +1196,8 @@ function CheckerSection({
       <p className="mt-8 max-w-3xl text-xs leading-relaxed text-[var(--dim)]">
         Pemeriksa membaca kode halaman secara statis, mengikuti rantai redirect-nya selangkah
         demi selangkah, dan membaca data pendaftaran domain (RDAP) — tanpa menjalankan script
-        situs dan tanpa connect wallet. Domain yang terbukti menguras wallet (solbarn.cc dan
-        sharkmoon.tech, dari kejadian 7 Nov 2026) selalu divonis BAHAYA, termasuk bila hanya
+        situs dan tanpa connect wallet. Domain yang tercatat sebagai drainer (solbarn.cc dan
+        sharkmoon.tech) selalu divonis BAHAYA, termasuk bila hanya
         dilewati oleh rantai redirect. Vonis hijau bukan jaminan: situs bisa berubah setelah
         dicek, dan tanda tangan transaksi tetap harus dibaca satu per satu di wallet.
       </p>
@@ -1209,7 +1209,7 @@ function GuideSection() {
   const guides = [
     {
       title: "Sebelum mengklik: cek link 60 detik",
-      body: "Tempel link-nya ke pemeriksa di atas sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik drainer — pola persis di balik pengurasan wallet pada 7 Nov 2026 yang terdokumentasi di platform ini.",
+      body: "Tempel link-nya ke pemeriksa di atas sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik drainer.",
     },
     {
       title: "Baca kontraknya, bukan hitung mundurnya",

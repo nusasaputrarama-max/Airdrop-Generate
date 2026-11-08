@@ -1,0 +1,39 @@
+U-118 probe — can Bun SQLite verify the opened DB file's identity?
+Run: 2026-11-09 ~00:55 WIB, VM, Bun 1.4.4, bun:sqlite 3.53.4
+Method: open a disposable DB with bun:sqlite, enumerate the Database
+instance's identity surface (own keys, filename, PRAGMA database_list,
+fileControl, handle/fd properties).
+
+--- probe 1 output ---
+keys: [ "filename" ]
+filename prop: /tmp/u118-probe.db
+typeof serialize: function
+database_list: [{"seq":0,"name":"main","file":"/tmp/u118-probe.db"}]
+sqlite_version: {"v":"3.53.4"}
+stat dev/ino/nlink: 85 11 1
+has $handle/fd/_fd: false false false
+proto: [ "constructor", "handle", "inTransaction", "loadExtension", "serialize", "fileControl", "close", "clearQueryCache", "run", "function", "aggregate", "onInsert", "onUpdate", "onDelete", "prepare", "query", "transaction", "exec" ]
+
+--- probe 2 output ---
+handle: number 0
+filename: /tmp/u118-probe2.db
+fileControl 30 -> number 12
+fileControl 31 -> number 12
+fileControl 32 -> number 12
+
+--- conclusion ---
+- Database exposes only `filename` (the path string as given) and
+  PRAGMA database_list returns the path string only. Neither is an
+  inode/device identity.
+- No fd property exists ($handle/fd/_fd all absent). `db.handle` is a
+  bare number (0 on a fresh DB) with no identity meaning.
+  `fileControl()` returns no file identity (opcodes 30/31/32 all
+  return the same bare number 12).
+- A post-open statSync(path) would only re-read the PATH, not the
+  opened file, so it cannot prove the opened inode equals the guarded
+  inode. The guard->open TOCTOU therefore CANNOT be closed from
+  inside the process with Bun's API.
+- Enforceable boundary instead: operator-configured allowlisted
+  working directory (env PRINCIPAL_MIGRATION_ALLOWED_DIR, enforced
+  in guardDbPath(); explicit U-118 WARNING on every run when unset).
+  Residual U-118 stays OPEN.

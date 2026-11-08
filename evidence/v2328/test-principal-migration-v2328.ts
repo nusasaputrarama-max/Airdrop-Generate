@@ -1,6 +1,7 @@
-// test-principal-migration-v2328.ts — F-065..F-068 (v2.3.28, audit V22):
+// test-principal-migration-v2328.ts — F-065..F-068 (v2.3.28, audit V22),
+// re-run under tool v2329-1 (v2.3.29, audit V23):
 // principal-key migration tool (evidence/v2326/principal-key-migration.ts,
-// TOOL_VERSION v2328-1).
+// TOOL_VERSION v2329-1).
 //
 // Audit V22 found four follow-on flaws in the v2.3.27 tool:
 //   F-065 High   backup/archive output paths unprotected — an output
@@ -609,7 +610,7 @@ test("H-MIGR-32", "sanity: valid archive + rename + rollback succeed with integr
     eq(r1.status, 0, `valid rename must exit 0 (stderr: ${r1.stderr})`);
     assert(existsSync(r1.backupFile), "valid rename must write a backup JSON");
     const backup = JSON.parse(readFileSync(r1.backupFile, "utf8"));
-    eq(backup.version, "v2328-1", "backup must record the new tool version v2328-1");
+    eq(backup.version, "v2329-1", "backup must record the new tool version v2329-1");
     eq(backup.integrity.algorithm, "sha-256", "backup must record integrity algorithm sha-256");
     assert(/^[0-9a-f]{64}$/.test(backup.integrity.hash), "backup integrity hash must be 64 hex chars");
     eq(backup.totalRows, 5, "backup totalRows must be 5 (2 checks + 2 saved + 1 provenance)");
