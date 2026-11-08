@@ -58,6 +58,11 @@ Exit code 0 = semua PASS. Setiap harness gagal pada
 | `drizzle-kit-generated/0000_ambitious_firelord.sql` | `2cfe202e…` | DDL dari `schema.ts` asli (drizzle-kit 0.31.4) — DK-01..07 PASS, tanpa divergensi semantik |
 | `drizzle-kit-generated/0000_snapshot.json` | `ed2ad065…` | Snapshot drizzle-kit |
 | `drizzle-kit-generated/README.md` | `850dd957…` | Catatan generasi DDL (termasuk: `bun x drizzle-kit` gagal resolve di VM — dipakai binary lokal 0.31.4 yang sama) |
+| `test-registrable-domain-v2323.ts` | `206015b8…` | Harness H-RD (10 test) — D-11 registrableDomain IP-literal |
+| `test-registrable-domain-v2323.txt` | `cfe9eed1…` | Log final: **10 PASS / 0 FAIL, exit 0** |
+| `test-registrable-domain-v2323-old-code-fail.txt` | `cf75a4db…` | Log kode lama: **7 PASS / 3 FAIL, exit 1** (bug terbukti) |
+| `test-registrable-domain-v2323.sha256` | `b358df9b…` | SHA-256 harness + log final + log fail |
+| `verify-r3.sha256` | `f0288ce0…` | SHA-256 7 log regresi round 3 (`.verify-r3.txt`, 312/312 PASS) |
 
 (SHA lengkap 64 hex ada di file `.sha256` masing-masing; tabel
 di atas memakai 8 hex pertama + `…` sesuai konvensi matriks.)

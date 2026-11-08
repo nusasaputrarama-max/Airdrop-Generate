@@ -85,7 +85,15 @@ const TWO_LEVEL_SUFFIXES = new Set([
 // Exported for harness verification only (NOT an action — the Actions map
 // is the only invocable surface). H-RD tests import it directly.
 export function registrableDomain(hostname: string): string {
-  const labels = hostname.toLowerCase().split(".").filter(Boolean);
+  const host = hostname.toLowerCase();
+  // IP literals are not domains: return them whole. Otherwise the
+  // last-two-labels rule mangles 127.0.0.1 into "0.1" and RDAP then
+  // queries a nonsense domain (rdap.org/domain/0.1).
+  if (host.includes(":")) return host; // IPv6 literal
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length > 0 && labels.every((l) => /^\d+$/.test(l))) {
+    return labels.join("."); // IPv4 / all-numeric literal
+  }
   if (labels.length <= 2) return labels.join(".");
   const lastTwo = labels.slice(-2).join(".");
   if (TWO_LEVEL_SUFFIXES.has(lastTwo)) return labels.slice(-3).join(".");
