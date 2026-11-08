@@ -1,0 +1,30 @@
+  fixture: wire=520 B, decoded=500000 B
+  L0/L1: wireBytes=520, decodedBytes=500000 (L0 != L1, terpisah)
+PASS H-RES-13
+  early-stop: pushed=524288 dari 2.000.000 B, destroyed=true
+PASS H-RES-02
+  page: OK decoded=400000, budget.used=400000
+  script-1: OK decoded=300000, budget.used=700000
+  script-2: OK decoded=300000, budget.used=1000000
+  script-3: GAGAL (aggregate-cap), budget.used=1000000
+PASS H-RES-07
+  race: fulfilled=0, rejected=2, budget.used=500000
+    rejected: aborted
+    rejected: aggregate-cap
+PASS H-RES-14
+  gzip bomb: wire=1973 B -> decoded>1MB, ditolak decoded-cap
+PASS H-RES-05a-gzip-bomb
+PASS H-RES-05b-deflate-ok
+PASS H-RES-05c-brotli-ok
+PASS H-RES-05d-unknown-encoding
+PASS H-RES-05e-multiple-encoding
+PASS H-RES-05f-corrupt-gzip
+PASS H-RES-05g-content-length-cap
+PASS H-RES-06a-deadline-constant
+  abort dalam 502 ms (signal 500 ms, drip 2 detik/chunk)
+PASS H-RES-06b-slow-drip-abort-500ms
+PASS H-RES-07-serial
+  abort total dalam 20002 ms (deadline TOTAL_DEADLINE_MS=20000)
+PASS H-RES-15
+
+==== RINGKASAN test-resource-v2323: PASS 15 / FAIL 0 ====

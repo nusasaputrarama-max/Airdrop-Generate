@@ -1,0 +1,8 @@
+PASS H-AUTH-01 anonymous (no viewer) -> rejected, 0 rows
+PASS H-AUTH-02 local non-owner -> rejected, 0 rows
+PASS H-AUTH-03 Cloudflare non-owner share viewer -> rejected, 0 rows
+PASS H-AUTH-04 local owner -> succeeds, provenance = local principal
+PASS H-AUTH-05 Cloudflare owner -> succeeds, provenance = cloudflare-owner principal
+PASS H-AUTH-06 three rejections in a row create zero rows total
+
+H-AUTH: 6 PASS / 0 FAIL (total 6)

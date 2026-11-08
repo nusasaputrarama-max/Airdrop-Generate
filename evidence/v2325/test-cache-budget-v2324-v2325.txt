@@ -1,0 +1,6 @@
+PASS H-CB-01 cache hit men-charge budget: 300 KB x2 -> used 600 KB
+PASS H-CB-02 agregat 1 MB ditegakkan lintas cache hit: 900 KB lolos, +300 KB ditolak
+PASS H-CB-03 cache hit dengan budget fresh tetap dilayani
+PASS H-CB-04 decodedBytes eksak untuk body 100 KB
+
+H-CB: 4 PASS / 0 FAIL (total 4)

@@ -1,0 +1,7 @@
+PASS H-AN-01 mode default OFF: dua anon setProjectState -> 0 baris; keduanya lihat default
+PASS H-AN-02 baris '<LEGACY>' yang di-seed TIDAK terbaca anon saat mode OFF
+PASS H-AN-03 mode ON: anon membaca + menulis baris '<LEGACY>' yang sama; OFF lagi -> default
+PASS H-AN-04 viewer share Cloudflare non-owner tetap disabled bahkan saat mode ON
+PASS H-AN-05 kontrol positif: local owner bookmark tersimpan; anon (OFF) tidak melihatnya
+
+H-AN: 5 PASS / 0 FAIL (total 5)

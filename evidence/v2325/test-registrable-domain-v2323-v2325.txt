@@ -1,0 +1,12 @@
+[PASS] H-RD-01 IPv4 loopback 127.0.0.1 stays whole (0 ms)
+[PASS] H-RD-02 IPv4 public 8.8.8.8 stays whole (0 ms)
+[PASS] H-RD-03 IPv4 private 192.168.1.1 stays whole (0 ms)
+[PASS] H-RD-04 IPv6 loopback ::1 stays whole (0 ms)
+[PASS] H-RD-05 IPv6 2001:db8::1 stays whole (0 ms)
+[PASS] H-RD-06 bare domain contoh.com unchanged (0 ms)
+[PASS] H-RD-07 two-level suffix sub.contoh.co.id -> contoh.co.id (0 ms)
+[PASS] H-RD-08 www.google.com -> google.com (0 ms)
+[PASS] H-RD-09 sub.example.com -> example.com (0 ms)
+[PASS] H-RD-10 case: SUB.EXAMPLE.COM -> example.com (0 ms)
+
+PASS 10 / FAIL 0 (total 10)

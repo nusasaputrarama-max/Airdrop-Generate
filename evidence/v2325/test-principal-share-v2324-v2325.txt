@@ -1,0 +1,8 @@
+PASS H-PRIN-01 listChecks: dua viewer satu share -> [] (baris share lama tak terbaca)
+PASS H-PRIN-02 deleteCheck: viewer share tak bisa hapus baris orang lain
+PASS H-PRIN-03 askGibran: prompt viewer share tanpa riwayat orang lain; owner dapat riwayatnya
+PASS H-PRIN-04 setProjectState viewer share -> no-op; kedua viewer lihat default
+PASS H-PRIN-05 kontrol positif: local owner bookmark tersimpan + terisolasi
+PASS H-PRIN-06 runCheck viewer share -> baris owner NULL; listChecks tetap []
+
+H-PRIN: 6 PASS / 0 FAIL (total 6)

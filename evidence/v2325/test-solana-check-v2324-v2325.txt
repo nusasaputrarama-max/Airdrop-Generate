@@ -1,0 +1,7 @@
+PASS H-B58-01 direct INSERT Solana non-base58 -> DITOLAK CHECK
+PASS H-B58-02 direct UPDATE ke alamat non-base58 -> DITOLAK, baris utuh
+PASS H-B58-03 positif: base58 valid + NULL + EVM lolos; EVM non-hex ditolak
+PASS H-B58-04 kesetaraan app-vs-DB: canonicalize setuju dengan CHECK
+PASS H-B58-05 down 0008 via sqlite3 CLI: CHECK kembali ke 0006, baris + skema lain utuh
+
+H-B58: 5 PASS / 0 FAIL (total 5)
