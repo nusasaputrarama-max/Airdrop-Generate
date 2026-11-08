@@ -3,7 +3,8 @@
 **Tanggal:** 8 November 2026  
 **Repository:** `nusasaputrarama-max/Airdrop-Generate`  
 **Audit branch:** `main`  
-**Main baseline:** `c0efbfdec67b6d6d48843162d292c88f8ddf9233` (V17)  
+**Main baseline at audit start:** `c0efbfdec67b6d6d48843162d292c88f8ddf9233` (V17)  
+**V18 audit commit:** `75fc5eee964fc8c068a9393b489865b0c85917b3` (this report; main HEAD immediately after initial publication)  
 **Development HEAD:** `2ed09a5b478fc2476afc57a3dd5847c2315f41c6`  
 **Development comparison:** `main...development` = 28 commits ahead, 1 behind; merge base `7e8281895e2d1844278b4814561b6037ed0ecca0` (V16)  
 **Status:** **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE — NOT READY FOR COMMUNITY BETA**
@@ -206,7 +207,7 @@ Staging readiness `STAGING_READINESS_V2323.md` states that no staging operator, 
 The existing owner authorization for isolated development-branch implementation remains sufficient. Do not ask the owner to carry messages or reconfirm development authorization. Keep all work on `development`; do not modify `main` application source, production, live artifact, deployment configuration, database/catalog, or enable Link Scanner.
 
 1. **Synchronize the development branch with current main.**
-   - Merge current main HEAD `c0efbfdec67b6d6d48843162d292c88f8ddf9233` into `development`, preserving all Muse commits.
+   - Merge the latest main HEAD into `development`, including V17 and this V18 audit. At the initial V18 publication, main advanced to `75fc5eee964fc8c068a9393b489865b0c85917b3`; re-read main HEAD before merging so no newer audit is skipped. Preserve all Muse commits.
    - Acceptance: compare reports no behind commits; record exact merge commit and resulting HEAD. Do not merge development application changes into main.
 
 2. **Close F-049 using the IANA registries.**
