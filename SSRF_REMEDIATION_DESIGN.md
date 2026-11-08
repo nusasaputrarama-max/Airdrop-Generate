@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.23 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.23 — **DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR RELEASE** (status keseluruhan TIDAK berubah oleh revisi ini). **PERUBAHAN v2.3.23:** implementasi di branch pengembangan terisolasi `dev` DIOTORISASI (V16 §1 + penilaian U-99 + direktif owner `c53fd73`) dan DIEKSEKUSI dalam revisi ini (D-01..D-04 + F-001/F-002/F-003 — lihat §D.4.34); otorisasi itu TIDAK mencakup merge ke `main`, produksi, live artifact, atau rilis/beta.
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **Respons atas audit independen V16:** `SSRF_RESPONSE_MATRIX_V2323.md` (implementasi D-01..D-04 di branch `dev` + jawaban handoff V16 §6 7 butir — lihat §D.4.34). **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.24 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.24 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **Respons atas audit independen V16:** `SSRF_RESPONSE_MATRIX_V2323.md` (implementasi D-01..D-04 di branch `development` + jawaban handoff V16 §6 7 butir — lihat §D.4.34, yang hanya ada di branch `development`, commit `31c3db3`; `main` tidak pernah menerima revisi v2.3.23 sebagai dokumen). **Respons atas audit independen V18:** `SSRF_RESPONSE_MATRIX_V2324.md` (F-049..F-056 diimplementasikan di branch `development` + jawaban handoff V18 §7 10 butir — lihat §D.4.35). **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -77,6 +77,20 @@
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
 
+## Perubahan di revisi v2.3.24 (8 November 2026)
+
+| # | Lokasi perubahan | Isi perubahan |
+| --- | --- | --- |
+| 1 | §D.4.35 (baru) + matriks §2 butir 1 | **Sinkronisasi development dengan main:** main HEAD saat re-read `1699706` (V18 `75fc5ee` + klarifikasi `1699706`); merge commit `32731defe190694fc49efad6ca259c5a5e03b905` (tanpa konflik); setelah merge `git log origin/main --not HEAD` = 0. Tidak ada merge balik development→main. |
+| 2 | §D.4.35 (baru) + matriks §2 butir 2 | **F-049 — korpus IANA lengkap (fetch live):** kedua registry IANA diambil langsung 2026-11-08 ~16:25 WIB (Last Updated 2025-10-09, sama dengan klaim audit V18); korpus per-entri di `evidence/v2324/iana-registry-corpus-v2324.md` (branch `development`). Tambah DENY `192.88.99.0/24` (termasuk `192.88.99.2/32`), `5f00::/16`, default-deny `2001::/23` dengan exception GR=True; exception GR=True di dalam prefix GR=False tetap ALLOW (`192.0.0.9/32`, `192.0.0.10/32`). **Keputusan 2001:20::/28 = ALLOW** mengikuti IANA (ORCHIDv2 GR=True, identifier kriptografis bukan host routable; kebijakan lebih ketat tidak diadopsi); H-SSRF-04 diperbaiki. H-IP 8/8 PASS. Tindak lanjut: registry-diff test berkala (U-108). |
+| 3 | §D.4.35 (baru) + matriks §2 butir 3 | **F-050 — otorisasi addProject di handler:** gate owner-only (`isAddProjectAuthorized`) DI DALAM handler sebelum akses DB; tidak mengandalkan asumsi dispatch-layer SDK. H-AUTH 6/6 PASS (anonim/non-owner/viewer share → 0 baris). Kejujuran batas: tidak ada service principal terjadwal di codebase/runtime — gate = owner-only; definisi service identity terjadwal butuh keputusan + staging proof (U-109). |
+| 4 | §D.4.35 (baru) + matriks §2 butir 4 | **F-051 — semantik principal didesain ulang:** viewer share Cloudflare non-owner → principal null: tanpa history, saved state nonaktif (`setProjectState` no-op), Gibran tanpa riwayat; owner Cloudflare → `cloudflare-owner:{shareId}`. Tidak ada label user-scoped pada baris share-scoped. H-PRIN 6/6 PASS. Trade-off diakui: viewer share kehilangan saved state by design. `ctx.viewer` runtime NOT VERIFIED (STAGE-P02, baris readiness 21 baru). |
+| 5 | §D.4.35 (baru) + matriks §2 butir 5 | **F-052 + F-053 — deadline batas keras + timeout tidak tersimpan:** DNS di-race melawan per-query 5 dtk DAN deadline total; `deadline.aborted` dicek sebelum cache read dan sebelum tiap script; lease TTL 25 dtk dipertahankan dengan alasan tertulis (deadline batas keras + unwind <1 dtk di VM). `ScanTimeoutError` di 3 checkpoint analyze; `runCheck` → error timeout eksplisit retryable, tanpa insert baris. H-DL 6/6 + H-TO-01 PASS (elapsed 20015 ms, 0 baris, lease 0). Timing runtime NOT VERIFIED (baris readiness 23 baru). |
+| 6 | §D.4.35 (baru) + matriks §2 butir 6 | **F-054 — akuntansi agregat pada cache hit:** opsi simpan-panjang + reserve: `FetchResult.decodedBytes` disimpan per cache entry dan di-reserve via `tryReserve` sebelum hit dilayani (900 KB lolos, +300 KB ditolak). H-CB 4/4 PASS. RDAP cache tetap berbudget sendiri by design. |
+| 7 | §D.4.35 (baru) + matriks §2 butir 7 | **F-055 — CHECK Solana base58 penuh:** migrasi 0008 (`site/drizzle/0008_solana_base58_check.sql`, journal idx 7) — CHECK cabang Solana kini allowlist penuh (`NOT GLOB '*[^1-9A-HJ-NP-Za-km-z]*'`), setara validator aplikasi; `schema.ts` + `catalog.ts` diselaraskan; DDL drizzle-kit diregenerasi (diff hanya cabang CHECK Solana); down migration diuji. H-B58 5/5 PASS; H-MIG re-run 232/232 (8 migrasi). Pre-check operator V1 wajib sebelum migrate di DB berisi data (U-110, baris readiness 22 baru). |
+| 8 | §D.4.35 (baru) + matriks §2 butir 8 | **F-056 — same-origin tiap hop redirect:** `opts.allowedOrigin` ditegakkan di setiap hop redirect fetch script sebelum koneksi hop berikutnya; `analyze` meneruskan `pageOrigin`. H-SO 5/5 PASS (redirect relatif same-origin tetap diikuti). |
+| 9 | §D.4.35 + matriks §2 butir 9–10 + §8 | **D-06/T-01/landing jujur + koreksi total:** D-06 stub SDK tidak disentuh; clean-clone TIDAK diulang (tidak ada perubahan material — protokol butir 6). T-01 tetap BLOCKED. Landing page tidak disentuh; URL publik tidak diklaim. **KOREKSI TOTAL (DL-24-01):** regresi penuh v2.3.24 adalah **363/363 PASS** (bukan 353/353 seperti tertulis di matriks development — H-RD 10/10 tidak dijumlahkan); koordinator memverifikasi independen ke-16 SHA-256 log (16/16 cocok), ekor tiap log, dan typecheck exit 0 (diulang). Bukti mentah TIDAK diduplikasi ke `main` (DL-24-02 — rujuk branch `development` + SHA commit). |
+| 10 | §D.4.35 + matriks §5 + §10 | **Risiko baru U-108..U-112** (registry-diff berkala, service identity terjadwal, pre-check migrasi 0008, total regresi salah hitung — DIKOREKSI, re-run 0006 mengembalikan CHECK lemah). Gate **G-L diperbarui** (V19 + K-1/K-4/K-10 + T-01 + M-1/M-2 + U-108/U-109/U-110 + staging G-E). F-049..F-056 addressed (dev + VM); staging tetap BLOCKED; F-019/F-028 NOT VERIFIED; F-030 CONFIRMED BLOCKER. |
 ## Perubahan di revisi v2.3.23 (8 November 2026)
 
 Revisi ini adalah **implementasi development-branch pertama** (bukan
@@ -7175,6 +7189,110 @@ V17, ATAU bukti staging, ATAU keputusan owner atas K-10/T-01,
 ATAU jawaban provider atas M-1/M-2.
 
 ---
+### D.4.35 Jawaban atas audit independen V18 — F-049..F-056 diimplementasikan di branch `development` + Handoff §7 (BARU, v2.3.24)
+
+**Status:** DESIGN REVIEW ONLY — IMPLEMENTATION NOT APPROVED FOR
+RELEASE — NOT READY FOR COMMUNITY BETA. Revisi ini menjawab audit
+independen V18 (`SSRF_INDEPENDENT_AUDIT_V18.md`, commit `75fc5ee` +
+klarifikasi `1699706`, 8 November 2026) atas `main` sampai V17
+(`c0efbfd`). **Catatan penomoran (DL-24-09):** §D.4.34 adalah bagian
+v2.3.23 yang hanya ada di branch `development` (commit `31c3db3`);
+`main` tidak pernah menerima revisi v2.3.23 sebagai dokumen — bagian
+ini diberi nomor §D.4.35 dan ketiadaan §D.4.34 di `main` dicatat
+secara eksplisit, bukan diisi secara retroaktif.
+
+**Otorisasi implementasi:** V18 §7 menegaskan otorisasi yang ada
+untuk implementasi di branch pengembangan terisolasi "remains
+sufficient" + direktif owner `c53fd73` + instruksi owner 2026-11-08
+~15:31 WIB ("perbaiki semua"). Implementasi F-049..F-056
+DIEKSEKUSI di branch `development` (merge `32731de`; commit
+`1863c1f`, `56d4a66`, `8344055`, `811561b`, `ecd6f06`; ls-remote
+terverifikasi `ecd6f069d95ffa7fcfb98110cd542a3cc7faf266`).
+Implementasi di `development` TIDAK berarti persetujuan
+rilis/produksi. `main` tidak disentuh source aplikasinya; live
+artifact `cek-link-airdrop` tidak disentuh; Link Scanner tetap
+nonaktif; tidak ada merge development→main.
+
+**F-049 — korpus IANA lengkap.** Classifier IPv4/IPv6 diturunkan
+dari fetch live kedua registry IANA 2026-11-08 (Last Updated
+2025-10-09): semua entri GR=False di-DENY, entri GR=True di-ALLOW,
+parent-prefix default-deny `2001::/23` dengan exception GR=True
+yang lebih spesifik. Tambahan eksplisit: `192.88.99.0/24`
+(termasuk `192.88.99.2/32`), `5f00::/16`. **Keputusan produk
+2001:20::/28 = ALLOW** mengikuti IANA (ORCHIDv2 GR=True;
+identifier kriptografis, bukan host routable; kebijakan lebih
+ketat tidak diadopsi). Korpus per-entri di
+`evidence/v2324/iana-registry-corpus-v2324.md` (branch
+`development`). H-IP 8/8 PASS. Tindak lanjut: registry-diff test
+berkala (U-108). Runtime reachability NOT VERIFIED.
+
+**F-050 — otorisasi addProject di handler.** Gate owner-only
+(`isAddProjectAuthorized`) di dalam handler, sebelum akses DB.
+Tidak mengandalkan asumsi dispatch-layer SDK yang belum terbukti.
+H-AUTH 6/6 PASS (anonim/non-owner/viewer share → 0 baris).
+Batas jujur: tidak ada service principal terjadwal di
+codebase/runtime — gate = owner-only; definisi service identity
+terjadwal butuh keputusan + staging proof (U-109).
+
+**F-051 — semantik principal didesain ulang.** Viewer share
+Cloudflare non-owner → principal null: tanpa history, saved state
+nonaktif, Gibran tanpa riwayat; owner Cloudflare →
+`cloudflare-owner:{shareId}`. Tidak ada label user-scoped pada
+baris share-scoped. H-PRIN 6/6 PASS. Trade-off: viewer share
+kehilangan saved state by design. `ctx.viewer` runtime NOT
+VERIFIED (STAGE-P02; baris readiness v2.3.24 #21 baru).
+
+**F-052 + F-053 — deadline batas keras + timeout tidak tersimpan.**
+DNS di-race melawan per-query 5 dtk DAN deadline total;
+`deadline.aborted` dicek sebelum cache read dan sebelum tiap
+script; lease TTL 25 dtk dipertahankan (deadline batas keras +
+unwind <1 dtk di VM). `ScanTimeoutError` di 3 checkpoint analyze;
+`runCheck` → error timeout eksplisit retryable, tanpa insert
+baris. H-DL 6/6 + H-TO-01 PASS (elapsed 20015 ms, 0 baris, lease
+0). Timing runtime NOT VERIFIED (baris readiness #23 baru).
+
+**F-054 — akuntansi agregat pada cache hit.** Opsi simpan-panjang
++ reserve: `FetchResult.decodedBytes` disimpan per cache entry
+dan di-reserve via `tryReserve` sebelum hit dilayani. H-CB 4/4
+PASS (900 KB lolos, +300 KB ditolak). RDAP cache berbudget
+sendiri by design.
+
+**F-055 — CHECK Solana base58 penuh.** Migrasi 0008
+(`site/drizzle/0008_solana_base58_check.sql`, journal idx 7):
+CHECK cabang Solana kini allowlist penuh
+(`NOT GLOB '*[^1-9A-HJ-NP-Za-km-z]*'`), setara validator aplikasi
+`canonicalizeContractAddress`; `schema.ts` + `catalog.ts`
+diselaraskan; DDL drizzle-kit diregenerasi (diff hanya cabang
+CHECK Solana); down migration diuji. H-B58 5/5 PASS; H-MIG
+re-run 232/232 (8 migrasi). Pre-check operator V1 wajib sebelum
+migrate di DB berisi data (U-110; baris readiness #22 baru).
+Versi SQLite runtime produksi NOT VERIFIED (U-90).
+
+**F-056 — same-origin tiap hop redirect.** `opts.allowedOrigin`
+ditegakkan di setiap hop redirect fetch script sebelum koneksi
+hop berikutnya; `analyze` meneruskan `pageOrigin`. H-SO 5/5
+PASS.
+
+**D-06 / T-01 / landing.** Stub SDK tidak disentuh; clean-clone
+TIDAK diulang (tidak ada perubahan material — protokol handoff
+butir 6). T-01 tetap BLOCKED. Landing page tidak disentuh; URL
+publik tidak diklaim.
+
+**Bukti (semua VM, bukan staging/produksi):** regresi penuh
+v2.3.24 **363/363 PASS** (232+32+15+8+12+8+5+10+8+6+6+6+1+4+5+5),
+tsc server+client exit 0, 2026-11-08 ~16:25–16:41 WIB, log +
+harness di branch `development` `evidence/v2324/` (commit
+`811561b`/`ecd6f06`), ke-16 SHA-256 log terverifikasi cocok oleh
+koordinator revisi. **Koreksi total (DL-24-01):** matriks
+development menulis 353/353 — salah hitung (H-RD 10/10 tidak
+dijumlahkan); angka benar 363/363. Bukti mentah TIDAK diduplikasi
+ke `main` (DL-24-02). Detail lengkap: matriks respons v2.3.24
+§2/§8; staging readiness v2.3.24 (baris 21–23 baru); risiko baru
+U-108..U-112; gate G-L.
+
+**Pemicu revisi v2.3.25:** audit independen V19, ATAU keputusan
+owner atas K-1/K-4/K-10/T-01, ATAU bukti runtime G-B (termasuk
+versi SQLite produksi, U-90), ATAU staging tersedia (G-E).
 
 ## E. Risiko regresi terhadap scanner yang sudah berjalan
 
