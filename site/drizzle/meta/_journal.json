@@ -36,6 +36,13 @@
       "when": 1794046846965,
       "tag": "0005_translate_catalog_text_to_bahasa_indonesia",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794122805971,
+      "tag": "0006_unified_ownership_and_uniqueness",
+      "breakpoints": true
     }
   ]
 }
