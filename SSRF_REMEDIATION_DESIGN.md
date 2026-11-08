@@ -1,8 +1,8 @@
 # RANCANGAN PERBAIKAN SSRF — Link Scanner Live AIRDROP GENERATE (AG-001)
 
-- **Tanggal:** 7 November 2026 — **Revisi v2.3.21 (8 November 2026)**
-- **Status dokumen:** RANCANGAN v2.3.21 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
-- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
+- **Tanggal:** 7 November 2026 — **Revisi v2.3.22 (8 November 2026)**
+- **Status dokumen:** RANCANGAN v2.3.22 (design-only) — **DESIGN ACCEPTED WITH CONDITIONS — IMPLEMENTATION NOT APPROVED** (status ini TIDAK berubah oleh revisi ini)
+- **Respons atas audit kode V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11:** `SSRF_RESPONSE_MATRIX_V2318.md` (F-034, F-035, U-72 diperketat, jawaban Handoff V11 §11 9 butir) — lihat §D.4.29. **Respons atas audit independen V12:** `SSRF_RESPONSE_MATRIX_V2319.md` (F-036, F-037, trust boundary F-035, proposal F-001..F-005 — lihat §D.4.30). Proposal implementation-ready F-001..F-005: `SSRF_PROPOSAL_F001_F005_V2319.md`. **Respons atas audit independen V13:** `SSRF_RESPONSE_MATRIX_V2320.md` (F-038..F-043, traceability, hard gates — lihat §D.4.31). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2320.md`. **Respons atas audit independen V14:** `SSRF_RESPONSE_MATRIX_V2321.md` (F-044/F-045/F-046 + handoff §9 — lihat §D.4.32). Proposal direvisi: `SSRF_PROPOSAL_F001_F005_V2321.md`. **Respons atas audit independen V15:** `SSRF_RESPONSE_MATRIX_V2322.md` (F-047/F-048 + handoff §9 7 butir — lihat §D.4.33). Feasibility deployment: `DEPLOYMENT_FEASIBILITY_V2322.md`. **[KOREKSI v2.3.21: §D.4.31 dirujuk v2.3.20 tetapi badannya tidak pernah ditulis (U-88) — v2.3.21 menambahkan §D.4.32 dan tidak memalsukan §D.4.31 secara retroaktif.]** Matriks v2.3.17 (`SSRF_RESPONSE_MATRIX_V2317.md`) dipertahankan utuh sebagai catatan sejarah. Revisi ini juga menjawab butir 1 + 3 brief eksekusi `MUSE_EXECUTION_BRIEF_2026-11-08.md` (commit `8441aec`); butir 2 brief (proposal remediasi F-001..F-005 yang implementation-ready) SELESAI v2.3.19 dan DIREVISI v2.3.20 (jawaban atas audit V13 — lihat §D.4.31). **[KOREKSI v2.3.20: kalimat sebelumnya yang menyatakan butir 2 BELUM dikerjakan adalah STALE sejak v2.3.19 — diperbaiki pada revisi ini.]** **Bukti mentah v2.3.6 diterbitkan:** `evidence/v236/` (21 file `.txt` byte-identik + `MANIFEST.md`) — lihat §D.4.17. **[KOREKSI v2.3.10 (F-010): bundle itu hanya membuktikan 1 log SU lengkap — su-run2/su-run3 adalah duplikat RUN=1, su-run4 hanya ekor; lihat `evidence/v236/MANIFEST.md` bagian koreksi + checker `scripts/verify-evidence-manifest.mjs`.]** **Manifest reproduksibilitas:** `SSRF_REPRODUCIBILITY_V238.md` (direkonsiliasi v2.3.10 — run repro baru + output mentah `evidence/v239-repro/`). **Revisi v2.3.9:** bundle bukti suplemen `evidence/v236-supplement-20261108/` (4 run SU lengkap 9/9 + run ketiga OPS-T7 PASS + `MANIFEST.md`) + verifikasi F-005 dari kode + verifikasi F-009 (SDK tarball, frozen install, typecheck di salinan scratch) — lihat §D.4.20 dan changelog v2.3.9. **Revisi v2.3.10:** jawaban atas audit V3 (F-010..F-015) — lihat §D.4.21 dan changelog v2.3.10. **Revisi v2.3.11:** jawaban atas audit V4 (F-016..F-020) — lihat §D.4.22 dan changelog v2.3.11. **Revisi v2.3.12:** jawaban atas audit V5 (F-021, F-022) — lihat §D.4.23 dan changelog v2.3.12. **Revisi v2.3.13:** jawaban atas audit V6 (F-023, F-024, F-025) — lihat §D.4.24 dan changelog v2.3.13. **Revisi v2.3.14:** jawaban atas audit V7 (F-026, F-027, F-028) — lihat §D.4.25 dan changelog v2.3.14. **Revisi v2.3.15:** jawaban atas audit V8 (F-029, F-030) — lihat §D.4.26 dan changelog v2.3.15.
 - **Pemisahan tiga tahap (keputusan pemilik, mengikat v2.3.8):** (a) desain remediasi — boleh dilanjutkan dan ditinjau (inilah v2.3.8 dan v2.3.9); (b) implementasi pada source code — butuh persetujuan eksplisit terpisah dari pemilik proyek, **TIDAK diberikan saat ini**; (c) penerapan ke situs live — butuh persetujuan dan prosedur deployment tersendiri. **Perubahan pada source mirror GitHub TIDAK otomatis berarti situs live berubah.** v2.3.8 dan v2.3.9 TIDAK mengimplementasikan apa pun; temuan kode F-001..F-005 tetap OPEN/blocked sampai tahap (b) + bukti harness staging.
 - **Rekonsiliasi bukti v2.3.7:** `SSRF_RECONCILIATION_V237.md` (pemetaan evaluasi ChatGPT ST-01..ST-12, SU-T1..SU-T9, U-38-A..D/U-33-A..F ke bukti v2.3.6 yang sudah ada — lihat §D.4.16; penomoran kanonik ST-01..ST-16; daftar kekurangan §6 dokumen tersebut) — TIDAK ADA pengujian baru yang dijalankan untuk v2.3.7.
 - **Bukti uji v2.3.6:** `SSRF_SPIKE_V236.md` (pidfd PIDFD-T1..T12 + window
@@ -76,6 +76,19 @@
 - **Ruang lingkup:** Link Scanner live di artifact slug `cek-link-airdrop`
   (aksi server `checkLink`). Tidak ada perubahan pada katalog proyek, histori cek,
   sistem scoring, atau asisten Gibran kecuali yang dinyatakan eksplisit di §B dan §E.
+
+## Perubahan di revisi v2.3.22 (8 November 2026)
+
+| # | Lokasi perubahan | Isi perubahan |
+| --- | --- | --- |
+| 1 | §D.4.33 (baru) + matriks §2 butir 1 | **F-044/F-045/F-046 — TIDAK diuji ulang, diverifikasi silang:** tidak ada perubahan material sejak v2.3.21 (implementasi, lingkungan, harness, risiko sama), sehingga pengulangan tes dilarang protokol handoff butir 6. Verifikasi: SHA-256 kelima file kanonik v2.3.21 COCOK dengan klaim matriks v2.3.21; tail log 109 PASS 0 FAIL + H-MIG-09 ALL PASS. Status: "addressed in v2.3.21, carried forward and verified by cross-reference". F-004 tetap OPEN/BLOCKED; K-10 tersisa; scope `ctx.db` NOT VERIFIED. |
+| 2 | §D.4.33 (baru) + matriks §2 butir 2 + `DEPLOYMENT_FEASIBILITY_V2322.md` (BARU) | **Feasibility deployment free-tier:** inspeksi tree lengkap (7 actions, `ctx.db` 7×, `ctx.inference` 1×, env var NOL, tanpa HTTP entry point/Dockerfile/start script, tanpa test/CI, auth boundary NOT VERIFIED). Matriks Vercel Hobby / Supabase Free / Cloudflare Workers+D1 + Oracle Always Free VM + second Hatch space dari dokumen resmi provider yang dicek langsung 2026-11-08 ~13:43–13:44 WIB (Vercel Hobby non-komersial + tunggu 30 hari bila lewat limit; Supabase pause 7 hari + DB 500 MB read-only; Workers 100k req/hari + 10 ms CPU + 50 subrequest; D1 5M read/100k write per hari). Jalur aman terkecil: **BLOCKED**; artefak hilang persis M-1..M-10. |
+| 3 | §D.4.33 (baru) + matriks §2 butir 3 + `evidence/v2322/` (BARU) | **F-047 — clean-clone build DIBUKTIKAN gagal (bukan diklaim):** clone bersih @ `c53fd73` → `unshare -rm` + bind dir kosong ke `/opt/hatch` → install FAIL exit 1 (`ENOENT extracting tarball from @hatch/space-sdk`) + build FAIL exit 1 (`Could not resolve: "@hatch/space-sdk"`). Kontrol dengan `/opt/hatch`: install OK, `build:server` OK (191 modul, 221 KB), `build:client` FAIL exit 1 — SDK menolak build tangan (temuan BARU **U-97**: lapisan kedua blocker portabilitas). SDK: `@hatch/space-sdk` 0.14.0, tarball SHA-256 `f2cb7b25…ad49e`; `npm view` → 404 (tidak ada sumber redistributable publik yang sah). Aksi owner minimal: M-1/M-2 (pernyataan/distribusi SDK + kontrak build client) atau M-6 (jawaban T-01). Status F-047: partially addressed (bukti lengkap; resolusi BLOCKED). |
+| 4 | §D.4.33 (baru) + matriks §2 butir 4 + `README.md` (diubah) | **F-048 — README direkonsiliasi:** klaim "Repo GitHub: Belum ada" DIHAPUS (repo publik ada sejak 2026-11-07); status dibedakan 4 artefak (live Hatch artifact / mirror repo / foundation package / deployment standalone masa depan) dengan tanggal verifikasi 2026-11-08 + bukti atau label NOT VERIFIED; katalog 15 (live) vs seed repo 12 (U-87); Supabase/Vercel tetap "belum ada" + NOT VERIFIED. Uji regresi V15 §3.3 lolos dari README saja. |
+| 5 | §D.4.33 (baru) + matriks §2 butir 5 + branch `dev` (`bd5d8fa` + `f25bb24`) | **Pengembangan paralel:** branch `dev` dari `main` @ `c53fd73` berisi `BACKLOG.md` (D-01..D-10) — backlog awal saja, TANPA perubahan kode. Perbedaan nama dicatat (U-98): tugas terjadwal `dev` vs `c53fd73` `development`; rename diserahkan ke agen induk/pemilik. |
+| 6 | §D.4.33 (baru) + matriks §2 butir 6 + `CLOSED_BETA_PACKAGE_POINTER.md` (BARU) | **Paket beta diverifikasi + direkonsiliasi:** 5 file ADA di branch `beta-readiness` @ `fd4441a`, keputusan BLOCKED, SHA paket `850592a` tercatat di `RELEASE_EVIDENCE.md`. Klaim V15 "no beta package found" = gap visibilitas branch (V15 hanya me-review `main`, ditulis sebelum paket di-push). File TIDAK diduplikasi ke `main`; pointer singkat sebagai gantinya. |
+| 7 | §D.4.33 (baru) + matriks §2 butir 8 + `DEPLOYMENT_FEASIBILITY_V2322.md` §4.1 | **Direktif `c53fd73` + jawaban GPT link-jadi dicatat:** `c53fd73` (implementation-first di branch development) masuk 13:41 WIB — implementasi TIDAK dieksekusi dalam revisi ini (otorisasi run ini desain+bukti saja; U-99 — keputusan diserahkan ke agen induk/pemilik). ChatGPT menjawab diskusi link-jadi 13:47 WIB (`59b02d0`): rangking C/A/D/B; definisi "project link" vs "application trial link"; kriteria T-01; gate minimum owner-only trial. |
+| 8 | §D.4.33 + matriks §5 + §10 | **Risiko baru U-97..U-102** (SDK menolak build tangan, nama branch, otorisasi implementasi, diskusi link-jadi, klasifikasi Vercel Hobby, CPU checkLink vs 10 ms). Gate **G-K diperbarui** (K-1..K-5/K-7..K-10 + otorisasi tahap (b) + U-99 + T-01 + M-1/M-2). F-001..F-005 tetap OPEN/BLOCKED; F-019/F-028 NOT VERIFIED; F-030 CONFIRMED BLOCKER; staging roles UNASSIGNED + 4 baris baru (14–17). |
 
 ## Perubahan di revisi v2.3.21 (8 November 2026)
 
@@ -6946,7 +6959,85 @@ Gate G-K diperbarui (K-1..K-5/K-7..K-10 + otorisasi tahap (b)).
 Pemicu revisi v2.3.22 adalah audit independen V15, ATAU keputusan
 owner atas K-1..K-5/K-7..K-10/G-A/G-C/G-D/G-F/G-G (G-K), ATAU bukti
 runtime G-B (termasuk versi SQLite produksi, U-90), ATAU staging
-tersedia (G-E).
+tersedia (G-E). [TEKS ASLI v2.3.21 — pemicu itu kini TERPENUHI oleh
+audit V15; revisi ini adalah v2.3.22.]
+
+### D.4.33 Jawaban atas audit independen V15 — F-047, F-048 + Handoff §9 (BARU, v2.3.22)
+
+**F-047 — portabilitas deployment free-tier (High):** DIBUKTIKAN
+BLOCKED oleh percobaan clean-clone build, bukan diklaim. Clone bersih
+@ `c53fd73` → `unshare -rm` + bind dir kosong ke `/opt/hatch` →
+`bun install --frozen-lockfile` FAIL exit 1 (`ENOENT extracting
+tarball from @hatch/space-sdk`) dan `bun run build` FAIL exit 1
+(`Could not resolve: "@hatch/space-sdk"`). Kontrol dengan `/opt/hatch`:
+install OK, `build:server` OK (191 modul, `actions.js` 221 KB),
+`build:client` FAIL exit 1 — SDK menolak build tangan ("This web
+artifact cannot be built by hand...") — temuan BARU U-97: portabilitas
+terhalang dua lapis independen (tarball tak terdistribusi + build
+client digerbangi tooling artifact). SDK `@hatch/space-sdk` 0.14.0,
+tarball SHA-256 `f2cb7b25…ad49e`; `npm view` → 404 (tidak ada sumber
+redistributable publik yang sah). Aksi owner minimal: pernyataan/
+distribusi SDK (M-1), kontrak build client (M-2), atau jawaban T-01
+(M-6). Log mentah: `evidence/v2322/clean-clone-build-no-hatch.txt`
+(SHA-256 `7a3c3331…`) + `...-with-hatch-control.txt` (SHA-256
+`4a74ba04…`) + driver `run-clean-clone-build.sh` (terverifikasi
+reproduksi: INSTALL_EXIT=1, BUILD_EXIT=1).
+
+**F-048 — README (Medium):** direkonsiliasi langsung di `README.md`
+(file dokumentasi). Klaim "Repo GitHub: Belum ada" DIHAPUS; status
+dibedakan 4 artefak (live Hatch artifact / mirror repo / foundation
+package / deployment standalone masa depan) dengan tanggal verifikasi
+2026-11-08 + bukti atau label NOT VERIFIED; katalog 15 (live) vs
+seed repo 12 (U-87); Supabase/Vercel tetap "belum ada" + NOT VERIFIED.
+Uji regresi V15 §3.3 lolos dari README saja. Residual: URL/digest
+live artifact tetap NOT VERIFIED (tidak ada public link).
+
+**F-044/F-045/F-046 — carry-forward terverifikasi:** TIDAK diuji ulang
+(tidak ada perubahan material; protokol melarang pengulangan tanpa
+alasan). Verifikasi silang SHA-256 kelima file kanonik v2.3.21 COCOK;
+tail log 109 PASS 0 FAIL + H-MIG-09 ALL PASS. Tidak ditemukan cacat
+pada v2.3.21. F-004 tetap OPEN/BLOCKED; K-10 tersisa; scope `ctx.db`
+NOT VERIFIED.
+
+**Feasibility deployment:** `DEPLOYMENT_FEASIBILITY_V2322.md` —
+inspeksi tree lengkap (7 actions; `ctx.db` 7×; `ctx.inference` 1×;
+env var NOL; tanpa HTTP entry point/Dockerfile/start script; tanpa
+test/CI; auth boundary NOT VERIFIED) + matriks free tier dari dokumen
+resmi provider yang dicek langsung 2026-11-08 (Vercel Hobby
+non-komersial + tunggu 30 hari; Supabase pause 7 hari + DB 500 MB;
+Workers 100k req/hari + 10 ms CPU + 50 subrequest; D1 5M read/100k
+write per hari) + jalur aman terkecil BLOCKED + artefak hilang M-1..M-10.
+
+**Paket beta:** diverifikasi di branch `beta-readiness` @ `fd4441a`
+(5 file ADA, keputusan BLOCKED, SHA paket `850592a`); klaim V15 "no
+beta package found" = gap visibilitas branch. File TIDAK diduplikasi
+ke `main`; pointer singkat `CLOSED_BETA_PACKAGE_POINTER.md`.
+
+**Pengembangan paralel:** branch `dev` dari `main` @ `c53fd73`
+(`bd5d8fa` + `f25bb24`) berisi `BACKLOG.md` (D-01..D-10) — tanpa kode.
+Perbedaan nama dicatat (U-98): `dev` vs `development` (`c53fd73` §1).
+
+**Direktif `c53fd73` + jawaban GPT link-jadi:** `c53fd73`
+(implementation-first di branch development) masuk 13:41 WIB —
+implementasi TIDAK dieksekusi dalam revisi ini (otorisasi run ini
+desain+bukti saja; U-99 — keputusan diserahkan ke agen induk/pemilik).
+ChatGPT menjawab diskusi link-jadi 13:47 WIB (`59b02d0`): rangking
+C/A/D/B; definisi "project link" vs "application trial link"; kriteria
+T-01; gate minimum owner-only trial. Ringkasan di
+`DEPLOYMENT_FEASIBILITY_V2322.md` §4.1.
+
+**Risiko baru U-97..U-102:** U-97 (SDK menolak build tangan), U-98
+(nama branch), U-99 (otorisasi implementasi), U-100 (diskusi link-jadi
+— DIJAWAB GPT, tindak lanjut OPEN), U-101 (klasifikasi Vercel Hobby),
+U-102 (CPU checkLink vs 10 ms, NOT VERIFIED).
+
+**Carry-forward:** F-001..F-005 tetap OPEN/BLOCKED; F-019/F-028
+NOT VERIFIED; F-030 CONFIRMED BLOCKER; STAGE-P01..P12 BLOCKED.
+Gate G-K diperbarui (K-1..K-5/K-7..K-10 + otorisasi tahap (b) + U-99 +
+T-01 + M-1/M-2). Pemicu revisi v2.3.23 adalah audit independen V16,
+ATAU tanggapan ChatGPT atas diskusi link-jadi, ATAU keputusan owner
+atas K-1..K-5/K-7..K-10/U-99/T-01 (G-K), ATAU bukti runtime G-B,
+ATAU staging tersedia (G-E).
 
 ---
 

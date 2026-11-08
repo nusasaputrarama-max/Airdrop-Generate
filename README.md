@@ -5,16 +5,34 @@
 > Indonesia mengidentifikasi penipuan airdrop, phishing, malicious link, dan ancaman
 > dalam ekosistem cryptocurrency.
 
-## Status dokumen
+## Status dokumen (terverifikasi 2026-11-08)
 
 | Item | Status |
 | --- | --- |
 | Tanggal fondasi | 2026-11-07 |
 | Tahap | Foundation (Phase 1) |
 | Produk yang sudah jalan | Web artifact fullstack `cek-link-airdrop` (lihat § Status saat ini) |
-| Repo GitHub | **Belum ada** — butuh akun + keputusan pemilik |
-| Supabase | **Belum ada** — butuh kredensial pemilik |
-| Vercel | **Belum ada** — butuh akun + keputusan pemilik |
+| Repo GitHub | **ADA** — publik `nusasaputrarama-max/Airdrop-Generate`, branch `main` (terverifikasi 2026-11-08; repo ini) |
+| Supabase | **Belum ada** — belum ada proyek yang terverifikasi (NOT VERIFIED, 2026-11-08); butuh kredensial pemilik |
+| Vercel | **Belum ada** — belum ada akun/proyek yang terverifikasi (NOT VERIFIED, 2026-11-08); butuh akun + keputusan pemilik |
+
+## Status saat ini — empat artefak yang berbeda (baca dulu)
+
+Agar tidak tertukar, dokumen ini membedakan empat hal yang sering
+dicampuradukkan. Setiap pernyataan di bawah membawa tanggal verifikasi
+atau label NOT VERIFIED eksplisit (rekonsiliasi F-048, 2026-11-08).
+
+| # | Artefak | Status (2026-11-08) | Bukti |
+| --- | --- | --- | --- |
+| 1 | **Live Hatch artifact** — website AIRDROP GENERATE yang sudah berjalan (slug `cek-link-airdrop`, v15) | **LIVE** sebagai web artifact Hatch (bukan deployment standalone). URL publik/digest artifact: **NOT VERIFIED** — artifact tidak di-share publik, tidak ada public link | `site/space.json` (`runtime: "typescript"`, `platformVersion: 28`); `site/README.md` |
+| 2 | **Mirror/source repo** — repo ini | **ADA** — publik, branch `main`, berisi mirror source `site/` + dokumen desain + bukti | Repo ini sendiri; `git log` |
+| 3 | **Migration foundation package** — paket dokumen + kerangka ini | **ADA** — dokumentasi + kerangka kode modular (`src/`), bukan aplikasi yang di-deploy | Dokumen dalam paket ini (lihat tabel di bawah) |
+| 4 | **Deployment standalone masa depan** (Vercel/Supabase/Cloudflare/dll.) | **BELUM ADA — BLOCKED** (lihat `DEPLOYMENT_FEASIBILITY_V2322.md`: clean-clone build gagal tanpa SDK Hatch; tidak ada entry point HTTP; gates keamanan belum lolos) | `DEPLOYMENT_FEASIBILITY_V2322.md` §2–§5; `SSRF_RESPONSE_MATRIX_V2322.md` |
+
+**Batas yang mengikat:** situs live (artefak 1) TIDAK diubah dengan
+mengedit repo ini (artefak 2/3). Perubahan live hanya lewat artifact
+tools Muse, lalu mirror di-sync ulang. Sebaliknya, dokumen desain di
+repo ini TIDAK otomatis berarti situs live berubah.
 
 **Prinsip paket ini:** fondasi ini mendokumentasikan apa yang *sudah berjalan* sebagai
 basis yang nyata, dan merancang migrasi ke stack target secara bertahap **tanpa membongkar**
@@ -42,8 +60,12 @@ Website **AIRDROP GENERATE** sudah live sebagai web artifact fullstack (slug
   redirect diikuti hop demi hop (maks 6); daftar domain drainer terbukti
   (`solbarn.cc`, `sharkmoon.tech`); validasi format alamat kontrak EVM/Solana; skor
   per sinyal dengan bukti. Riwayat tersimpan (`listChecks`, `deleteCheck`).
-- **Airdrop Explorer** — katalog 13 proyek terverifikasi (`listProjects`, `addProject`
-  dengan aturan ketat anti-duplikat, `setProjectState` untuk bookmark/status tugas).
+- **Airdrop Explorer** — katalog 15 proyek terverifikasi di live artifact
+  (`listProjects`, `addProject` dengan aturan ketat anti-duplikat,
+  `setProjectState` untuk bookmark/status tugas). Catatan: seed repo
+  `site/drizzle/0004` berisi 12 baris — perbedaan repo-vs-live dicatat
+  jujur sebagai U-87 (lihat matriks v2.3.21 §5); jumlah live
+  terverifikasi via `listProjects` 2026-11-08 13:20 WIB.
 - **Asisten AI Gibran** — aksi `askGibran`: menjawab hanya dari data situs (katalog,
   riwayat cek, panduan keamanan), jujur bilang tidak tahu bila datanya tidak ada.
 - **Otomasi 2 jam** — cron memantau sumber airdrop baru dan auto-add proyek yang lolos
@@ -70,8 +92,10 @@ klasifikasi 4 tingkat target ada di [`CLASSIFICATION.md`](CLASSIFICATION.md).
 
 ## Cara menjalankan / memeriksa paket ini
 
-Paket ini adalah **dokumentasi + kerangka**, bukan aplikasi yang di-deploy. Tidak ada
-server yang perlu dijalankan.
+Paket ini adalah **dokumentasi + kerangka**, bukan aplikasi yang di-deploy.
+Tidak ada server yang perlu dijalankan. Ini berbeda dengan artifact live
+(artefak 1 di § Status saat ini) — artifact live berjalan di runtime
+Hatch, bukan dari paket ini.
 
 ```bash
 # 1. Periksa environment
