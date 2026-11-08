@@ -986,6 +986,30 @@ function rowToCheck(row: typeof schema.checks.$inferSelect): Check {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Link Scanner kill-switch (F-019).
+// ---------------------------------------------------------------------------
+// Server-side runtime control for checkLink: while the flag is false the
+// scan entry point (runCheck) rejects BEFORE any rate-limit, lease, fetch
+// or DB write — the disabled state is enforced by code, not by a label.
+// Default DISABLED on this branch (development): the scanner must not
+// run until its gates are cleared and an explicit enable decision is
+// recorded. The flag is module state on purpose (no env vars exist in
+// this runtime, no settings table exists yet): flipping it requires a
+// code change + review, not a silent toggle. `setCheckLinkEnabled` is
+// test-only; production code never calls it.
+let CHECKLINK_ENABLED = false;
+
+/** Current kill-switch state (read-only for diagnostics/tests). */
+export function isCheckLinkEnabled(): boolean {
+  return CHECKLINK_ENABLED;
+}
+
+/** Test-only setter for the kill-switch (harness H-KILL). */
+export function setCheckLinkEnabled(enabled: boolean): void {
+  CHECKLINK_ENABLED = enabled;
+}
+
 /**
  * Runs one full link check and stores the result row.
  *
@@ -1000,6 +1024,13 @@ export async function runCheck(
   rawUrl: string,
   opts?: { forceFresh?: boolean; testHooks?: FetchTestHooks },
 ): Promise<Check> {
+  // F-019 kill-switch: reject BEFORE any work (no rate-limit/lease
+  // consumed, no fetch, no row) with a clear error — never silently run.
+  if (!CHECKLINK_ENABLED) {
+    throw new Error(
+      "Pemeriksa tautan sedang nonaktif. Fitur Cek Link dimatikan sementara untuk perbaikan keamanan (F-019) — belum bisa memeriksa link.",
+    );
+  }
   const input = normalizeUrl(rawUrl);
   const domain = registrableDomain(input.hostname.toLowerCase());
   const db = ctx.db<typeof schema>();
