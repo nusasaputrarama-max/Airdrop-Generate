@@ -224,13 +224,13 @@ function Chip({ children, color, bg }: { children: ReactNode; color: string; bg:
   );
 }
 
-function Navbar({ onConnect }: { onConnect: () => void }) {
+function Navbar() {
   const [open, setOpen] = useState(false);
   const links: { label: string; target: string }[] = [
     { label: "Beranda", target: "home" },
     { label: "Jelajahi Airdrop", target: "explore" },
     { label: "Segera Hadir", target: "upcoming" },
-    { label: "Cek Link", target: "checker" },
+    { label: "Cek Link (Nonaktif)", target: "checker" },
     { label: "Panduan", target: "guide" },
     { label: "Tentang", target: "about" },
   ];
@@ -263,14 +263,6 @@ function Navbar({ onConnect }: { onConnect: () => void }) {
             className="hidden rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold sm:block"
           >
             Dasbor
-          </button>
-          <button
-            type="button"
-            onClick={onConnect}
-            className="rounded-full px-4 py-2 text-sm font-bold"
-            style={{ backgroundImage: GRADIENT, color: "var(--accent-ink)" }}
-          >
-            Hubungkan Wallet
           </button>
           <button
             type="button"
@@ -613,8 +605,8 @@ function ExploreSection({
       ) : filtered.length === 0 ? (
         <p className="mt-6 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-sm leading-relaxed text-[var(--dim)]">
           Belum ada proyek terverifikasi yang cocok dengan filter itu. Proyek hanya ditambahkan
-          setelah pemeriksaan on-chain — coba hapus salah satu filter, atau jalankan link-nya lewat
-          Cek Link di bawah sebelum memercayainya.
+          setelah pemeriksaan on-chain — coba hapus salah satu filter, atau periksa link-nya secara
+          manual (alamat kontrak di explorer, umur domain, tautan resmi proyek) sebelum memercayainya.
         </p>
       ) : (
         <>
@@ -729,7 +721,7 @@ function CategoriesSection({
 
 function HowItWorks() {
   const steps = [
-    { n: 1, title: "Temukan airdrop", text: "Telusuri katalog terverifikasi atau cari berdasarkan chain, status, dan kategori. Kalau link-nya datang dari X atau Telegram, jalankan dulu lewat Cek Link sebelum dibuka." },
+    { n: 1, title: "Temukan airdrop", text: "Telusuri katalog terverifikasi atau cari berdasarkan chain, status, dan kategori. Kalau link-nya datang dari X atau Telegram, periksa dulu secara manual (alamat kontrak di explorer, umur domain, tautan resmi proyek) sebelum dibuka." },
     { n: 2, title: "Lihat detail proyek", text: "Buka kartu detailnya: alamat kontrak, tautan resmi, tingkat kesulitan, dan persis bagaimana proyek itu diverifikasi — beserta tanggalnya." },
     { n: 3, title: "Selesaikan tugas yang memenuhi syarat", text: "Ikuti langkah resmi proyek di situsnya sendiri. Jangan pernah memasukkan seed phrase atau private key di mana pun — airdrop asli tidak pernah memintanya." },
     { n: 4, title: "Pantau progresmu", text: "Tandai proyek dan atur statusnya menjadi Belum Dimulai, Sedang Dikerjakan, atau Selesai di dasbormu, supaya tidak ada yang terlewat." },
@@ -898,36 +890,6 @@ function ProjectModal({
   );
 }
 
-function WalletModal({ onClose }: { onClose: () => void }) {
-  return (
-    <ModalShell title="Hubungkan Wallet" onClose={onClose}>
-      <p className="mt-3 text-sm leading-relaxed text-[var(--dim)]">
-        AIRDROP GENERATE adalah platform penemuan yang sifatnya hanya-baca. Menjelajah, menandai,
-        dan memantau airdrop — juga mengecek link — tidak pernah memerlukan wallet, jadi koneksi
-        wallet memang sengaja belum diaktifkan di sini.
-      </p>
-      <ul className="mt-4 space-y-2.5 text-sm leading-relaxed">
-        <li className="rounded-xl bg-[var(--surface2)] px-3 py-2.5">
-          <strong>Kami tidak akan pernah meminta seed phrase atau private key kamu.</strong> Situs
-          atau orang yang memintanya adalah penipu — segera tutup.
-        </li>
-        <li className="rounded-xl bg-[var(--surface2)] px-3 py-2.5">
-          Kalau dukungan wallet hadir nanti, sifatnya hanya <strong>lihat saja</strong> (pencarian
-          alamat). Platform ini tidak akan pernah memulai transaksi atau memintamu
-          menandatanganinya.
-        </li>
-        <li className="rounded-xl bg-[var(--surface2)] px-3 py-2.5">
-          Punya link klaim dari suatu tempat? Jalankan dulu lewat{" "}
-          <button type="button" className="font-semibold text-[var(--accent)] underline" onClick={() => { onClose(); go("checker"); }}>
-            Cek Link
-          </button>{" "}
-          sebelum menghubungkan wallet apa pun ke sana.
-        </li>
-      </ul>
-    </ModalShell>
-  );
-}
-
 function SignalIcon({ status }: { status: Signal["status"] }) {
   if (status === "bahaya")
     return (
@@ -954,7 +916,7 @@ function SignalIcon({ status }: { status: Signal["status"] }) {
   );
 }
 
-function CheckDetail({ check, onRecheck, rechecking }: { check: Check; onRecheck: (c: Check) => void; rechecking: boolean }) {
+function CheckDetail({ check }: { check: Check }) {
   const v = VERDICT[check.verdict];
   return (
     <div className="mt-6">
@@ -1043,15 +1005,6 @@ function CheckDetail({ check, onRecheck, rechecking }: { check: Check; onRecheck
           </ul>
         </>
       )}
-
-      <button
-        type="button"
-        disabled={rechecking}
-        onClick={() => onRecheck(check)}
-        className="mt-5 w-full rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold disabled:opacity-50"
-      >
-        {rechecking ? "Memeriksa ulang…" : "Cek ulang link ini sekarang"}
-      </button>
     </div>
   );
 }
@@ -1061,9 +1014,6 @@ function CheckerSection({
   loading,
   selected,
   setSelected,
-  onCheck,
-  checking,
-  checkError,
   onDelete,
   deleting,
 }: {
@@ -1071,70 +1021,32 @@ function CheckerSection({
   loading: boolean;
   selected: Check | null;
   setSelected: (c: Check | null) => void;
-  onCheck: (url: string) => void;
-  checking: boolean;
-  checkError: string | null;
   onDelete: (id: number) => void;
   deleting: boolean;
 }) {
-  const [input, setInput] = useState("");
   const shown = selected ?? checks[0] ?? null;
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const url = input.trim();
-    if (!url || checking) return;
-    onCheck(url);
-  };
   return (
     <section aria-label="Pemeriksa keamanan link" className="mx-auto w-full max-w-6xl px-4 pt-14">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div>
           <SectionHead
             id="checker"
-            title="Cek Link Airdrop"
-            blurb="Tempel link airdrop atau klaim apa pun yang kamu dapat dari X, Telegram, atau grup — sebelum kamu membukanya. Pemeriksa ini membaca kode halaman dan data pendaftaran domainnya: domain drainer yang sudah terbukti, seluruh rantai redirect, permintaan connect wallet, kode penandatanganan transaksi, alamat kontrak (formatnya divalidasi terhadap chain yang diklaim halaman), umur domain, dan bahasa iming-iming klaim. Setiap sinyal menunjukkan apa yang ditemukan dan persis berapa pengaruhnya terhadap skor."
+            title="Cek Link Airdrop — Nonaktif"
+            blurb="Pemeriksa otomatis Cek Link sedang nonaktif sementara untuk perbaikan keamanan (F-019). Tidak ada pemeriksaan baru yang bisa dijalankan dari halaman ini; riwayat di bawah adalah catatan pemeriksaan yang sudah dilakukan sebelumnya."
           />
-          <form onSubmit={submit} className="mt-5">
-            <label htmlFor="link-input" className="text-sm font-semibold">
-              Link yang mau dicek
-            </label>
-            <input
-              id="link-input"
-              type="text"
-              inputMode="url"
-              autoCapitalize="off"
-              autoCorrect="off"
-              placeholder="https://contoh-airdrop.xyz/claim"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="mt-1.5 w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 py-3.5 font-mono text-sm outline-none focus:border-[var(--accent)]"
-            />
-            <button
-              type="submit"
-              disabled={checking || input.trim().length === 0}
-              className="font-display mt-3 w-full rounded-full px-4 py-4 text-lg font-black tracking-wide disabled:opacity-50"
-              style={{ backgroundImage: GRADIENT, color: "var(--accent-ink)" }}
-            >
-              {checking ? "MEMERIKSA…" : "CEK LINK INI"}
-            </button>
-            {checking && (
-              <p className="mt-2 text-center text-sm text-[var(--dim)]">
-                Menghubungi situsnya, membaca kode halamannya, dan mengecek umur domain…
-              </p>
-            )}
-            {checkError && (
-              <p role="alert" className="mt-2 rounded-[var(--radius)] px-3 py-2.5 text-sm font-medium" style={{ color: "var(--red)", backgroundColor: "var(--red-bg)" }}>
-                {checkError}
-              </p>
-            )}
-          </form>
-          <button
-            type="button"
-            className="mt-3 text-left text-sm text-[var(--dim)] underline"
-            onClick={() => setInput("https://scamsem.solbarn.cc/")}
-          >
-            Isi contoh: link klaim palsu (scamsem.solbarn.cc)
-          </button>
+          <div role="status" className="mt-5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm leading-relaxed text-[var(--dim)]">
+            <p className="font-semibold text-[var(--text)]">Cek Link sedang nonaktif.</p>
+            <p className="mt-1.5">
+              Pemeriksa otomatis dimatikan sementara untuk perbaikan keamanan (F-019) — saat ini
+              tidak bisa memeriksa link baru. Riwayat di bawah ini hanya catatan pemeriksaan
+              yang sudah dilakukan sebelumnya.
+            </p>
+            <p className="mt-1.5">
+              Sementara itu, periksa link secara manual: buka alamat kontrak di explorer
+              chain-nya, cek umur domain, dan pastikan tautan sosialnya berasal dari kanal
+              resmi proyek.
+            </p>
+          </div>
 
           <h3 className="font-display mt-8 text-lg font-bold">Riwayat pemeriksaan</h3>
           {loading ? (
@@ -1184,7 +1096,7 @@ function CheckerSection({
         </div>
         <div aria-live="polite">
           {shown ? (
-            <CheckDetail check={shown} rechecking={checking} onRecheck={(c) => onCheck(c.url)} />
+            <CheckDetail check={shown} />
           ) : (
             <div className="rounded-[var(--radius)] border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm leading-relaxed text-[var(--dim)]">
               Hasil pemeriksaan terakhir akan tampil di sini — lengkap dengan cap BAHAYA / WASPADA /
@@ -1194,12 +1106,13 @@ function CheckerSection({
         </div>
       </div>
       <p className="mt-8 max-w-3xl text-xs leading-relaxed text-[var(--dim)]">
-        Pemeriksa membaca kode halaman secara statis, mengikuti rantai redirect-nya selangkah
-        demi selangkah, dan membaca data pendaftaran domain (RDAP) — tanpa menjalankan script
-        situs dan tanpa connect wallet. Domain yang tercatat sebagai drainer (solbarn.cc dan
-        sharkmoon.tech) selalu divonis BAHAYA, termasuk bila hanya
-        dilewati oleh rantai redirect. Vonis hijau bukan jaminan: situs bisa berubah setelah
-        dicek, dan tanda tangan transaksi tetap harus dibaca satu per satu di wallet.
+        Cara kerja pemeriksa (saat aktif): membaca kode halaman secara statis, mengikuti
+        rantai redirect-nya selangkah demi selangkah, dan membaca data pendaftaran domain
+        (RDAP) — tanpa menjalankan script situs dan tanpa connect wallet. Domain yang
+        tercatat sebagai drainer (solbarn.cc dan sharkmoon.tech) selalu divonis BAHAYA
+        bila diperiksa, termasuk bila hanya dilewati oleh rantai redirect. Vonis hijau
+        bukan jaminan: situs bisa berubah setelah dicek, dan tanda tangan transaksi
+        tetap harus dibaca satu per satu di wallet.
       </p>
     </section>
   );
@@ -1208,8 +1121,8 @@ function CheckerSection({
 function GuideSection() {
   const guides = [
     {
-      title: "Sebelum mengklik: cek link 60 detik",
-      body: "Tempel link-nya ke pemeriksa di atas sebelum membukanya. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik drainer.",
+      title: "Sebelum mengklik: cek manual 60 detik",
+      body: "Periksa link-nya secara manual sebelum membukanya: buka alamat kontrak di explorer, cek umur domain, dan pastikan tautan sosialnya resmi. Halaman klaim di domain yang baru berumur beberapa hari, tanpa alamat kontrak dan tanpa tautan sosial resmi, adalah pola klasik drainer. (Pemeriksa otomatis Cek Link sedang nonaktif untuk perbaikan keamanan — lihat bagian Cek Link.)",
     },
     {
       title: "Baca kontraknya, bukan hitung mundurnya",
@@ -1360,9 +1273,10 @@ function AboutSection() {
             berbagai proyek kripto.
           </p>
           <p className="mt-3">
-            Melalui fitur seperti Link Scanner, Threat Intelligence, dan analisis berbasis AI,
+            Melalui katalog terverifikasi, panduan keamanan, dan analisis berbasis AI,
             Airdrop Generate terus dikembangkan untuk membantu pengguna lebih waspada terhadap
-            berbagai potensi penipuan di ekosistem Web3.
+            berbagai potensi penipuan di ekosistem Web3. Pemeriksa otomatis Link Scanner
+            saat ini nonaktif sementara untuk perbaikan keamanan (F-019).
           </p>
           <p className="mt-3">
             Saat ini, Airdrop Generate masih berada dalam tahap pengembangan dan pengujian.
@@ -1407,7 +1321,7 @@ function Footer() {
     { label: "Jelajahi Airdrop", target: "explore" },
     { label: "Segera Hadir", target: "upcoming" },
     { label: "Kategori", target: "categories" },
-    { label: "Cek Link", target: "checker" },
+    { label: "Cek Link (Nonaktif)", target: "checker" },
     { label: "Panduan", target: "guide" },
     { label: "Dasbor", target: "dashboard" },
     { label: "Tentang", target: "about" },
@@ -1477,12 +1391,12 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 const GIBRAN_WELCOME: ChatMessage = {
   role: "assistant",
   content:
-    "Halo! Aku Gibran, asisten AIRDROP GENERATE. Aku bisa bantu jawab soal airdrop di katalog, cara pakai cek link, dan tips keamanan wallet. Mau tanya apa?",
+    "Halo! Aku Gibran, asisten AIRDROP GENERATE. Aku bisa bantu jawab soal airdrop di katalog, cara memeriksa link secara manual, dan tips keamanan wallet. Mau tanya apa?",
 };
 
 const GIBRAN_SUGGESTIONS = [
   "Airdrop apa saja yang sedang live?",
-  "Bagaimana cara cek link airdrop?",
+  "Bagaimana cara memeriksa link airdrop secara manual?",
   "Tips aman supaya tidak kena drainer?",
   "Proyek apa saja di kategori NFT?",
 ];
@@ -1624,7 +1538,7 @@ function GibranChat() {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Tanya soal airdrop, cek link, keamanan…"
+              placeholder="Tanya soal airdrop, cek manual, keamanan…"
               maxLength={1000}
               autoComplete="off"
               className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--bg)] px-3.5 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
@@ -1700,9 +1614,8 @@ export function App() {
   const [segment, setSegment] = useState("All");
   const [category, setCategory] = useState("All");
   const [detail, setDetail] = useState<Project | null>(null);
-  const [walletOpen, setWalletOpen] = useState(false);
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
-  // C7: pesan kesalahan aksi (bookmark/status, cek link, hapus riwayat) —
+  // C7: pesan kesalahan aksi (bookmark/status, hapus riwayat) —
   // sebelumnya kegagalan deleteMut/stateMut tidak terlihat sama sekali
   // oleh pengguna.
   const [actionError, setActionError] = useState<string | null>(null);
@@ -1723,19 +1636,6 @@ export function App() {
     onError: (err) =>
       setActionError(
         `Gagal menyimpan perubahan proyek: ${err instanceof Error ? err.message : "terjadi kesalahan"}. Coba lagi.`,
-      ),
-  });
-
-  const checkMut = useMutation({
-    mutationFn: (url: string) => api.checkLink({ url }),
-    onSuccess: (result) => {
-      setSelectedCheck(result);
-      queryClient.invalidateQueries({ queryKey: ["checks"] });
-      go("checker");
-    },
-    onError: (err) =>
-      setActionError(
-        `Pemeriksaan link gagal: ${err instanceof Error ? err.message : "terjadi kesalahan"}. Coba lagi.`,
       ),
   });
 
@@ -1787,7 +1687,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <SafeAreaTopScrim backgroundColor="var(--bg)" />
-      <Navbar onConnect={() => setWalletOpen(true)} />
+      <Navbar />
       <main>
         {actionError && (
           <div role="alert" className="mx-auto mt-4 w-full max-w-6xl px-4">
@@ -1827,15 +1727,6 @@ export function App() {
           loading={history.isPending}
           selected={selectedCheck}
           setSelected={setSelectedCheck}
-          onCheck={(url) => checkMut.mutate(url)}
-          checking={checkMut.isPending}
-          checkError={
-            checkMut.isError
-              ? checkMut.error instanceof Error
-                ? checkMut.error.message
-                : "Pemeriksaan gagal. Coba lagi."
-              : null
-          }
           onDelete={(id) => deleteMut.mutate(id)}
           deleting={deleteMut.isPending}
         />
@@ -1858,7 +1749,6 @@ export function App() {
           onTaskStatus={changeTaskStatus}
         />
       )}
-      {walletOpen && <WalletModal onClose={() => setWalletOpen(false)} />}
       <GibranChat />
     </div>
   );

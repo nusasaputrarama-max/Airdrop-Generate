@@ -11,7 +11,7 @@
 | --- | --- |
 | Tanggal fondasi | 2026-11-07 |
 | Tahap | Foundation (Phase 1) |
-| Produk yang sudah jalan | Web artifact fullstack `cek-link-airdrop` (lihat § Status saat ini) |
+| Produk yang sudah jalan | Web artifact fullstack `cek-link-airdrop` — TIDAK di-share publik (lihat § Status saat ini) |
 | Repo GitHub | **ADA** — publik `nusasaputrarama-max/Airdrop-Generate`, branch `main` (terverifikasi 2026-11-08; repo ini) |
 | Supabase | **Belum ada** — belum ada proyek yang terverifikasi (NOT VERIFIED, 2026-11-08); butuh kredensial pemilik |
 | Vercel | **Belum ada** — belum ada akun/proyek yang terverifikasi (NOT VERIFIED, 2026-11-08); butuh akun + keputusan pemilik |
@@ -48,24 +48,31 @@ keterbatasan analisis yang jelas — bukan sekadar label "aman" atau "scam".
 Latar belakang nyata: pembuat platform kehilangan aset pada 7 November 2026 karena
 sebuah halaman claim airdrop palsu (`scamsem.solbarn.cc`) yang mengarahkan ke
 `sharkmoon.tech` dan menguras wallet Solana-nya. Kedua domain itu kini tercatat
-sebagai domain drainer terbukti dan selalu dicap BAHAYA oleh Link Scanner.
+sebagai domain drainer terbukti dan selalu divonis BAHAYA bila diperiksa — pemeriksa
+otomatisnya sendiri saat ini nonaktif untuk perbaikan keamanan (F-019).
 
 ## Yang sudah berjalan hari ini (fondasi yang nyata)
 
 Website **AIRDROP GENERATE** sudah live sebagai web artifact fullstack (slug
-`cek-link-airdrop`, TypeScript, database SQLite/Drizzle):
+`cek-link-airdrop`, TypeScript, database SQLite/Drizzle) — namun TIDAK di-share publik
+(tidak ada public link) dan berstatus DESIGN REVIEW ONLY, bukan rilis:
 
-- **Link Scanner** — aksi `checkLink`: fetch halaman, pindai permintaan connect-wallet,
-  kode signing, alamat kontrak, bahasa iming-iming, kode tersamar; umur domain via RDAP;
-  redirect diikuti hop demi hop (maks 6); daftar domain drainer terbukti
-  (`solbarn.cc`, `sharkmoon.tech`); validasi format alamat kontrak EVM/Solana; skor
-  per sinyal dengan bukti. Riwayat tersimpan (`listChecks`, `deleteCheck`).
-- **Airdrop Explorer** — katalog 15 proyek terverifikasi di live artifact
+- **Link Scanner** — aksi `checkLink` saat ini **NONAKTIF** di mirror ini (kill switch
+  `CHECKLINK_ENABLED = false`, F-019; UI tidak lagi menawarkannya sebagai pemeriksa
+  yang bisa dipakai). Kemampuan pemeriksanya — fetch halaman, pindai permintaan
+  connect-wallet, kode signing, alamat kontrak, bahasa iming-iming, kode tersamar;
+  umur domain via RDAP; redirect diikuti hop demi hop (maks 6); daftar domain
+  drainer terbukti (`solbarn.cc`, `sharkmoon.tech`); validasi format alamat kontrak
+  EVM/Solana; skor per sinyal dengan bukti — berlaku bila pemeriksa diaktifkan
+  kembali setelah gate SSRF lolos. Status pemeriksa di artifact live TIDAK
+  terverifikasi sama dengan mirror ini (provenance belum terbukti). Riwayat
+  tersimpan (`listChecks`, `deleteCheck`) tetap tersedia sebagai catatan.
+- **Airdrop Explorer** — katalog 24 proyek terverifikasi di live artifact
   (`listProjects`, `addProject` dengan aturan ketat anti-duplikat,
   `setProjectState` untuk bookmark/status tugas). Catatan: seed repo
   `site/drizzle/0004` berisi 12 baris — perbedaan repo-vs-live dicatat
   jujur sebagai U-87 (lihat matriks v2.3.21 §5); jumlah live
-  terverifikasi via `listProjects` 2026-11-08 13:20 WIB.
+  terverifikasi via `listProjects` langsung dari live artifact 2026-11-12.
 - **Asisten AI Gibran** — aksi `askGibran`: menjawab hanya dari data situs (katalog,
   riwayat cek, panduan keamanan), jujur bilang tidak tahu bila datanya tidak ada.
 - **Otomasi 2 jam** — cron memantau sumber airdrop baru dan auto-add proyek yang lolos
