@@ -1,0 +1,1 @@
+{"description":"AGBadge soulbound ERC-721 for the Binance Agent ID Hackathon (Airdrop Generate entry). Toolchain is intentionally separate from site/ (bun) — plain npm + solc.","devDependencies":{"@openzeppelin/contracts":"^5.4.0","solc":"^0.8.30"},"license":"MIT","name":"ag-badge-contracts","private":true,"scripts":{"compile":"node compile.mjs"},"version":"0.1.0"}
