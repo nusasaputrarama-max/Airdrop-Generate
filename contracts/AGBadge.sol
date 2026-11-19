@@ -9,13 +9,20 @@ interface IAgentID {
     function balanceOf(address owner) external view returns (uint256);
 }
 
+/// @dev Minimal ERC-5192 interface for permanently locked ERC-721 tokens.
+interface IERC5192 {
+    event Locked(uint256 tokenId);
+    event Unlocked(uint256 tokenId);
+
+    function locked(uint256 tokenId) external view returns (bool);
+}
+
 /// @title AGBadge — Airdrop Generate Agent ID holder badge
-/// @notice Free, soulbound, one per wallet. Mintable only by wallets that hold
-/// a Binance Agent ID (name.ai). No fees, no admin, no promises of value.
-/// @dev Metadata is fully on-chain (data-URI JSON + inline SVG). The Agent ID
-/// registry (SPACE ID Agent ID) is not enumerable, so the gate uses balanceOf
-/// only; no tokenOfOwnerByIndex call exists anywhere in this contract.
-contract AGBadge is ERC721 {
+/// @notice Free, permanently soulbound, one per wallet. Mintable only by
+/// wallets that hold a Binance Agent ID (name.ai). No fees, no admin.
+/// @dev Metadata is fully on-chain. The Agent ID registry is not enumerable;
+/// the gate deliberately uses balanceOf only.
+contract AGBadge is ERC721, IERC5192 {
     using Strings for uint256;
 
     /// @notice SPACE ID Agent ID registry (ERC-721, non-transferable).
@@ -25,7 +32,7 @@ contract AGBadge is ERC721 {
     /// @notice Next token id to mint. Starts at 1.
     uint256 public nextTokenId = 1;
 
-    /// @notice True once a wallet has claimed. Burning does NOT reset this.
+    /// @notice True once a wallet has claimed. It is never reset.
     mapping(address => bool) public hasClaimed;
 
     event BadgeMinted(address indexed holder, uint256 indexed tokenId);
@@ -36,27 +43,50 @@ contract AGBadge is ERC721 {
 
     constructor() ERC721("Airdrop Generate Agent Badge", "AGBADGE") {}
 
-    /// @notice Mint the caller's one free badge. Requires holding an Agent ID.
+    /// @notice Mint the caller's one free, permanently locked badge.
     function mint() external {
         if (AGENT_ID.balanceOf(msg.sender) == 0) revert NotAgentIDHolder();
         if (hasClaimed[msg.sender]) revert AlreadyClaimed();
 
+        // Set before _safeMint so an ERC721Receiver callback cannot re-enter
+        // mint() for this wallet.
         hasClaimed[msg.sender] = true;
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
         emit BadgeMinted(msg.sender, tokenId);
     }
 
-    /// @notice Soulbound: every transfer reverts. Mint (from == 0) and burn
-    /// (to == 0) stay allowed.
+    /// @inheritdoc IERC5192
+    /// @dev Every existing token is permanently locked. Queries for
+    /// nonexistent token IDs revert as required by ERC-5192.
+    function locked(uint256 tokenId) external view override returns (bool) {
+        _requireOwned(tokenId);
+        return true;
+    }
+
+    /// @dev ERC-5192 interface ID is 0xb45a3c0e (locked(uint256)).
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721)
+        returns (bool)
+    {
+        return interfaceId == 0xb45a3c0e || super.supportsInterface(interfaceId);
+    }
+
+    /// @dev Permanent soulbound policy: once minted, a token can never move
+    /// or be burned. This also blocks transfers attempted through approvals.
     function _update(address to, uint256 tokenId, address auth)
         internal
         override
         returns (address)
     {
         address from = _ownerOf(tokenId);
-        if (from != address(0) && to != address(0)) revert Soulbound();
-        return super._update(to, tokenId, auth);
+        if (from != address(0)) revert Soulbound();
+
+        address previousOwner = super._update(to, tokenId, auth);
+        if (to != address(0)) emit Locked(tokenId);
+        return previousOwner;
     }
 
     /// @notice Fully on-chain metadata: base64 JSON with an inline SVG image.
