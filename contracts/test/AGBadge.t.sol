@@ -137,7 +137,7 @@ contract AGBadgeTest {
 
         bytes memory uri = bytes(badge.tokenURI(1));
         require(uri.length > 100, "metadata unexpectedly short");
-        require(bytes5(uri) == bytes5("data:"), "metadata is not a data URI");
+        require(uri[0] == 0x64 && uri[1] == 0x61 && uri[2] == 0x74 && uri[3] == 0x61 && uri[4] == 0x3a, "metadata is not a data URI");
     }
 
     function testBadgeCannotBeBurnedOrReclaimed() public {
