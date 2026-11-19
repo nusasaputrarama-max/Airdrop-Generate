@@ -8,6 +8,7 @@ interface Vm {
     function store(address target, bytes32 slot, bytes32 value) external;
     function prank(address sender) external;
     function expectRevert(bytes4 revertData) external;
+    function expectRevert(bytes calldata revertData) external;
     function expectEmit(bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData, address emitter) external;
 }
 
@@ -109,6 +110,7 @@ contract AGBadgeTest {
     function testApprovalCannotEnableTransfer() public {
         vm.prank(ALICE);
         badge.mint();
+        vm.prank(ALICE);
         badge.approve(BOB, 1);
 
         vm.expectRevert(AGBadge.Soulbound.selector);
@@ -127,7 +129,7 @@ contract AGBadgeTest {
         require(badge.supportsInterface(0x80ac58cd), "ERC-721 missing");
         require(badge.supportsInterface(0x01ffc9a7), "ERC-165 missing");
 
-        vm.expectRevert(bytes4(keccak256("ERC721NonexistentToken(uint256)")));
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ERC721NonexistentToken(uint256)")), uint256(999)));
         badge.locked(999);
     }
 
